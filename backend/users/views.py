@@ -8,8 +8,8 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    # TODO: Add IsAdminUser permission later
-    permission_classes = [permissions.AllowAny] 
+    # Protegido: Solo usuarios autenticados pueden ver la lista
+    permission_classes = [permissions.IsAuthenticated] 
 
 class StudentRegisterView(generics.CreateAPIView):
     serializer_class = StudentRegisterSerializer
