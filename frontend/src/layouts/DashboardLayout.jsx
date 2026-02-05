@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Sidebar Item Component
 const SidebarItem = ({ icon: Icon, label, to, onClick }) => (
@@ -24,6 +24,14 @@ export default function DashboardLayout() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
+    // Proteger ruta: Si no hay token, enviar al login
+    useEffect(() => {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            navigate('/login');
+        }
+    }, [navigate]);
 
     const handleLogout = () => {
         // Aquí iría la lógica de limpiar tokens, etc.
