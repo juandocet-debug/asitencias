@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useUser } from '../context/UserContext';
 
 // Sidebar Item Component
 const SidebarItem = ({ icon: Icon, label, to, onClick }) => (
@@ -24,6 +25,7 @@ export default function DashboardLayout() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const { user } = useUser(); // Obtenemos el usuario del contexto
 
     // Proteger ruta: Si no hay token, enviar al login
     useEffect(() => {
@@ -70,18 +72,26 @@ export default function DashboardLayout() {
                 <div className="mx-4 mb-6 p-4 bg-upn-50/50 rounded-2xl border border-upn-100">
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <img
-                                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                                alt="User"
-                                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                            />
+                            {user?.photo ? (
+                                <img
+                                    src={user.photo}
+                                    alt="User"
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center border-2 border-white shadow-sm">
+                                    <User className="text-slate-400" size={20} />
+                                </div>
+                            )}
                             <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
                         </div>
                         <div>
                             <p className="text-xs text-slate-500 font-medium">Buen día 👋</p>
-                            <h3 className="text-sm font-bold text-slate-800">Prof. Juan David</h3>
+                            <h3 className="text-sm font-bold text-slate-800">
+                                {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
+                            </h3>
                             <p className="text-[10px] text-upn-600 font-semibold bg-upn-100 px-2 py-0.5 rounded-full w-fit mt-1">
-                                DOCENTE
+                                {user?.role === 'ADMIN' ? 'ADMINISTRADOR' : user?.role === 'TEACHER' ? 'DOCENTE' : 'ESTUDIANTE'}
                             </p>
                         </div>
                     </div>
@@ -140,16 +150,24 @@ export default function DashboardLayout() {
                                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                                 className="flex items-center gap-3 pl-4 border-l border-slate-200 focus:outline-none group"
                             >
-                                <div className="text-right hidden md:block">
-                                    <p className="text-sm font-bold text-slate-800 group-hover:text-upn-700 transition-colors">Juan David</p>
-                                    <p className="text-xs text-slate-500">Administrador</p>
+                                <div className="text-right mr-3 hidden sm:block">
+                                    <p className="text-sm font-bold text-slate-800 group-hover:text-upn-700 transition-colors">
+                                        {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
+                                    </p>
+                                    <p className="text-xs text-slate-500">
+                                        {user?.role === 'ADMIN' ? 'Administrador' : user?.role === 'TEACHER' ? 'Docente' : 'Estudiante'}
+                                    </p>
                                 </div>
-                                <div className="h-10 w-10 rounded-full p-0.5 bg-gradient-to-br from-upn-500 to-upn-700 cursor-pointer group-hover:scale-105 transition-transform shadow-sm">
-                                    <img
-                                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                                        alt="Profile"
-                                        className="w-full h-full rounded-full object-cover border-2 border-white"
-                                    />
+                                <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
+                                    {user?.photo ? (
+                                        <img
+                                            src={user.photo}
+                                            alt="Profile"
+                                            className="w-full h-full rounded-full object-cover border-2 border-white"
+                                        />
+                                    ) : (
+                                        <User className="text-slate-400" size={20} />
+                                    )}
                                 </div>
                             </button>
 
@@ -166,7 +184,7 @@ export default function DashboardLayout() {
                                         </div>
 
                                         <button
-                                            onClick={() => { setIsProfileMenuOpen(false); navigate('/settings'); }}
+                                            onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }}
                                             className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-upn-700 flex items-center gap-3 transition-colors"
                                         >
                                             <User size={18} /> Editar Perfil
