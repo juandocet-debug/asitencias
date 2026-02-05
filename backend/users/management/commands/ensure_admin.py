@@ -14,7 +14,23 @@ class Command(BaseCommand):
 
         if not User.objects.filter(username=username).exists():
             print(f"Creando superusuario: {username}...")
-            User.objects.create_superuser(username=username, email=email, password=password)
-            self.stdout.write(self.style.SUCCESS(f'✅ ¡Superusuario "{username}" creado exitosamente!'))
+            User.objects.create_superuser(
+                username=username, 
+                email=email, 
+                password=password,
+                role='ADMIN',  # ASIGNA ROL ADMINISTRADOR
+                is_staff=True,
+                is_superuser=True
+            )
+            self.stdout.write(self.style.SUCCESS(f'✅ ¡Superusuario "{username}" creado exitosamente con rol ADMIN!'))
         else:
-            self.stdout.write(self.style.SUCCESS(f'ℹ️ El superusuario "{username}" ya existe.'))
+            # Si ya existe, aseguramos que tenga el rol correcto
+            user = User.objects.get(username=username)
+            if user.role != 'ADMIN' or not user.is_superuser:
+                user.role = 'ADMIN'
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+                self.stdout.write(self.style.SUCCESS(f'🔄 Usuario "{username}" actualizado a ADMIN y Superuser.'))
+            else:
+                self.stdout.write(self.style.SUCCESS(f'ℹ️ El superusuario "{username}" ya existe y está configurado correctamente.'))
