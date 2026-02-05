@@ -9,6 +9,14 @@ import ClassReports from './pages/ClassReports';
 import RegisterStudent from './pages/RegisterStudent';
 import UsersPage from './pages/Users';
 
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -17,7 +25,11 @@ function App() {
         <Route path="/register" element={<RegisterStudent />} />
 
         {/* Protected Routes */}
-        <Route element={<DashboardLayout />}>
+        <Route element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/classes" element={<Classes />} />
@@ -31,6 +43,7 @@ function App() {
     </BrowserRouter>
   );
 }
+
 
 export default App;
 
