@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Calendar, CheckCircle, AlertCircle, ArrowUpRight, BookOpen, Clock, Activity } from 'lucide-react';
+import { Users, Calendar, CheckCircle, AlertCircle, ArrowUpRight, BookOpen, Clock, Activity, Edit2, X, Plus, Trash2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const StatCard = ({ title, value, label, icon: Icon, color, trend, subtext }) => (
@@ -25,12 +26,115 @@ const StatCard = ({ title, value, label, icon: Icon, color, trend, subtext }) =>
     </div>
 );
 
+const ScheduleModal = ({ isOpen, onClose, course, onSave }) => {
+    const [schedule, setSchedule] = useState([{ day: 'MON', start: '08:00', end: '10:00' }]);
+
+    useEffect(() => {
+        if (course?.all_schedules && course.all_schedules.length > 0) {
+            setSchedule(course.all_schedules);
+        } else {
+            setSchedule([{ day: 'MON', start: '08:00', end: '10:00' }]);
+        }
+    }, [course]);
+
+    const handleChange = (index, field, value) => {
+        const newSchedule = [...schedule];
+        newSchedule[index][field] = value;
+        setSchedule(newSchedule);
+    };
+
+    const addSlot = () => {
+        setSchedule([...schedule, { day: 'MON', start: '08:00', end: '10:00' }]);
+    };
+
+    const removeSlot = (index) => {
+        const newSchedule = schedule.filter((_, i) => i !== index);
+        setSchedule(newSchedule);
+    };
+
+    const handleSave = () => {
+        onSave(course.id, schedule);
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 m-4 animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-800">Programar Horario</h3>
+                        <p className="text-sm text-slate-500">{course?.name} ({course?.code})</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                        <X size={20} className="text-slate-500" />
+                    </button>
+                </div>
+
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    {schedule.map((slot, index) => (
+                        <div key={index} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <select
+                                value={slot.day}
+                                onChange={(e) => handleChange(index, 'day', e.target.value)}
+                                className="bg-white border border-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 flex-1"
+                            >
+                                <option value="MON">Lunes</option>
+                                <option value="TUE">Martes</option>
+                                <option value="WED">Miércoles</option>
+                                <option value="THU">Jueves</option>
+                                <option value="FRI">Viernes</option>
+                                <option value="SAT">Sábado</option>
+                                <option value="SUN">Domingo</option>
+                            </select>
+                            <input
+                                type="time"
+                                value={slot.start}
+                                onChange={(e) => handleChange(index, 'start', e.target.value)}
+                                className="bg-white border border-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 w-24"
+                            />
+                            <span className="text-slate-400">-</span>
+                            <input
+                                type="time"
+                                value={slot.end}
+                                onChange={(e) => handleChange(index, 'end', e.target.value)}
+                                className="bg-white border border-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 w-24"
+                            />
+                            <button onClick={() => removeSlot(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                <button onClick={addSlot} className="mt-4 flex items-center gap-2 text-sm text-blue-600 font-medium hover:text-blue-700">
+                    <Plus size={16} /> Agregar horario
+                </button>
+
+                <div className="mt-8 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+                        Cancelar
+                    </button>
+                    <button onClick={handleSave} className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-600/20 transition-all">
+                        Guardar Horario
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function Dashboard() {
     const { user } = useUser();
+    const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [year, setYear] = useState('2026');
     const [period, setPeriod] = useState('');
+
+    // Schedule Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState(null);
 
     useEffect(() => {
         fetchStats();
@@ -48,6 +152,22 @@ export default function Dashboard() {
             console.error("Error fetching dashboard stats:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleEditSchedule = (course) => {
+        setSelectedCourse(course);
+        setIsModalOpen(true);
+    };
+
+    const handleSaveSchedule = async (courseId, newSchedule) => {
+        try {
+            await api.patch(`/academic/courses/${courseId}/`, { schedule: newSchedule });
+            setIsModalOpen(false);
+            fetchStats(); // Recargar datos
+        } catch (error) {
+            console.error("Error saving schedule:", error);
+            alert("Error al guardar el horario");
         }
     };
 
@@ -101,7 +221,7 @@ export default function Dashboard() {
                 {isStudent ? (
                     <>
                         <StatCard
-                            title="Mis Clases"
+                            title="Mis Clases Totales"
                             value={stats.stats.total_courses || 0}
                             icon={BookOpen}
                             color="bg-blue-500"
@@ -122,17 +242,17 @@ export default function Dashboard() {
                             subtext="Inasistencias registradas"
                         />
                         <StatCard
-                            title="Retardos"
-                            value={stats.stats.total_lates || 0}
-                            icon={Clock}
-                            color="bg-orange-500"
-                            subtext="Llegadas tarde"
+                            title="Clases Hoy"
+                            value={stats.today_classes?.length || 0}
+                            icon={Calendar}
+                            color="bg-indigo-500"
+                            subtext="Según horario"
                         />
                     </>
                 ) : (
                     <>
                         <StatCard
-                            title="Mis Cursos"
+                            title="Mis Cursos Totales"
                             value={stats.stats.total_courses || 0}
                             icon={BookOpen}
                             color="bg-blue-500"
@@ -148,6 +268,7 @@ export default function Dashboard() {
                             value={stats.stats.today_sessions || 0}
                             icon={Calendar}
                             color="bg-orange-500"
+                            subtext="Programadas hoy"
                         />
                         <StatCard
                             title="Asistencia Hoy"
@@ -162,33 +283,52 @@ export default function Dashboard() {
             {/* Content Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* Main Content (Schedule / Classes) */}
+                {/* Main Content (Today's Classes) */}
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                             <Calendar size={20} className="text-upn-600" />
-                            {isStudent ? 'Mi Horario de Clases' : 'Clases de Hoy'}
+                            Clases de Hoy
                         </h3>
                     </div>
 
-                    {stats.next_classes && stats.next_classes.length > 0 ? (
+                    {stats.today_classes && stats.today_classes.length > 0 ? (
                         <div className="divide-y divide-slate-100">
-                            {stats.next_classes.map((clase, i) => (
+                            {stats.today_classes.map((clase, i) => (
                                 <div key={i} className="p-5 hover:bg-slate-50 transition-colors flex items-center group">
                                     <div className="h-12 w-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg mr-4 group-hover:scale-110 transition-transform">
                                         {clase.code?.substring(0, 2) || 'C'}
                                     </div>
                                     <div className="flex-1">
-                                        <h4 className="font-bold text-slate-800 text-lg">{clase.name}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-bold text-slate-800 text-lg">{clase.name}</h4>
+                                            {!isStudent && (
+                                                <button
+                                                    onClick={() => handleEditSchedule(clase)}
+                                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    title="Editar Horario"
+                                                >
+                                                    <Edit2 size={14} />
+                                                </button>
+                                            )}
+                                        </div>
                                         <p className="text-slate-500 text-sm flex items-center gap-2">
                                             <Clock size={14} /> {clase.schedule || 'Sin horario definido'}
                                         </p>
                                     </div>
-                                    <div className="text-right hidden sm:block">
-                                        <span className="block text-sm font-semibold text-slate-700">{clase.code}</span>
-                                        {isStudent && (
-                                            <span className="text-xs text-slate-500">Docente: {clase.teacher}</span>
-                                        )}
+                                    <div className="text-right flex items-center gap-4">
+                                        <div className="hidden sm:block text-right">
+                                            <span className="block text-sm font-semibold text-slate-700">{clase.code}</span>
+                                            {isStudent && (
+                                                <span className="text-xs text-slate-500">Docente: {clase.teacher}</span>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => navigate(`/classes/${clase.id}`)}
+                                            className="px-4 py-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg text-sm font-bold transition-colors"
+                                        >
+                                            Ir a Clase
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -196,7 +336,12 @@ export default function Dashboard() {
                     ) : (
                         <div className="p-12 text-center text-slate-400">
                             <Calendar size={48} className="mx-auto mb-4 opacity-20" />
-                            <p>No hay clases programadas para mostrar.</p>
+                            <p>No hay clases programadas para hoy.</p>
+                            {!isStudent && (
+                                <p className="text-sm mt-2">
+                                    (Asegúrate de configurar los horarios de tus cursos)
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
@@ -233,19 +378,29 @@ export default function Dashboard() {
                     <div className="bg-upn-600 text-white rounded-2xl p-6 shadow-xl shadow-upn-600/20 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full translate-x-8 -translate-y-8"></div>
                         <h3 className="font-bold text-lg mb-2 relative z-10">
-                            {isStudent ? '¿Necesitas justificar una falta?' : 'Gestionar Asistencias'}
+                            {isStudent ? 'Mis Clases' : 'Ver Todos los Cursos'}
                         </h3>
                         <p className="text-blue-100 text-sm mb-6 relative z-10">
                             {isStudent
-                                ? 'Recuerda que tienes 3 días hábiles para subir tu excusa médica o calamidad doméstica.'
-                                : 'Revisa las excusas pendientes y gestiona las clases activas del día.'}
+                                ? 'Accede a la lista completa de tus materias inscritas y revisa tu historial.'
+                                : 'Administra todas tus asignaturas, estudiantes y configuraciones.'}
                         </p>
-                        <button className="w-full bg-white text-upn-700 font-bold py-3 rounded-xl shadow hover:bg-blue-50 transition-colors relative z-10">
-                            {isStudent ? 'Subir Excusa' : 'Ir a Clases'}
+                        <button
+                            onClick={() => navigate('/classes')}
+                            className="w-full bg-white text-upn-700 font-bold py-3 rounded-xl shadow hover:bg-blue-50 transition-colors relative z-10"
+                        >
+                            {isStudent ? 'Ver todas mis clases' : 'Gestionar Cursos'}
                         </button>
                     </div>
                 </div>
             </div>
+
+            <ScheduleModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                course={selectedCourse}
+                onSave={handleSaveSchedule}
+            />
         </div>
     );
 }

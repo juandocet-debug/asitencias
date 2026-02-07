@@ -423,6 +423,8 @@ class DashboardViewSet(viewsets.ViewSet):
     def stats(self, request):
         user = request.user
         today = date.today()
+        # 0=Monday, 6=Sunday. Map to our storage format.
+        today_code = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][today.weekday()]
         
         # Filtros opcionales
         year = request.query_params.get('year')
@@ -436,7 +438,7 @@ class DashboardViewSet(viewsets.ViewSet):
             if year:
                 courses = courses.filter(year=year)
             if period:
-                courses = courses.filter(semester=period)
+                courses = courses.filter(period=period)
                 
             total_courses = courses.count()
             
@@ -446,7 +448,7 @@ class DashboardViewSet(viewsets.ViewSet):
             total_absent = 0
             total_late = 0
             
-            next_classes = []
+            today_classes = []
             alerts = []
             
             for course in courses:
@@ -472,29 +474,32 @@ class DashboardViewSet(viewsets.ViewSet):
                         'limit': 3 # Configurable
                      })
                 
-                # Próxima clase (mockup logic por ahora, idealmente usar horario real)
-                # Aquí asumimos que todos los cursos están activos
-                next_classes.append({
-                    'id': course.id,
-                    'name': course.name,
-                    'code': course.code,
-                    'schedule': "Lun/Mie 10:00 AM", # Placeholder, el modelo Course necesita horario
-                    'teacher': f"{course.teacher.first_name} {course.teacher.last_name}"
-                })
+                # Revisar si hay clase hoy según el horario
+                has_class_today = False
+                class_time = "Sin horario"
+                
+                if course.schedule:
+                    for slot in course.schedule:
+                        if slot.get('day') == today_code:
+                            has_class_today = True
+                            class_time = f"{slot.get('start')} - {slot.get('end')}"
+                            break
+                
+                if has_class_today:
+                    today_classes.append({
+                        'id': course.id,
+                        'name': course.name,
+                        'code': course.code,
+                        'schedule': class_time,
+                        'teacher': f"{course.teacher.first_name} {course.teacher.last_name}",
+                        'all_schedules': course.schedule # Para referencia completa
+                    })
 
             global_rate = 0
-            if total_sessions > 0:
-                # (Presentes + Retardos + Excusas) / Sesiones Totales
-                attended = total_present + total_late
-                # Nota: Asumimos que total_sessions es el número de clases pasadas
-                # Si total_sessions incluye futuras, el cálculo cambia.
-                # Mejor usar el count de attendances como base si solo hay registros pasados.
-                recorded_sessions = attendances.count() # Esto estaría mal si iteramos, mejor usar la suma acumulada
-                
-                # Simplificación: Usar la suma de registros de asistencia existentes
-                total_recorded = total_present + total_late + total_absent + excused
-                if total_recorded > 0:
-                     global_rate = round(((total_present + total_late + excused) / total_recorded) * 100, 1)
+            # Simplificación: Usar la suma de registros de asistencia existentes
+            total_recorded = total_present + total_late + total_absent + excused
+            if total_recorded > 0:
+                 global_rate = round(((total_present + total_late + excused) / total_recorded) * 100, 1)
 
             return Response({
                 'role': 'STUDENT',
@@ -505,7 +510,7 @@ class DashboardViewSet(viewsets.ViewSet):
                     'total_lates': total_late,
                     'alerts': alerts
                 },
-                'next_classes': next_classes
+                'today_classes': today_classes
             })
 
         else:
@@ -514,11 +519,33 @@ class DashboardViewSet(viewsets.ViewSet):
             if year:
                 my_courses = my_courses.filter(year=year)
             if period:
-                my_courses = my_courses.filter(semester=period)
+                my_courses = my_courses.filter(period=period)
                 
             total_students = 0
+            today_classes = []
+            
             for c in my_courses:
                 total_students += c.students.count()
+                
+                # Revisar horario para hoy
+                has_class_today = False
+                class_time = "Sin horario"
+                if c.schedule:
+                    for slot in c.schedule:
+                        if slot.get('day') == today_code:
+                            has_class_today = True
+                            class_time = f"{slot.get('start')} - {slot.get('end')}"
+                            break
+                            
+                if has_class_today:
+                    today_classes.append({
+                        'id': c.id,
+                        'name': c.name,
+                        'code': c.code,
+                        'schedule': class_time,
+                        'students_count': c.students.count(),
+                        'all_schedules': c.schedule
+                    })
             
             # Asistencia promedio de mis cursos hoy
             today_sessions = Session.objects.filter(course__in=my_courses, date=today)
@@ -535,8 +562,8 @@ class DashboardViewSet(viewsets.ViewSet):
                 'stats': {
                     'total_courses': my_courses.count(),
                     'total_students': total_students,
-                    'today_sessions': today_sessions.count(),
+                    'today_sessions': len(today_classes), # Clases programadas hoy segun horario
                     'today_attendance_rate': today_attendance_rate
                 },
-                'next_classes': [] # TODO: Implementar horario profesor
+                'today_classes': today_classes
             })

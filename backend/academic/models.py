@@ -22,6 +22,7 @@ class Course(models.Model):
     start_date = models.DateField(default=date.today)
     end_date = models.DateField(default=date.today)
     students = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='enrolled_courses', limit_choices_to={'role': 'STUDENT'}, blank=True)
+    schedule = models.JSONField(default=list, blank=True)  # [{"day": "MON", "start": "08:00", "end": "10:00"}]
 
     def __str__(self):
         return f"{self.name} ({self.code})"
