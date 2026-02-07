@@ -43,7 +43,8 @@ from django.urls import re_path
 from django.views.generic import TemplateView
 
 # Serve React App for any other routes (SPA)
+# Excluimos /static/, /media/, /assets/, /api/, /admin/ del catch-all
 urlpatterns += [
-    re_path(r'^.*$', TemplateView.as_view(template_name='index.html')),
+    re_path(r'^(?!static|media|assets|api|admin).*$', TemplateView.as_view(template_name='index.html')),
 ]
 
