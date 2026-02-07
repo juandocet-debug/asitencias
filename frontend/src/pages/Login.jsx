@@ -77,14 +77,21 @@ export default function Login() {
             <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 lg:p-24 bg-white">
                 <div className="w-full max-w-md space-y-8">
 
-                    <div className="md:hidden text-center mb-8">
-                        <img
-                            src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
-                            alt="Logo UPN Mobile"
-                            className="h-28 mx-auto mb-4"
-                        />
-                        <h2 className="text-xl font-bold text-upn-900 leading-tight">Sistema de Control de Gestión Académica</h2>
-                        <p className="text-slate-500 text-sm mt-1">Licenciatura en Recreación</p>
+                    <div className="md:hidden mb-8 -mt-6 -mx-6 bg-upn-700 p-8 rounded-b-[3rem] shadow-xl relative overflow-hidden text-center text-white">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                            <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl"></div>
+                        </div>
+                        <div className="relative z-10">
+                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl inline-block mb-4 border border-white/20 shadow-lg">
+                                <img
+                                    src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                                    alt="Logo UPN Mobile"
+                                    className="h-20 mx-auto filter brightness-0 invert"
+                                />
+                            </div>
+                            <h2 className="text-xl font-bold leading-tight">Gestión Académica</h2>
+                            <p className="text-blue-200 text-xs font-medium tracking-widest uppercase mt-2">Licenciatura en Recreación</p>
+                        </div>
                     </div>
 
                     <motion.div
