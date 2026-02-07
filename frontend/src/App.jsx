@@ -34,11 +34,36 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Componente para manejar la ruta raíz
+const RootRedirect = () => {
+  const { user, loading } = useUser();
+  const token = localStorage.getItem('access_token');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-upn-600"></div>
+      </div>
+    );
+  }
+
+  // Si hay usuario o token, ir al dashboard
+  if (user || token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Si no hay sesión, ir al login
+  return <Navigate to="/login" replace />;
+};
+
 function App() {
   return (
     <UserProvider>
       <BrowserRouter>
         <Routes>
+          {/* Ruta raíz con lógica de redirección */}
+          <Route path="/" element={<RootRedirect />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<RegisterStudent />} />
 
@@ -48,7 +73,6 @@ function App() {
               <DashboardLayout />
             </ProtectedRoute>
           }>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="/classes/:id" element={<ClassDetails />} />
