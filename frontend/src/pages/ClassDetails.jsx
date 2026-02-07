@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Calendar, Search, Trash2, QrCode, Check, Award, X, User, Mail, Phone, Save, CheckCircle, AlertCircle, Loader2, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Search, Trash2, QrCode, Check, Award, X, User, Mail, Phone, Save, CheckCircle, AlertCircle, Loader2, BarChart3, Edit2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
+import ScheduleModal from '../components/ScheduleModal';
 
 // Toast Component
 function Toast({ message, type, onClose }) {
@@ -44,6 +45,9 @@ export default function ClassDetails() {
     const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
     const [attendanceData, setAttendanceData] = useState({});
     const [savingAttendance, setSavingAttendance] = useState(false);
+
+    // Schedule Modal
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
     // Base URL for media files
     const getMediaUrl = (path) => {
@@ -126,6 +130,18 @@ export default function ClassDetails() {
         }
     };
 
+    const handleSaveSchedule = async (courseId, newSchedule) => {
+        try {
+            await api.patch(`/academic/courses/${courseId}/`, { schedule: newSchedule });
+            showToast("Horario actualizado correctamente", "success");
+            setIsScheduleModalOpen(false);
+            fetchCourseAndStudents(); // Recargar datos
+        } catch (error) {
+            console.error("Error saving schedule:", error);
+            showToast("Error al guardar el horario", "error");
+        }
+    };
+
     const toggleAttendanceStatus = (studentId) => {
         setAttendanceData(prev => {
             const current = prev[studentId] || 'PRESENT';
@@ -180,7 +196,16 @@ export default function ClassDetails() {
                     <ArrowLeft size={24} />
                 </button>
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800">{course.name}</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-slate-800">{course.name}</h2>
+                        <button
+                            onClick={() => setIsScheduleModalOpen(true)}
+                            className="p-1.5 text-slate-400 hover:text-upn-600 hover:bg-upn-50 rounded-lg transition-colors"
+                            title="Editar Horario"
+                        >
+                            <Edit2 size={18} />
+                        </button>
+                    </div>
                     <div className="flex items-center gap-2 text-slate-500 text-sm">
                         <Calendar size={14} /> <span>{course.year}-{course.period}</span>
                         <span className="text-slate-300">|</span>
@@ -470,6 +495,13 @@ export default function ClassDetails() {
                     </div>
                 </div>
             )}
+
+            <ScheduleModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                course={course}
+                onSave={handleSaveSchedule}
+            />
         </div>
     );
 }
