@@ -11,11 +11,27 @@ import UsersPage from './pages/Users';
 import Profile from './pages/Profile';
 import { UserProvider } from './context/UserContext';
 
+import { useUser } from './context/UserContext';
+import { Navigate } from 'react-router-dom';
+
 const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useUser();
   const token = localStorage.getItem('access_token');
-  if (!token) {
+
+  if (loading) {
+    // Spinner de carga mientras verificamos sesión
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-upn-600"></div>
+      </div>
+    );
+  }
+
+  // Si no hay usuario cargado O no hay token, redirigir
+  if (!user && !token) {
     return <Navigate to="/login" replace />;
   }
+
   return children;
 };
 
