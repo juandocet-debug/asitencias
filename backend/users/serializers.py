@@ -8,6 +8,13 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'first_name', 'last_name', 'email', 'role', 'document_number', 'second_name', 'second_lastname', 'personal_email', 'phone_number', 'photo')
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.photo:
+            # CloudinaryField ya devuelve la URL completa
+            representation['photo'] = instance.photo.url
+        return representation
 
 class StudentRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -37,6 +44,13 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
                 pass
         
         return user
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.photo:
+            # CloudinaryField ya devuelve la URL completa
+            representation['photo'] = instance.photo.url
+        return representation
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
