@@ -12,7 +12,12 @@ npm install
 npm run build
 cd ..
 
-# 3. Recolectar archivos estáticos (incluyendo los del frontend construido)
+# Crear carpeta de templates y mover index.html para asegurar que Django lo encuentre
+echo "Moviendo index.html a templates..."
+mkdir -p backend/templates
+cp frontend/dist/index.html backend/templates/index.html
+
+# Recolectar estáticos (incluyendo los assets del frontend)
 echo "Recolectando estáticos..."
 python backend/manage.py collectstatic --no-input
 
