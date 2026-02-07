@@ -72,6 +72,9 @@ export default function Profile() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setUser(response.data); // Actualizar con respuesta del servidor
+            if (response.data.photo) {
+                setPreview(response.data.photo); // 🔥 Actualizar preview con la URL de Cloudinary
+            }
             updateUser(response.data); // 🔥 Actualizar el contexto global (esto actualiza el header/sidebar instantáneamente)
             setMessage({ type: 'success', text: '¡Perfil actualizado exitosamente!' });
         } catch (error) {
