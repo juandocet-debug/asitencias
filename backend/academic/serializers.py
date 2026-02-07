@@ -8,6 +8,13 @@ class SimpleStudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'first_name', 'last_name', 'email', 'document_number', 'phone_number', 'photo')
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.photo:
+            # CloudinaryField ya devuelve la URL completa
+            representation['photo'] = instance.photo.url
+        return representation
 
 class CourseSerializer(serializers.ModelSerializer):
     students = SimpleStudentSerializer(many=True, read_only=True)
