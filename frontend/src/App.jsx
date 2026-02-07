@@ -12,7 +12,6 @@ import Profile from './pages/Profile';
 import { UserProvider } from './context/UserContext';
 
 import { useUser } from './context/UserContext';
-import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
