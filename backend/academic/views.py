@@ -415,3 +415,128 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             })
         
         return Response(result)
+
+class DashboardViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        user = request.user
+        today = date.today()
+        
+        # Filtros opcionales
+        year = request.query_params.get('year')
+        period = request.query_params.get('period') # e.g., '1' or '2'
+
+        if user.role == 'STUDENT':
+            # --- ESTADÍSTICAS ESTUDIANTE ---
+            
+            # Cursos inscritos
+            courses = Course.objects.filter(students=user)
+            if year:
+                courses = courses.filter(year=year)
+            if period:
+                courses = courses.filter(semester=period)
+                
+            total_courses = courses.count()
+            
+            # Calcular asistencia global
+            total_sessions = 0
+            total_present = 0
+            total_absent = 0
+            total_late = 0
+            
+            next_classes = []
+            alerts = []
+            
+            for course in courses:
+                # Asistencias en este curso
+                attendances = Attendance.objects.filter(session__course=course, student=user)
+                course_sessions = Session.objects.filter(course=course).count()
+                
+                presences = attendances.filter(status='PRESENT').count()
+                lates = attendances.filter(status='LATE').count()
+                absences = attendances.filter(status='ABSENT').count()
+                excused = attendances.filter(status='EXCUSED').count()
+                
+                total_sessions += course_sessions
+                total_present += presences
+                total_late += lates
+                total_absent += absences
+                
+                # Alerta si tiene muchas faltas (ej. >= 3)
+                if absences >= 3:
+                     alerts.append({
+                        'course_name': course.name,
+                        'absences': absences,
+                        'limit': 3 # Configurable
+                     })
+                
+                # Próxima clase (mockup logic por ahora, idealmente usar horario real)
+                # Aquí asumimos que todos los cursos están activos
+                next_classes.append({
+                    'id': course.id,
+                    'name': course.name,
+                    'code': course.code,
+                    'schedule': "Lun/Mie 10:00 AM", # Placeholder, el modelo Course necesita horario
+                    'teacher': f"{course.teacher.first_name} {course.teacher.last_name}"
+                })
+
+            global_rate = 0
+            if total_sessions > 0:
+                # (Presentes + Retardos + Excusas) / Sesiones Totales
+                attended = total_present + total_late
+                # Nota: Asumimos que total_sessions es el número de clases pasadas
+                # Si total_sessions incluye futuras, el cálculo cambia.
+                # Mejor usar el count de attendances como base si solo hay registros pasados.
+                recorded_sessions = attendances.count() # Esto estaría mal si iteramos, mejor usar la suma acumulada
+                
+                # Simplificación: Usar la suma de registros de asistencia existentes
+                total_recorded = total_present + total_late + total_absent + excused
+                if total_recorded > 0:
+                     global_rate = round(((total_present + total_late + excused) / total_recorded) * 100, 1)
+
+            return Response({
+                'role': 'STUDENT',
+                'stats': {
+                    'total_courses': total_courses,
+                    'attendance_rate': global_rate,
+                    'total_absences': total_absent,
+                    'total_lates': total_late,
+                    'alerts': alerts
+                },
+                'next_classes': next_classes
+            })
+
+        else:
+            # --- ESTADÍSTICAS PROFESOR ---
+            my_courses = Course.objects.filter(teacher=user)
+            if year:
+                my_courses = my_courses.filter(year=year)
+            if period:
+                my_courses = my_courses.filter(semester=period)
+                
+            total_students = 0
+            for c in my_courses:
+                total_students += c.students.count()
+            
+            # Asistencia promedio de mis cursos hoy
+            today_sessions = Session.objects.filter(course__in=my_courses, date=today)
+            today_attendance_rate = 0
+            
+            if today_sessions.exists():
+                total_att = Attendance.objects.filter(session__in=today_sessions).count()
+                present_att = Attendance.objects.filter(session__in=today_sessions, status='PRESENT').count()
+                if total_att > 0:
+                    today_attendance_rate = round((present_att / total_att) * 100, 1)
+
+            return Response({
+                'role': 'TEACHER',
+                'stats': {
+                    'total_courses': my_courses.count(),
+                    'total_students': total_students,
+                    'today_sessions': today_sessions.count(),
+                    'today_attendance_rate': today_attendance_rate
+                },
+                'next_classes': [] # TODO: Implementar horario profesor
+            })
