@@ -94,7 +94,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800">
-                        {isStudent ? `Hola, ${user.first_name}` : 'Panel de Control'}
+                        {isStudent ? `Hola, ${user.first_name}` : 'Panel de Control v2.0'}
                     </h2>
                     <p className="text-slate-500 text-sm">Resumen de actividad académica</p>
                 </div>
