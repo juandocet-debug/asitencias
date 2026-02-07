@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Mail, ArrowRight, ArrowLeft, CheckCircle2,
@@ -57,6 +57,7 @@ function SuccessModal({ onClose }) {
 
 export default function RegisterStudent() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
     const [error, setError] = useState(null);
@@ -83,6 +84,15 @@ export default function RegisterStudent() {
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+
+    // Read class code from URL on mount
+    useEffect(() => {
+        const codeFromUrl = searchParams.get('code');
+        if (codeFromUrl) {
+            setFormData(prev => ({ ...prev, class_code: codeFromUrl }));
+            showToast(`Código de clase detectado: ${codeFromUrl}`, 'success');
+        }
+    }, [searchParams]);
 
     // Camera Logic
     const startCamera = async () => {

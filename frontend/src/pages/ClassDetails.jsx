@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Calendar, Search, Trash2, QrCode, Check, Award, X, User, Mail, Phone, Save, CheckCircle, AlertCircle, Loader2, BarChart3 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 
 // Toast Component
@@ -310,8 +311,13 @@ export default function ClassDetails() {
                             <X size={24} />
                         </button>
                         <h3 className="text-xl font-bold text-slate-800 mb-6">Código de Acceso</h3>
-                        <div className="bg-slate-900 p-6 rounded-2xl mb-6 shadow-inner inline-block">
-                            <QrCode size={200} className="text-white" />
+                        <div className="bg-white p-6 rounded-2xl mb-6 shadow-inner inline-block border-4 border-slate-900">
+                            <QRCodeSVG
+                                value={`${window.location.origin}/register?code=${course.code}`}
+                                size={200}
+                                level="H"
+                                includeMargin={false}
+                            />
                         </div>
                         <div className="bg-upn-50 py-3 px-6 rounded-xl font-mono text-3xl font-black text-upn-900 tracking-widest border border-upn-100">
                             {course.code}
