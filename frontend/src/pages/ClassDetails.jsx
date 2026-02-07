@@ -48,9 +48,11 @@ export default function ClassDetails() {
     // Base URL for media files
     const getMediaUrl = (path) => {
         if (!path) return null;
+        // Si ya es una URL completa (Cloudinary), devolverla tal cual
         if (path.startsWith('http')) return path;
-        // Construir URL completa del backend
-        return `http://127.0.0.1:8000${path.startsWith('/') ? '' : '/'}${path}`;
+        // Si es una ruta relativa, construir URL completa del backend
+        const baseUrl = window.API_URL || 'http://127.0.0.1:8000';
+        return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
     };
 
     useEffect(() => {
