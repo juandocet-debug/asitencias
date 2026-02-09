@@ -851,6 +851,17 @@ function StudentDetailModal({ student, onClose, getMediaUrl, onUpdate, showToast
     const [editMode, setEditMode] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    // Helpers to find the original attendance object for excuses
+    const getAttendanceStatus = (dateStr) => {
+        const absMatch = (student.absent_dates || []).find(d => (typeof d === 'object' ? d.date : d) === dateStr);
+        if (absMatch && typeof absMatch === 'object') return absMatch;
+        const lateMatch = (student.late_dates || []).find(d => (typeof d === 'object' ? d.date : d) === dateStr);
+        if (lateMatch && typeof lateMatch === 'object') return lateMatch;
+        const excMatch = (student.excused_dates || []).find(d => (typeof d === 'object' ? d.date : d) === dateStr);
+        if (excMatch && typeof excMatch === 'object') return excMatch;
+        return { date: dateStr };
+    };
+
     // Normalizar las fechas (pueden ser strings o objetos)
     const normalizeAbsent = (student.absent_dates || []).map(d => typeof d === 'object' ? d.date : d);
     const normalizeLate = student.late_dates || [];
@@ -1017,9 +1028,10 @@ function StudentDetailModal({ student, onClose, getMediaUrl, onUpdate, showToast
                                 {(editMode ? editedAbsent : normalizeAbsent).map((date, idx) => (
                                     <DateBadge
                                         key={idx}
-                                        date={date}
+                                        date={getAttendanceStatus(date)}
                                         type="absent"
                                         editable={editMode}
+                                        onViewExcuse={() => setViewingExcuse(getAttendanceStatus(date))}
                                         onChangeStatus={(toStatus) => changeStatus(date, 'absent', toStatus)}
                                     />
                                 ))}
@@ -1037,9 +1049,10 @@ function StudentDetailModal({ student, onClose, getMediaUrl, onUpdate, showToast
                                 {(editMode ? editedLate : normalizeLate).map((date, idx) => (
                                     <DateBadge
                                         key={idx}
-                                        date={date}
+                                        date={getAttendanceStatus(date)}
                                         type="late"
                                         editable={editMode}
+                                        onViewExcuse={() => setViewingExcuse(getAttendanceStatus(date))}
                                         onChangeStatus={(toStatus) => changeStatus(date, 'late', toStatus)}
                                     />
                                 ))}

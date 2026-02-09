@@ -1,24 +1,29 @@
 /* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 
 // Sidebar Item Component
-const SidebarItem = ({ icon: Icon, label, to, onClick }) => (
+const SidebarItem = ({ icon: Icon, label, to, onClick, subtitle }) => (
     <NavLink
         to={to}
         onClick={onClick}
         className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
-                ? 'bg-upn-600 text-white shadow-lg shadow-upn-600/30'
-                : 'text-slate-500 hover:bg-upn-50 hover:text-upn-700'
+            `flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group ${isActive
+                ? 'bg-upn-600 text-white shadow-lg shadow-upn-600/30 font-bold'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-upn-600'
             }`
         }
     >
-        <Icon size={20} />
-        <span className="font-medium">{label}</span>
+        <div className="flex items-center gap-3">
+            <Icon size={20} className="flex-shrink-0" />
+            <div className="flex flex-col">
+                <span className="text-sm">{label}</span>
+                {subtitle && <span className="text-[10px] opacity-70 font-normal leading-none mt-0.5">{subtitle}</span>}
+            </div>
+        </div>
     </NavLink>
 );
 
@@ -147,7 +152,23 @@ export default function DashboardLayout() {
                     )}
 
                     {user?.role === 'STUDENT' && (
-                        <SidebarItem icon={AlertCircle} label="Mis Faltas" to="/my-absences" onClick={() => setIsSidebarOpen(false)} />
+                        <SidebarItem
+                            icon={AlertCircle}
+                            label="Mis Faltas"
+                            to="/my-absences"
+                            onClick={() => setIsSidebarOpen(false)}
+                            subtitle="Justificar inasistencias"
+                        />
+                    )}
+
+                    {user?.role === 'TEACHER' && (
+                        <SidebarItem
+                            icon={ClipboardCheck}
+                            label="Revisiones"
+                            to="/classes"
+                            onClick={() => setIsSidebarOpen(false)}
+                            subtitle="Excusas pendientes"
+                        />
                     )}
                 </nav>
 
