@@ -17,6 +17,7 @@ export const UserProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const fetchUser = async () => {
+        setLoading(true);
         try {
             const response = await api.get('/users/me/');
             setUser(response.data);

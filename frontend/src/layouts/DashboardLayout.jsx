@@ -26,7 +26,7 @@ export default function DashboardLayout() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    const { user, setUser } = useUser();
+    const { user, setUser, loading } = useUser();
     const isAdmin = user?.role === 'ADMIN';
     const isTeacher = user?.role === 'TEACHER';
 
@@ -37,6 +37,24 @@ export default function DashboardLayout() {
             navigate('/login');
         }
     }, [navigate]);
+
+    if (loading) {
+        return (
+            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-upn-200 border-t-upn-600 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <img
+                            src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                            className="h-6 w-6 object-contain animate-pulse"
+                            alt="UPN"
+                        />
+                    </div>
+                </div>
+                <p className="mt-4 text-slate-500 font-medium animate-pulse">Sincronizando perfil...</p>
+            </div>
+        );
+    }
 
     const handleLogout = () => {
         localStorage.removeItem('access_token');
@@ -108,7 +126,7 @@ export default function DashboardLayout() {
 
                     <SidebarItem
                         icon={BookOpen}
-                        label={!user ? 'Cargando...' : isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
+                        label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
                         to="/classes"
                         onClick={() => setIsSidebarOpen(false)}
                     />
