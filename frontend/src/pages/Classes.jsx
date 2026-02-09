@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Calendar, Users, X, Save, Eye, BookOpen, Filter, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 import api from '../services/api';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function Classes() {
+    const { user } = useUser();
+    const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +34,12 @@ export default function Classes() {
     const [selectedYear, setSelectedYear] = useState(currentYear);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
 
-    const navigate = useNavigate();
+    // Redirect students to dashboard
+    useEffect(() => {
+        if (user?.role === 'STUDENT') {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
 
     useEffect(() => {
         fetchCourses();

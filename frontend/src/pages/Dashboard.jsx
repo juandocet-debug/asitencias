@@ -283,18 +283,18 @@ export default function Dashboard() {
                     <div className="bg-upn-600 text-white rounded-2xl p-6 shadow-xl shadow-upn-600/20 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full translate-x-8 -translate-y-8"></div>
                         <h3 className="font-bold text-lg mb-2 relative z-10">
-                            {isStudent ? 'Mis Clases' : 'Ver Todos los Cursos'}
+                            {isStudent ? 'Rendimiento Académico' : 'Ver Todos los Cursos'}
                         </h3>
                         <p className="text-blue-100 text-sm mb-6 relative z-10">
                             {isStudent
-                                ? 'Accede a la lista completa de tus materias inscritas y revisa tu historial.'
+                                ? 'Revisa tu asistencia detallada, calificaciones y progreso en cada materia.'
                                 : 'Administra todas tus asignaturas, estudiantes y configuraciones.'}
                         </p>
                         <button
-                            onClick={() => navigate('/classes')}
+                            onClick={() => navigate(isStudent ? '/dashboard' : '/classes')}
                             className="w-full bg-white text-upn-700 font-bold py-3 rounded-xl shadow hover:bg-blue-50 transition-colors relative z-10"
                         >
-                            {isStudent ? 'Ver todas mis clases' : 'Gestionar Cursos'}
+                            {isStudent ? 'Ver mi progreso' : 'Gestionar Cursos'}
                         </button>
                     </div>
                 </div>

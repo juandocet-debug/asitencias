@@ -20,7 +20,26 @@ class CourseViewSet(viewsets.ModelViewSet):
         return Course.objects.all()
 
     def perform_create(self, serializer):
+        # Solo profesores pueden crear cursos
+        if self.request.user.role != 'TEACHER':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Solo los profesores pueden crear cursos")
         serializer.save(teacher=self.request.user)
+    
+    def perform_update(self, serializer):
+        # Solo el profesor dueño puede actualizar
+        course = self.get_object()
+        if self.request.user.role != 'TEACHER' or course.teacher != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No tienes permiso para editar este curso")
+        serializer.save()
+    
+    def perform_destroy(self, instance):
+        # Solo el profesor dueño puede eliminar
+        if self.request.user.role != 'TEACHER' or instance.teacher != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No tienes permiso para eliminar este curso")
+        instance.delete()
 
     @action(detail=True, methods=['get'])
     def attendance_stats(self, request, pk=None):

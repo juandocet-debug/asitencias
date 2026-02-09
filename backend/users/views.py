@@ -135,3 +135,41 @@ def password_reset_confirm(request):
     reset_token.save()
     
     return Response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def join_class(request):
+    """
+    Permite a un estudiante ya registrado unirse a una clase usando un código.
+    """
+    class_code = request.data.get('class_code')
+    
+    if not class_code:
+        return Response({'error': 'El código de clase es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Verificar que el usuario sea estudiante
+    if request.user.role != 'STUDENT':
+        return Response({'error': 'Solo los estudiantes pueden unirse a clases'}, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        from academic.models import Course
+        course = Course.objects.get(code=class_code)
+    except Course.DoesNotExist:
+        return Response({'error': 'Código de clase inválido'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Verificar si ya está inscrito
+    if request.user in course.students.all():
+        return Response({'error': 'Ya estás inscrito en esta clase'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Agregar estudiante al curso
+    course.students.add(request.user)
+    
+    return Response({
+        'message': f'Te has unido exitosamente a {course.name}',
+        'course': {
+            'id': course.id,
+            'name': course.name,
+            'code': course.code
+        }
+    }, status=status.HTTP_200_OK)

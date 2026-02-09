@@ -5,6 +5,7 @@ import {
     User, Mail, ArrowRight, ArrowLeft, CheckCircle2,
     CreditCard, Smartphone, Camera, Upload, X, AlertCircle, Loader2, Lock, Eye, EyeOff
 } from 'lucide-react';
+import { useUser } from '../context/UserContext';
 import api from '../services/api';
 
 // Toast Component
@@ -56,6 +57,7 @@ function SuccessModal({ onClose }) {
 }
 
 export default function RegisterStudent() {
+    const { user } = useUser();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [loading, setLoading] = useState(false);
@@ -313,6 +315,33 @@ export default function RegisterStudent() {
                 }
             }
 
+            setError(errMsg);
+            showToast(errMsg, "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Función simplificada para estudiantes ya logueados
+    const handleJoinClass = async (e) => {
+        e.preventDefault();
+        if (!formData.class_code.trim()) {
+            showToast("Ingresa el código de la clase", "error");
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            await api.post('/users/join-class/', {
+                class_code: formData.class_code.trim()
+            });
+            showToast("¡Te has unido a la clase exitosamente!", "success");
+            setTimeout(() => navigate('/dashboard'), 1500);
+        } catch (error) {
+            console.error("Error al unirse a la clase:", error);
+            const errMsg = error.response?.data?.detail || error.response?.data?.error || "Código de clase inválido";
             setError(errMsg);
             showToast(errMsg, "error");
         } finally {
