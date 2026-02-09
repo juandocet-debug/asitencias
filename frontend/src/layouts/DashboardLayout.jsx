@@ -99,13 +99,24 @@ export default function DashboardLayout() {
 
                 <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
                     <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
-                    <SidebarItem icon={BookOpen} label="Clases" to="/classes" onClick={() => setIsSidebarOpen(false)} />
-                    <SidebarItem icon={Users} label="Usuarios" to="/users" onClick={() => setIsSidebarOpen(false)} />
-                    <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
+                    <SidebarItem icon={BookOpen} label={user?.role === 'STUDENT' ? 'Mis Clases' : 'Clases'} to="/classes" onClick={() => setIsSidebarOpen(false)} />
+
+                    {/* Solo ADMIN y TEACHER ven Usuarios */}
+                    {(user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
+                        <SidebarItem icon={Users} label="Usuarios" to="/users" onClick={() => setIsSidebarOpen(false)} />
+                    )}
+
+                    {/* Solo ADMIN ve Insignias */}
+                    {user?.role === 'ADMIN' && (
+                        <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
+                    )}
                 </nav>
 
                 <div className="px-4 py-6 border-t border-slate-100 space-y-2">
-                    <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
+                    {/* Solo ADMIN ve Configuración */}
+                    {user?.role === 'ADMIN' && (
+                        <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
+                    )}
                     <button
                         onClick={handleLogout}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 w-full transition-all duration-200"
