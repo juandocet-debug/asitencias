@@ -105,7 +105,7 @@ export default function DashboardLayout() {
 
                     <SidebarItem
                         icon={BookOpen}
-                        label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
+                        label={!user ? 'Cargando...' : isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
                         to="/classes"
                         onClick={() => setIsSidebarOpen(false)}
                     />

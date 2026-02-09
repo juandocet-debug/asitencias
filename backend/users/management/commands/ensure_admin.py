@@ -29,13 +29,11 @@ class Command(BaseCommand):
             
             user, created = User.objects.get_or_create(username=uname, defaults=u_data)
             
-            if created or not user.check_password(pwd):
-                user.set_password(pwd)
-                # Actualizar campos si ya existía para asegurar rol
-                for key, value in u_data.items():
-                    setattr(user, key, value)
-                user.save()
-                action = "creado" if created else "actualizado"
-                self.stdout.write(self.style.SUCCESS(f'✅ Usuario {uname} {action} ({user.role})'))
-            else:
-                self.stdout.write(self.style.SUCCESS(f'ℹ️ Usuario {uname} ya existe con la configuración correcta.'))
+            # Forzar actualización de datos sensibles para asegurar el rol y acceso
+            user.set_password(pwd)
+            for key, value in u_data.items():
+                setattr(user, key, value)
+            user.save()
+            
+            status_text = "creado" if created else "actualizado y sincronizado"
+            self.stdout.write(self.style.SUCCESS(f'✅ Usuario {uname} {status_text} (Rol: {user.role})'))
