@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Lock, ArrowRight, Eye, EyeOff, CreditCard } from 'lucide-react';
 import api from '../services/api';
@@ -14,6 +14,8 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const classCode = searchParams.get('code');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -37,7 +39,11 @@ export default function Login() {
             }
 
             // Redirigir
-            navigate('/dashboard');
+            if (classCode) {
+                navigate(`/register?code=${classCode}`);
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             console.error("Login error:", err);
             setError('Credenciales inválidas. Verifique su usuario y contraseña.');
@@ -109,7 +115,13 @@ export default function Login() {
                     >
                         <div className="text-center md:text-left mb-10">
                             <h2 className="text-3xl font-bold text-slate-900 mb-2">Iniciar sesión</h2>
-                            <p className="text-slate-500">Ingrese su número de cédula y contraseña.</p>
+                            {classCode ? (
+                                <div className="bg-amber-50 text-amber-700 px-4 py-2 rounded-lg text-sm font-medium border border-amber-100 mb-2">
+                                    Inicia sesión para unirte a la clase: <span className="font-bold">{classCode}</span>
+                                </div>
+                            ) : (
+                                <p className="text-slate-500">Ingrese su número de cédula y contraseña.</p>
+                            )}
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -180,7 +192,7 @@ export default function Login() {
                             <div className="text-center pt-4">
                                 <p className="text-slate-500 text-sm">
                                     ¿No tienes cuenta?{' '}
-                                    <Link to="/register" className="text-upn-700 font-bold hover:underline">
+                                    <Link to={classCode ? `/register?code=${classCode}` : "/register"} className="text-upn-700 font-bold hover:underline">
                                         Regístrate como Estudiante
                                     </Link>
                                 </p>

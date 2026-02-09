@@ -4,7 +4,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Mail, ArrowRight, ArrowLeft, CheckCircle2,
-    CreditCard, Smartphone, Camera, Upload, X, AlertCircle, Loader2, Lock, Eye, EyeOff
+    CreditCard, Smartphone, Camera, Upload, X, AlertCircle, Loader2, Lock, Eye, EyeOff, BookOpen
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
@@ -99,9 +99,20 @@ export default function RegisterStudent() {
         const codeFromUrl = searchParams.get('code');
         if (codeFromUrl) {
             setFormData(prev => ({ ...prev, class_code: codeFromUrl }));
+
+            // Si NO está logueado y viene con código, sugerir login primero
+            if (!user && !localStorage.getItem('access_token')) {
+                showToast("Si ya tienes cuenta, inicia sesión primero para unirte a la clase.", "warning");
+                // Pequeño delay para que lean el toast antes de redirigir (opcional)
+                const timer = setTimeout(() => {
+                    navigate(`/login?code=${codeFromUrl}`);
+                }, 2000);
+                return () => clearTimeout(timer);
+            }
+
             showToast(`Código de clase detectado: ${codeFromUrl}`, 'success');
         }
-    }, [searchParams]);
+    }, [searchParams, user, navigate]);
 
     // Camera Logic
     const startCamera = async () => {
@@ -416,253 +427,285 @@ export default function RegisterStudent() {
 
             {/* Sección Derecha - Formulario */}
             <div className="w-full md:w-7/12 flex flex-col justify-center bg-white h-screen overflow-y-auto">
-                <div className="w-full max-w-2xl mx-auto p-4 md:p-12 lg:p-16">
-                    <div className="md:hidden text-center mb-8">
-                        <img src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png" alt="Logo UPN Mobile" className="h-20 mx-auto mb-4" />
-                        <h2 className="text-xl font-bold text-upn-900 leading-tight">Registro de Estudiantes</h2>
+                <div className="w-full max-w-2xl mx-auto p-0 md:p-12 lg:p-16">
+                    {/* Mobile Header - High Impact */}
+                    <div className="md:hidden bg-upn-700 p-8 rounded-b-[3rem] shadow-xl relative overflow-hidden text-center text-white mb-8">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                            <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl"></div>
+                        </div>
+                        <div className="relative z-10">
+                            <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-lg">
+                                <img
+                                    src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                                    alt="Logo UPN Mobile"
+                                    className="h-16 mx-auto object-contain"
+                                />
+                            </div>
+                            <h2 className="text-xl font-bold leading-tight">Registro de Estudiantes</h2>
+                            <p className="text-blue-200 text-xs font-medium tracking-widest uppercase mt-2">Licenciatura en Recreación</p>
+                        </div>
                     </div>
 
-                    <Link to="/login" className="inline-flex items-center text-slate-400 hover:text-upn-700 mb-8 transition-colors group text-sm font-medium">
-                        <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Volver al Login
-                    </Link>
+                    <div className="px-6 md:px-0">
+                        <Link to="/login" className="inline-flex items-center text-slate-400 hover:text-upn-700 mb-6 transition-colors group text-sm font-medium">
+                            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Volver al Login
+                        </Link>
 
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                        {user ? 'Unirse a una Clase' : 'Crear Cuenta'}
-                    </h2>
-                    <p className="text-slate-500 mb-6 md:mb-8 text-sm md:text-base">
-                        {user ? 'Ingresa el código que te dio tu profesor para unirse.' : 'Complete el formulario para registrarse en el sistema.'}
-                    </p>
+                        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                            {user ? 'Unirse a una Clase' : 'Crear Cuenta'}
+                        </h2>
+                        <p className="text-slate-500 mb-6 md:mb-8 text-sm md:text-base">
+                            {user ? 'Ingresa el código que te dio tu profesor para unirse.' : 'Complete el formulario para registrarse en el sistema.'}
+                        </p>
 
-                    {error && (
-                        <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 flex items-start gap-3 text-sm animate-in fade-in slide-in-from-top-2">
-                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    {user?.role === 'STUDENT' ? (
-                        <form onSubmit={handleJoinClass} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="block text-sm font-semibold text-slate-700">Código de la Clase</label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                        <BookOpen className="h-5 w-5" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        name="class_code"
-                                        value={formData.class_code}
-                                        onChange={handleInputChange}
-                                        placeholder="Ej: MATH101"
-                                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-upn-500 focus:border-transparent transition-all font-mono tracking-widest uppercase placeholder:font-sans placeholder:tracking-normal"
-                                        required
-                                    />
-                                </div>
-                                <p className="text-xs text-slate-400 mt-2">El código tiene letras y números.</p>
+                        {error && (
+                            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 flex items-start gap-3 text-sm animate-in fade-in slide-in-from-top-2">
+                                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                                <span>{error}</span>
                             </div>
+                        )}
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-gradient-to-r from-upn-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-upn-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={20} /> Unirse ahora</>}
-                            </button>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-                            <AnimatePresence mode="wait">
-                                {step === 1 && (
-                                    <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                            <InputGroup label="Primer Nombre" name="first_name" value={formData.first_name} onChange={handleInputChange} required icon={<User className="h-4 w-4" />} />
-                                            <InputGroup label="Segundo Nombre" name="second_name" value={formData.second_name} onChange={handleInputChange} />
-                                            <InputGroup label="Primer Apellido" name="last_name" value={formData.last_name} onChange={handleInputChange} required />
-                                            <InputGroup label="Segundo Apellido" name="second_lastname" value={formData.second_lastname} onChange={handleInputChange} />
-                                        </div>
-
-                                        <div className="mb-5">
-                                            <InputGroup
-                                                label="Número de Documento (DNI)"
-                                                name="document_number"
+                        {user ? (
+                            user.role === 'STUDENT' ? (
+                                <form onSubmit={handleJoinClass} className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-semibold text-slate-700">Código de la Clase</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                                                <BookOpen className="h-5 w-5" />
+                                            </div>
+                                            <input
                                                 type="text"
-                                                inputMode="numeric"
-                                                value={formData.document_number}
-                                                onChange={handleInputChange}
-                                                required
-                                                icon={<CreditCard className="h-4 w-4" />}
-                                                helper="Este será tu usuario para iniciar sesión."
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                            <InputGroup label="Correo Institucional" name="institutional_email" type="email" value={formData.institutional_email} onChange={handleInputChange} required icon={<Mail className="h-4 w-4" />} placeholder="usuario@upn.edu.co" />
-                                            <InputGroup label="Correo Personal" name="email" type="email" value={formData.email} onChange={handleInputChange} icon={<Mail className="h-4 w-4" />} helper="Para recuperación de contraseña" />
-                                            <InputGroup label="Celular" name="phone_number" type="tel" value={formData.phone_number} onChange={handleInputChange} icon={<Smartphone className="h-4 w-4" />} placeholder="300 123 4567" />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-700 ml-1">Contraseña *</label>
-                                                <div className="relative group">
-                                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
-                                                    <input
-                                                        type={showPassword ? "text" : "password"}
-                                                        name="password"
-                                                        value={formData.password}
-                                                        onChange={handleInputChange}
-                                                        required
-                                                        className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all"
-                                                        placeholder="Mín. 6 caracteres + carác. especial"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                                                    >
-                                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-700 ml-1">Confirmar Contraseña *</label>
-                                                <div className="relative group">
-                                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
-                                                    <input
-                                                        type={showPasswordConfirm ? "text" : "password"}
-                                                        name="password_confirm"
-                                                        value={formData.password_confirm}
-                                                        onChange={handleInputChange}
-                                                        required
-                                                        className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all"
-                                                        placeholder="Repite tu contraseña"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                                                    >
-                                                        {showPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (validateStep1()) {
-                                                    setStep(2);
-                                                }
-                                            }}
-                                            className="w-full bg-upn-700 hover:bg-upn-800 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all"
-                                        >
-                                            Continuar <ArrowRight size={20} />
-                                        </button>
-                                    </motion.div>
-                                )}
-
-                                {step === 2 && (
-                                    <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                                        <div className="flex flex-col items-center justify-center gap-6 mb-8">
-                                            <div className="relative group w-full max-w-sm aspect-video bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 flex items-center justify-center hover:bg-slate-50 transition-colors">
-                                                {photoPreview ? (
-                                                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    isCameraOpen ? (
-                                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
-                                                    ) : (
-                                                        <div className="text-center p-6">
-                                                            <Camera size={48} className="mx-auto text-slate-300 mb-2" />
-                                                            <p className="text-sm text-slate-500 font-medium">Toma o sube una foto</p>
-                                                        </div>
-                                                    )
-                                                )}
-                                                {photoPreview && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setPhoto(null); setPhotoPreview(null); }}
-                                                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg transition-colors"
-                                                    >
-                                                        <X size={16} />
-                                                    </button>
-                                                )}
-                                            </div>
-
-                                            <div className="flex gap-4">
-                                                {isCameraOpen ? (
-                                                    <>
-                                                        <button type="button" onClick={takePhoto} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2">
-                                                            <Camera size={18} /> Capturar
-                                                        </button>
-                                                        <button type="button" onClick={stopCamera} className="px-6 py-2.5 bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2">
-                                                            <X size={18} /> Cancelar
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button type="button" onClick={startCamera} className="px-6 py-2.5 bg-upn-600 hover:bg-upn-700 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2">
-                                                            <Camera size={18} /> Usar Cámara
-                                                        </button>
-                                                        <label className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2 cursor-pointer">
-                                                            <Upload size={18} /> Subir Foto
-                                                            <input type="file" className="hidden" accept="image/*" capture="user" onChange={handleFileUpload} />
-                                                        </label>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-upn-50 p-6 rounded-xl border border-upn-100 mb-8">
-                                            <InputGroup
-                                                label="Código de Clase (Opcional)"
                                                 name="class_code"
                                                 value={formData.class_code}
-                                                onChange={(e) => setFormData({ ...formData, class_code: e.target.value.toUpperCase() })}
-                                                placeholder="XXXXXX"
-                                                className="font-mono text-center tracking-widest uppercase border-upn-200 focus:border-upn-500 bg-white text-lg"
-                                                helper="Si tienes un código de clase, ingrésalo aquí para unirte automáticamente."
+                                                onChange={handleInputChange}
+                                                placeholder="Ej: MATH101"
+                                                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-upn-500 focus:border-transparent transition-all font-mono tracking-widest uppercase placeholder:font-sans placeholder:tracking-normal"
+                                                required
                                             />
                                         </div>
+                                        <p className="text-xs text-slate-400 mt-2">El código tiene letras y números.</p>
+                                    </div>
 
-                                        {error && (
-                                            <div className="p-4 mb-6 rounded-xl bg-red-50 text-red-600 border border-red-100 font-medium text-sm flex items-start gap-3">
-                                                <div className="mt-0.5"><AlertCircle size={18} /></div>
-                                                <div>{error}</div>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full bg-gradient-to-r from-upn-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-upn-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                                    >
+                                        {loading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={20} /> Unirse ahora</>}
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl text-center">
+                                    <AlertCircle className="mx-auto text-amber-500 mb-3" size={32} />
+                                    <h4 className="font-bold text-slate-800 mb-2">Ya tienes una sesión activa</h4>
+                                    <p className="text-sm text-slate-600 mb-4">
+                                        Estás conectado como <strong>{user.role === 'TEACHER' ? 'Docente' : 'Administrador'}</strong>.
+                                        Como docente no puedes registrarte como estudiante.
+                                    </p>
+                                    <button
+                                        onClick={() => navigate('/dashboard')}
+                                        className="px-6 py-2 bg-slate-800 text-white rounded-xl text-sm font-bold"
+                                    >
+                                        Ir a mi Dashboard
+                                    </button>
+                                </div>
+                            )
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                                <AnimatePresence mode="wait">
+                                    {step === 1 && (
+                                        <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                                <InputGroup label="Primer Nombre" name="first_name" value={formData.first_name} onChange={handleInputChange} required icon={<User className="h-4 w-4" />} />
+                                                <InputGroup label="Segundo Nombre" name="second_name" value={formData.second_name} onChange={handleInputChange} />
+                                                <InputGroup label="Primer Apellido" name="last_name" value={formData.last_name} onChange={handleInputChange} required />
+                                                <InputGroup label="Segundo Apellido" name="second_lastname" value={formData.second_lastname} onChange={handleInputChange} />
                                             </div>
-                                        )}
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="mb-5">
+                                                <InputGroup
+                                                    label="Número de Documento (DNI)"
+                                                    name="document_number"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    value={formData.document_number}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                    icon={<CreditCard className="h-4 w-4" />}
+                                                    helper="Este será tu usuario para iniciar sesión."
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                                <InputGroup label="Correo Institucional" name="institutional_email" type="email" value={formData.institutional_email} onChange={handleInputChange} required icon={<Mail className="h-4 w-4" />} placeholder="usuario@upn.edu.co" />
+                                                <InputGroup label="Correo Personal" name="email" type="email" value={formData.email} onChange={handleInputChange} icon={<Mail className="h-4 w-4" />} helper="Para recuperación de contraseña" />
+                                                <InputGroup label="Celular" name="phone_number" type="tel" value={formData.phone_number} onChange={handleInputChange} icon={<Smartphone className="h-4 w-4" />} placeholder="300 123 4567" />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-semibold text-slate-700 ml-1">Contraseña *</label>
+                                                    <div className="relative group">
+                                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
+                                                        <input
+                                                            type={showPassword ? "text" : "password"}
+                                                            name="password"
+                                                            value={formData.password}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                            className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all"
+                                                            placeholder="Mín. 6 caracteres + carác. especial"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                        >
+                                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-semibold text-slate-700 ml-1">Confirmar Contraseña *</label>
+                                                    <div className="relative group">
+                                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
+                                                        <input
+                                                            type={showPasswordConfirm ? "text" : "password"}
+                                                            name="password_confirm"
+                                                            value={formData.password_confirm}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                            className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all"
+                                                            placeholder="Repite tu contraseña"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                        >
+                                                            {showPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <button
                                                 type="button"
-                                                onClick={() => { setStep(1); stopCamera(); setError(null); }}
-                                                className="px-6 py-4 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                                                onClick={() => {
+                                                    if (validateStep1()) {
+                                                        setStep(2);
+                                                    }
+                                                }}
+                                                className="w-full bg-upn-700 hover:bg-upn-800 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all"
                                             >
-                                                Atrás
+                                                Continuar <ArrowRight size={20} />
                                             </button>
-                                            <button
-                                                type="submit"
-                                                disabled={loading}
-                                                className="px-6 py-4 bg-upn-700 hover:bg-upn-800 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-                                            >
-                                                {loading ? (
-                                                    <>
-                                                        <Loader2 size={20} className="animate-spin" /> Registrando...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        Finalizar Registro <CheckCircle2 size={20} />
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </form>
-                    )}
-                    <canvas ref={canvasRef} className="hidden" />
+                                        </motion.div>
+                                    )}
+
+                                    {step === 2 && (
+                                        <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                                            <div className="flex flex-col items-center justify-center gap-6 mb-8">
+                                                <div className="relative group w-full max-w-sm aspect-video bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 flex items-center justify-center hover:bg-slate-50 transition-colors">
+                                                    {photoPreview ? (
+                                                        <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        isCameraOpen ? (
+                                                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
+                                                        ) : (
+                                                            <div className="text-center p-6">
+                                                                <Camera size={48} className="mx-auto text-slate-300 mb-2" />
+                                                                <p className="text-sm text-slate-500 font-medium">Toma o sube una foto</p>
+                                                            </div>
+                                                        )
+                                                    )}
+                                                    {photoPreview && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setPhoto(null); setPhotoPreview(null); }}
+                                                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg transition-colors"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex gap-4">
+                                                    {isCameraOpen ? (
+                                                        <>
+                                                            <button type="button" onClick={takePhoto} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2">
+                                                                <Camera size={18} /> Capturar
+                                                            </button>
+                                                            <button type="button" onClick={stopCamera} className="px-6 py-2.5 bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2">
+                                                                <X size={18} /> Cancelar
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button type="button" onClick={startCamera} className="px-6 py-2.5 bg-upn-600 hover:bg-upn-700 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2">
+                                                                <Camera size={18} /> Usar Cámara
+                                                            </button>
+                                                            <label className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg shadow-md font-bold transition-colors flex items-center gap-2 cursor-pointer">
+                                                                <Upload size={18} /> Subir Foto
+                                                                <input type="file" className="hidden" accept="image/*" capture="user" onChange={handleFileUpload} />
+                                                            </label>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-upn-50 p-6 rounded-xl border border-upn-100 mb-8">
+                                                <InputGroup
+                                                    label="Código de Clase (Opcional)"
+                                                    name="class_code"
+                                                    value={formData.class_code}
+                                                    onChange={(e) => setFormData({ ...formData, class_code: e.target.value.toUpperCase() })}
+                                                    placeholder="XXXXXX"
+                                                    className="font-mono text-center tracking-widest uppercase border-upn-200 focus:border-upn-500 bg-white text-lg"
+                                                    helper="Si tienes un código de clase, ingrésalo aquí para unirte automáticamente."
+                                                />
+                                            </div>
+
+                                            {error && (
+                                                <div className="p-4 mb-6 rounded-xl bg-red-50 text-red-600 border border-red-100 font-medium text-sm flex items-start gap-3">
+                                                    <div className="mt-0.5"><AlertCircle size={18} /></div>
+                                                    <div>{error}</div>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setStep(1); stopCamera(); setError(null); }}
+                                                    className="px-6 py-4 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                                                >
+                                                    Atrás
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className="px-6 py-4 bg-upn-700 hover:bg-upn-800 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                                                >
+                                                    {loading ? (
+                                                        <>
+                                                            <Loader2 size={20} className="animate-spin" /> Registrando...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            Finalizar Registro <CheckCircle2 size={20} />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </form>
+                        )}
+                        <canvas ref={canvasRef} className="hidden" />
+                    </div>
                 </div>
             </div>
         </div >
