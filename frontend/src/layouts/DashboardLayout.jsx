@@ -165,7 +165,7 @@ export default function DashboardLayout() {
                         <SidebarItem
                             icon={ClipboardCheck}
                             label="Revisiones"
-                            to="/classes"
+                            to="/reviews"
                             onClick={() => setIsSidebarOpen(false)}
                             subtitle="Excusas pendientes"
                         />

@@ -413,6 +413,34 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Curso no encontrado'}, status=404)
 
     @action(detail=False, methods=['get'])
+    def teacher_all_pending_excuses(self, request):
+        """Obtener TODAS las excusas pendientes de revisión para todas las clases del profesor"""
+        pending = Attendance.objects.filter(
+            session__course__teacher=request.user,
+            excuse_status='PENDING'
+        ).select_related('student', 'session', 'session__course')
+        
+        result = []
+        for att in pending:
+            result.append({
+                'id': att.id,
+                'course_id': att.session.course.id,
+                'course_name': att.session.course.name,
+                'student_id': att.student.id,
+                'student_name': f"{att.student.first_name} {att.student.last_name}",
+                'student_photo': att.student.photo.url if att.student.photo else None,
+                'student_document': att.student.document_number,
+                'date': att.session.date.isoformat(),
+                'status': att.status,
+                'status_label': 'Falta' if att.status == 'ABSENT' else 'Retardo',
+                'excuse_note': att.excuse_note,
+                'excuse_file': att.excuse_file.url if att.excuse_file else None,
+                'submitted_at': att.excuse_submitted_at.isoformat() if att.excuse_submitted_at else None
+            })
+        
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
     def my_absences(self, request):
         """Obtener las faltas/retardos de un estudiante para que pueda subir excusas"""
         course_id = request.query_params.get('course_id')

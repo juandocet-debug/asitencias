@@ -12,6 +12,7 @@ import ResetPassword from './pages/ResetPassword';
 import UsersPage from './pages/Users';
 import Profile from './pages/Profile';
 import MyAbsences from './pages/MyAbsences';
+import TeacherReviews from './pages/TeacherReviews';
 import { UserProvider } from './context/UserContext';
 
 import { useUser } from './context/UserContext';
@@ -84,6 +85,7 @@ function App() {
             <Route path="/classes/:id/reports" element={<ClassReports />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/my-absences" element={<MyAbsences />} />
+            <Route path="/reviews" element={<TeacherReviews />} />
             <Route path="/badges" element={<div className="p-4">Módulo de Insignias: En Construcción</div>} />
             <Route path="/settings" element={<div className="p-4">Configuración: En Construcción</div>} />
             <Route path="/profile" element={<Profile />} />
