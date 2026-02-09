@@ -201,9 +201,16 @@ export default function RegisterStudent() {
             return false;
         }
         if (formData.password.length < 6) {
-            showToast("La contraseña debe tener al menos 6 caracteres", "error");
+            setError('La contraseña debe tener al menos 6 caracteres');
             return false;
         }
+
+        const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+        if (!specialCharRegex.test(formData.password)) {
+            setError('La contraseña debe contener al menos un carácter especial (!@#$%^&*...)');
+            return false;
+        }
+
         if (formData.password !== formData.password_confirm) {
             showToast("Las contraseñas no coinciden", "error");
             return false;
@@ -379,7 +386,7 @@ export default function RegisterStudent() {
 
             {/* Sección Derecha - Formulario */}
             <div className="w-full md:w-7/12 flex flex-col justify-center bg-white h-screen overflow-y-auto">
-                <div className="w-full max-w-2xl mx-auto p-6 md:p-12 lg:p-16">
+                <div className="w-full max-w-2xl mx-auto p-4 md:p-12 lg:p-16">
                     <div className="md:hidden text-center mb-8">
                         <img src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png" alt="Logo UPN Mobile" className="h-20 mx-auto mb-4" />
                         <h2 className="text-xl font-bold text-upn-900 leading-tight">Registro de Estudiantes</h2>
@@ -389,10 +396,17 @@ export default function RegisterStudent() {
                         <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Volver al Login
                     </Link>
 
-                    <h2 className="text-3xl font-bold text-slate-900 mb-2">Crear Cuenta</h2>
-                    <p className="text-slate-500 mb-8">Complete el formulario para registrarse en el sistema.</p>
+                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Crear Cuenta</h2>
+                    <p className="text-slate-500 mb-6 md:mb-8 text-sm md:text-base">Complete el formulario para registrarse en el sistema.</p>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 flex items-start gap-3 text-sm animate-in fade-in slide-in-from-top-2">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                         <AnimatePresence mode="wait">
                             {step === 1 && (
                                 <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
@@ -436,7 +450,7 @@ export default function RegisterStudent() {
                                                     onChange={handleInputChange}
                                                     required
                                                     className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all"
-                                                    placeholder="Mínimo 6 caracteres"
+                                                    placeholder="Mín. 6 caracteres + carác. especial"
                                                 />
                                                 <button
                                                     type="button"

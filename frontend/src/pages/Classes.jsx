@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Calendar, Users, X, Save, Eye, BookOpen, Filter, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function Classes() {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Delete Modal State
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     // Form State
     const currentYear = new Date().getFullYear();
@@ -84,14 +87,19 @@ export default function Classes() {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar esta clase?')) {
-            try {
-                await api.delete(`/academic/courses/${id}/`);
-                fetchCourses();
-            } catch (error) {
-                console.error("Error deleting course:", error);
-            }
+        try {
+            await api.delete(`/academic/courses/${id}/`);
+            fetchCourses();
+            setDeleteModalOpen(false);
+        } catch (error) {
+            console.error("Error deleting course:", error);
+            alert("Error al eliminar la clase");
         }
+    };
+
+    const confirmDelete = (id) => {
+        setItemToDelete(id);
+        setDeleteModalOpen(true);
     };
 
     const openNewModal = () => {
@@ -186,7 +194,7 @@ export default function Classes() {
                                     <Edit2 size={18} />
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(course.id)}
+                                    onClick={() => confirmDelete(course.id)}
                                     className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
                                     title="Eliminar"
                                 >
@@ -339,6 +347,16 @@ export default function Classes() {
                     </div>
                 )
             }
+            {/* Modal de Confirmación */}
+            <ConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={() => handleDelete(itemToDelete)}
+                title="Eliminar Clase"
+                message="¿Estás seguro de eliminar esta clase? Esta acción también borrará todas las asistencias asociadas."
+                confirmText="Eliminar"
+                isDestructive={true}
+            />
         </div >
     );
 }

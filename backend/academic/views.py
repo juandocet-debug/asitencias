@@ -12,8 +12,11 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.role == 'TEACHER':
-            return Course.objects.filter(teacher=self.request.user)
+        user = self.request.user
+        if user.role == 'TEACHER':
+            return Course.objects.filter(teacher=user)
+        elif user.role == 'STUDENT':
+            return Course.objects.filter(students=user)
         return Course.objects.all()
 
     def perform_create(self, serializer):
