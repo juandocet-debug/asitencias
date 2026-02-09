@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Edit2, Trash2, Calendar, Users, X, Save, Eye, BookOpen, Filter, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ConfirmationModal from '../components/ConfirmationModal';
