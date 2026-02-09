@@ -101,9 +101,14 @@ export default function DashboardLayout() {
                     <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
                     <SidebarItem icon={BookOpen} label={user?.role === 'STUDENT' ? 'Mis Clases' : 'Clases'} to="/classes" onClick={() => setIsSidebarOpen(false)} />
 
-                    {/* Solo ADMIN y TEACHER ven Usuarios */}
+                    {/* Solo ADMIN y TEACHER ven Usuarios/Estudiantes */}
                     {(user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
-                        <SidebarItem icon={Users} label="Usuarios" to="/users" onClick={() => setIsSidebarOpen(false)} />
+                        <SidebarItem
+                            icon={Users}
+                            label={user?.role === 'ADMIN' ? 'Usuarios' : 'Estudiantes'}
+                            to="/users"
+                            onClick={() => setIsSidebarOpen(false)}
+                        />
                     )}
 
                     {/* Solo ADMIN ve Insignias */}

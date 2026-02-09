@@ -157,14 +157,14 @@ export default function Dashboard() {
                 ) : (
                     <>
                         <StatCard
-                            title="Mis Cursos Totales"
+                            title={user?.role === 'ADMIN' ? "Cursos Totales" : "Mis Cursos Totales"}
                             value={stats.stats.total_courses || 0}
                             icon={BookOpen}
                             color="bg-blue-500"
                         />
                         <StatCard
-                            title="Total Estudiantes"
-                            value={stats.stats.total_students || 0}
+                            title={user?.role === 'ADMIN' ? "Total Docentes" : "Total Estudiantes"}
+                            value={user?.role === 'ADMIN' ? stats.stats.total_teachers : stats.stats.total_students}
                             icon={Users}
                             color="bg-indigo-500"
                         />

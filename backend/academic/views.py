@@ -535,6 +535,59 @@ class DashboardViewSet(viewsets.ViewSet):
                 'today_classes': today_classes
             })
 
+        elif user.role == 'ADMIN':
+            # --- ESTADÍSTICAS ADMINISTRADOR ---
+            courses = Course.objects.all()
+            if year:
+                courses = courses.filter(year=year)
+            if period:
+                courses = courses.filter(period=period)
+                
+            total_students = User.objects.filter(role='STUDENT').count()
+            total_teachers = User.objects.filter(role='TEACHER').count()
+            
+            # Clases de hoy
+            today_classes = []
+            for c in courses:
+                has_class_today = False
+                class_time = "Sin horario"
+                if c.schedule:
+                    for slot in c.schedule:
+                        if slot.get('day') == today_code:
+                            has_class_today = True
+                            class_time = f"{slot.get('start')} - {slot.get('end')}"
+                            break
+                if has_class_today:
+                    today_classes.append({
+                        'id': c.id,
+                        'name': c.name,
+                        'code': c.code,
+                        'schedule': class_time,
+                        'teacher': f"{c.teacher.first_name} {c.teacher.last_name}",
+                        'all_schedules': c.schedule
+                    })
+
+            # Asistencia promedio global hoy
+            today_sessions = Session.objects.filter(date=today)
+            today_attendance_rate = 0
+            if today_sessions.exists():
+                total_att = Attendance.objects.filter(session__in=today_sessions).count()
+                present_att = Attendance.objects.filter(session__in=today_sessions, status='PRESENT').count()
+                if total_att > 0:
+                    today_attendance_rate = round((present_att / total_att) * 100, 1)
+
+            return Response({
+                'role': 'ADMIN',
+                'stats': {
+                    'total_courses': courses.count(),
+                    'total_students': total_students,
+                    'total_teachers': total_teachers,
+                    'today_sessions': len(today_classes),
+                    'today_attendance_rate': today_attendance_rate
+                },
+                'today_classes': today_classes
+            })
+
         else:
             # --- ESTADÍSTICAS PROFESOR ---
             my_courses = Course.objects.filter(teacher=user)
