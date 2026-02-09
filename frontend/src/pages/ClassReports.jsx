@@ -474,6 +474,27 @@ export default function ClassReports() {
                     {/* Tab: Por Estudiante */}
                     {activeTab === 'students' && (
                         <div>
+                            {/* Panel Global de Excusas Pendientes */}
+                            {studentReport.some(s => s.pending_excuses?.length > 0) && (
+                                <div className="mb-8 p-5 bg-blue-50 border border-blue-100 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                                            <FileText size={28} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-800 text-lg">Excusas por Revisar</h4>
+                                            <p className="text-sm text-slate-600">
+                                                Hay estudiantes que han subido justificaciones médicas o personales pendientes de tu aprobación.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-white/50 p-2 rounded-2xl border border-blue-200">
+                                        <div className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm">
+                                            {studentReport.reduce((acc, s) => acc + (s.pending_excuses?.length || 0), 0)} Pendientes
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             {/* Header */}
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                                 <div>
@@ -598,7 +619,32 @@ export default function ClassReports() {
                                         <CheckCircle size={32} className="text-emerald-600" />
                                     </div>
                                     <h4 className="font-bold text-emerald-800 text-lg mb-1">¡Excelente!</h4>
-                                    <p className="text-emerald-600 text-sm">No hay estudiantes con alertas de asistencia.</p>
+                                    <p className="text-emerald-600 text-sm">No hay estudiantes en situación de riesgo.</p>
+                                </div>
+                            )}
+
+                            {/* Sección de Excusas Pendientes en Alertas */}
+                            {studentReport.some(s => s.pending_excuses?.length > 0) && (
+                                <div className="mt-12 group">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-2.5 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
+                                            <FileText size={20} className="text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-800">Revisiones Pendientes</h3>
+                                            <p className="text-sm text-slate-500">Estudiantes que han solicitado justificar una inasistencia</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {studentReport.filter(s => s.pending_excuses?.length > 0).map((student, idx) => (
+                                            <StudentRow
+                                                key={`pending-${idx}`}
+                                                student={student}
+                                                onClick={() => setSelectedStudent(student)}
+                                                getMediaUrl={getMediaUrl}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -671,9 +717,16 @@ function StudentRow({ student, onClick, getMediaUrl }) {
 
                 {/* Nombre + Correo (en columna) */}
                 <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-800 text-sm">
-                        {student.first_name} {student.last_name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="font-semibold text-slate-800 text-sm">
+                            {student.first_name} {student.last_name}
+                        </p>
+                        {student.pending_excuses?.length > 0 && (
+                            <div className="bg-blue-600 text-[10px] text-white px-1.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse" title="Tiene excusas pendientes de revisión">
+                                <FileText size={8} /> Revisar
+                            </div>
+                        )}
+                    </div>
                     <div className="flex items-center gap-1 mt-0.5">
                         <span className="text-xs text-slate-400 truncate">{student.email}</span>
                         <button
