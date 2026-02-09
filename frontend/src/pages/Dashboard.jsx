@@ -31,6 +31,10 @@ const StatCard = ({ title, value, label, icon: Icon, color, trend, subtext }) =>
 
 export default function Dashboard() {
     const { user } = useUser();
+    const isAdmin = user?.role === 'ADMIN';
+    const isTeacher = user?.role === 'TEACHER';
+    const isStudent = user?.role === 'STUDENT';
+    const canManage = isAdmin || isTeacher;
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -86,7 +90,7 @@ export default function Dashboard() {
 
     if (!stats) return null;
 
-    const isStudent = user?.role === 'STUDENT';
+
 
     return (
         <div className="space-y-8">
@@ -207,7 +211,7 @@ export default function Dashboard() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <h4 className="font-bold text-slate-800 text-lg">{clase.name}</h4>
-                                            {!isStudent && (
+                                            {canManage && (
                                                 <button
                                                     onClick={() => handleEditSchedule(clase)}
                                                     className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -242,7 +246,7 @@ export default function Dashboard() {
                         <div className="p-12 text-center text-slate-400">
                             <Calendar size={48} className="mx-auto mb-4 opacity-20" />
                             <p>No hay clases programadas para hoy.</p>
-                            {!isStudent && (
+                            {canManage && (
                                 <p className="text-sm mt-2">
                                     (Asegúrate de configurar los horarios de tus cursos)
                                 </p>

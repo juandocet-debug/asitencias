@@ -11,10 +11,26 @@ from django.conf import settings
 User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     # Protegido: Solo usuarios autenticados pueden ver la lista
     permission_classes = [permissions.IsAuthenticated] 
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        # 1. ADMIN ve TODO
+        if user.role == 'ADMIN' or user.is_superuser:
+            return User.objects.all().order_by('-date_joined')
+            
+        # 2. TEACHER ve solo sus ESTUDIANTES
+        if user.role == 'TEACHER':
+            from academic.models import Course
+            # Obtener IDs de estudiantes en sus cursos
+            student_ids = Course.objects.filter(teacher=user).values_list('students__id', flat=True).distinct()
+            return User.objects.filter(id__in=student_ids).order_by('-date_joined')
+            
+        # 3. STUDENT no ve a nadie (el frontend lo bloquea, pero por seguridad mandamos vacío)
+        return User.objects.none()
 
     @action(detail=False, methods=['get', 'put', 'patch'])
     def me(self, request):

@@ -25,7 +25,10 @@ export default function DashboardLayout() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    const { user } = useUser(); // Obtenemos el usuario del contexto
+    const { user } = useUser();
+    const isAdmin = user?.role === 'ADMIN';
+    const isTeacher = user?.role === 'TEACHER';
+    const isStudent = user?.role === 'STUDENT'; // Obtenemos el usuario del contexto
 
     // Proteger ruta: Si no hay token, enviar al login
     useEffect(() => {
@@ -99,20 +102,26 @@ export default function DashboardLayout() {
 
                 <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
                     <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
-                    <SidebarItem icon={BookOpen} label={user?.role === 'STUDENT' ? 'Mis Clases' : 'Clases'} to="/classes" onClick={() => setIsSidebarOpen(false)} />
+
+                    <SidebarItem
+                        icon={BookOpen}
+                        label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
+                        to="/classes"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
 
                     {/* Solo ADMIN y TEACHER ven Usuarios/Estudiantes */}
-                    {(user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
+                    {(isAdmin || isTeacher) && (
                         <SidebarItem
                             icon={Users}
-                            label={user?.role === 'ADMIN' ? 'Usuarios' : 'Estudiantes'}
+                            label={isAdmin ? 'Usuarios' : 'Estudiantes'}
                             to="/users"
                             onClick={() => setIsSidebarOpen(false)}
                         />
                     )}
 
                     {/* Solo ADMIN ve Insignias */}
-                    {user?.role === 'ADMIN' && (
+                    {isAdmin && (
                         <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
                     )}
                 </nav>

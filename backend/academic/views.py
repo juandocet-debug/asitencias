@@ -13,33 +13,41 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'TEACHER':
+        if not user.is_authenticated:
+            return Course.objects.none()
+            
+        if user.role == 'ADMIN' or user.is_superuser:
+            return Course.objects.all()
+        elif user.role == 'TEACHER':
             return Course.objects.filter(teacher=user)
         elif user.role == 'STUDENT':
             return Course.objects.filter(students=user)
-        return Course.objects.all()
+        return Course.objects.none()
 
     def perform_create(self, serializer):
-        # Solo profesores pueden crear cursos
-        if self.request.user.role != 'TEACHER':
+        if self.request.user.role not in ['ADMIN', 'TEACHER']:
             from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("Solo los profesores pueden crear cursos")
+            raise PermissionDenied("Solo docentes o administradores pueden crear clases")
         serializer.save(teacher=self.request.user)
     
     def perform_update(self, serializer):
-        # Solo el profesor dueño puede actualizar
-        course = self.get_object()
-        if self.request.user.role != 'TEACHER' or course.teacher != self.request.user:
+        instance = self.get_object()
+        if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
+            serializer.save()
+        elif self.request.user.role == 'TEACHER' and instance.teacher == self.request.user:
+            serializer.save()
+        else:
             from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("No tienes permiso para editar este curso")
-        serializer.save()
+            raise PermissionDenied("No tienes permiso para editar esta clase")
     
     def perform_destroy(self, instance):
-        # Solo el profesor dueño puede eliminar
-        if self.request.user.role != 'TEACHER' or instance.teacher != self.request.user:
+        if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
+            instance.delete()
+        elif self.request.user.role == 'TEACHER' and instance.teacher == self.request.user:
+            instance.delete()
+        else:
             from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("No tienes permiso para eliminar este curso")
-        instance.delete()
+            raise PermissionDenied("No tienes permiso para eliminar esta clase")
 
     @action(detail=True, methods=['get'])
     def attendance_stats(self, request, pk=None):
@@ -588,7 +596,7 @@ class DashboardViewSet(viewsets.ViewSet):
                 'today_classes': today_classes
             })
 
-        else:
+        elif user.role == 'TEACHER':
             # --- ESTADÍSTICAS PROFESOR ---
             my_courses = Course.objects.filter(teacher=user)
             if year:
@@ -642,3 +650,5 @@ class DashboardViewSet(viewsets.ViewSet):
                 },
                 'today_classes': today_classes
             })
+        
+        return Response({'error': 'Rol no reconocido o no autorizado'}, status=403)

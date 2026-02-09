@@ -34,8 +34,10 @@ export default function Classes() {
     const [selectedYear, setSelectedYear] = useState(currentYear);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
 
-    const isStudent = user?.role === 'STUDENT';
+    const isAdmin = user?.role === 'ADMIN';
     const isTeacher = user?.role === 'TEACHER';
+    const isStudent = user?.role === 'STUDENT';
+    const canManage = isAdmin || isTeacher;
 
     useEffect(() => {
         fetchCourses();
@@ -172,7 +174,7 @@ export default function Classes() {
                         )}
                     </div>
 
-                    {!isStudent && (
+                    {canManage && (
                         <button
                             onClick={openNewModal}
                             className="bg-upn-600 hover:bg-upn-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-upn-600/20 transition-all active:scale-95"
@@ -193,7 +195,7 @@ export default function Classes() {
                             <div className="w-12 h-12 rounded-xl bg-upn-50 flex items-center justify-center text-upn-700 font-bold text-xl border border-upn-100">
                                 {course.name.charAt(0)}
                             </div>
-                            {!isStudent && (
+                            {canManage && (
                                 <div className="flex gap-1">
                                     <button
                                         onClick={() => handleEdit(course)}
@@ -203,7 +205,7 @@ export default function Classes() {
                                         <Edit2 size={18} />
                                     </button>
                                     <button
-                                        onClick={() => openDeleteModal(course)}
+                                        onClick={() => confirmDelete(course.id)}
                                         className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-red-600 transition-colors"
                                         title="Eliminar"
                                     >
