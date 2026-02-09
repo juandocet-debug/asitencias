@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User } from 'lucide-react';

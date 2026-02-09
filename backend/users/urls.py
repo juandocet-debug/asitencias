@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import StudentRegisterView, UserViewSet, password_reset_request, password_reset_confirm, join_class
 
 router = DefaultRouter()
-router.register(r'', UserViewSet)
+router.register(r'', UserViewSet, basename='users')
 
 urlpatterns = [
     path('register/student/', StudentRegisterView.as_view(), name='student-register'),

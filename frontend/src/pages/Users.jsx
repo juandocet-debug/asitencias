@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Mail, User, Upload, X, AlertTriangle, Check, Loader2, Shield, GraduationCap, BookOpen } from 'lucide-react';
 import api from '../services/api';

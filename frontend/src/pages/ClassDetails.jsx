@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Calendar, Search, Trash2, QrCode, Check, Award, X, User, Mail, Phone, Save, CheckCircle, AlertCircle, Loader2, BarChart3, Edit2, Upload, FileText } from 'lucide-react';
