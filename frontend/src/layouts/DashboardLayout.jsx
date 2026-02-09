@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 
@@ -144,6 +144,10 @@ export default function DashboardLayout() {
                     {/* Solo ADMIN ve Insignias */}
                     {isAdmin && (
                         <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
+                    )}
+
+                    {user?.role === 'STUDENT' && (
+                        <SidebarItem icon={AlertCircle} label="Mis Faltas" to="/my-absences" onClick={() => setIsSidebarOpen(false)} />
                     )}
                 </nav>
 

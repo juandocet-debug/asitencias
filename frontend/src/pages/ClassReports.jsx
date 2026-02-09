@@ -869,6 +869,22 @@ function StudentDetailModal({ student, onClose, getMediaUrl, onUpdate, showToast
 
     const rateColor = student.attendance_rate >= 80 ? 'text-emerald-600 bg-emerald-50' : student.attendance_rate >= 50 ? 'text-amber-600 bg-amber-50' : 'text-red-600 bg-red-50';
 
+    const [viewingExcuse, setViewingExcuse] = useState(null);
+
+    const handleReviewAction = async (attendanceId, decision) => {
+        try {
+            await api.post('/academic/attendance/review_excuse/', {
+                attendance_id: attendanceId,
+                decision: decision
+            });
+            showToast(`Excusa ${decision === 'APPROVED' ? 'aprobada' : 'rechazada'}`, 'success');
+            setViewingExcuse(null);
+            onUpdate();
+        } catch (error) {
+            showToast('Error al procesar la excusa', 'error');
+        }
+    };
+
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -1012,8 +1028,34 @@ function StudentDetailModal({ student, onClose, getMediaUrl, onUpdate, showToast
                                         date={date}
                                         type="excused"
                                         editable={editMode}
+                                        onViewExcuse={() => setViewingExcuse(date)}
                                         onChangeStatus={(toStatus) => changeStatus(date, 'excused', toStatus)}
                                     />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Pending Excuses Alerts */}
+                    {!editMode && student.pending_excuses?.length > 0 && (
+                        <div className="mb-5 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                            <h4 className="text-sm font-bold text-amber-800 mb-3 flex items-center gap-2">
+                                <AlertCircle size={16} /> Excusas Pendientes ({student.pending_excuses.length})
+                            </h4>
+                            <div className="space-y-2">
+                                {student.pending_excuses.map((exc, idx) => (
+                                    <div key={idx} className="flex items-center justify-between bg-white p-3 rounded-lg border border-amber-200">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size={14} className="text-slate-400" />
+                                            <span className="text-sm font-medium text-slate-700">{formatDateShort(exc.date)}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => setViewingExcuse(exc)}
+                                            className="text-xs font-bold text-upn-600 hover:text-upn-700 bg-upn-50 px-3 py-1.5 rounded-lg transition-colors"
+                                        >
+                                            Revisar Excusa
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -1069,13 +1111,86 @@ function StudentDetailModal({ student, onClose, getMediaUrl, onUpdate, showToast
                         </>
                     )}
                 </div>
+
+                {/* View Excuse Modal Sub-layer */}
+                {viewingExcuse && (
+                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                                <h4 className="font-bold text-slate-800">Detalle de la Excusa</h4>
+                                <button onClick={() => setViewingExcuse(null)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-8 space-y-6">
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Fecha de la Falta</p>
+                                    <p className="font-bold text-slate-800">{formatDate(viewingExcuse.date)}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-2">Motivo/Nota</p>
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-slate-600 text-sm">
+                                        "{viewingExcuse.excuse_note || 'Sin nota adjunta'}"
+                                    </div>
+                                </div>
+
+                                {viewingExcuse.excuse_file && (
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase mb-2">Documento de Soporte</p>
+                                        <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-100 flex items-center justify-center min-h-[200px]">
+                                            {viewingExcuse.excuse_file.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/) ? (
+                                                <img
+                                                    src={getMediaUrl(viewingExcuse.excuse_file)}
+                                                    className="w-full h-auto max-h-[400px] object-contain"
+                                                    alt="Soporte"
+                                                />
+                                            ) : (
+                                                <div className="text-center p-8">
+                                                    <FileText size={48} className="mx-auto mb-3 text-slate-400" />
+                                                    <p className="text-sm font-bold text-slate-700 mb-4">El documento es un PDF u otro formato</p>
+                                                    <a
+                                                        href={getMediaUrl(viewingExcuse.excuse_file)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-2 bg-upn-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-upn-700 transition-colors"
+                                                    >
+                                                        Abrir documento en nueva pestaña
+                                                    </a>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Evaluation Actions - Only show if it matches a pending attendance */}
+                                {(viewingExcuse.attendance_id || (viewingExcuse.has_excuse && viewingExcuse.excuse_status === 'PENDING')) && (
+                                    <div className="flex gap-4 pt-4">
+                                        <button
+                                            onClick={() => handleReviewAction(viewingExcuse.attendance_id || viewingExcuse.id, 'REJECTED')}
+                                            className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-xl font-bold hover:bg-red-100 transition-colors border border-red-100"
+                                        >
+                                            <XCircle size={18} /> Rechazar
+                                        </button>
+                                        <button
+                                            onClick={() => handleReviewAction(viewingExcuse.attendance_id || viewingExcuse.id, 'APPROVED')}
+                                            className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20"
+                                        >
+                                            <CheckCircle size={18} /> Aprobar
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
 // Date Badge with edit capability
-function DateBadge({ date, type, editable, onChangeStatus }) {
+function DateBadge({ date, type, editable, onChangeStatus, onViewExcuse }) {
     const [showMenu, setShowMenu] = useState(false);
 
     const colors = {
@@ -1094,12 +1209,21 @@ function DateBadge({ date, type, editable, onChangeStatus }) {
 
     // Handle date object or string
     const dateStr = typeof date === 'object' ? date.date : date;
+    const hasExcuse = typeof date === 'object' && date.has_excuse;
 
     if (!editable) {
         return (
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border ${colors[type]}`}>
-                {icons[type]} {formatDate(dateStr)}
-            </span>
+            <div className="relative group">
+                <span
+                    onClick={hasExcuse || type === 'excused' ? onViewExcuse : undefined}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border ${colors[type]} ${hasExcuse || type === 'excused' ? 'cursor-pointer hover:shadow-md' : ''}`}
+                >
+                    {icons[type]} {formatDateShort(dateStr)}
+                    {hasExcuse && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse ml-0.5" title="Tiene Excusa"></div>
+                    )}
+                </span>
+            </div>
         );
     }
 
@@ -1109,7 +1233,8 @@ function DateBadge({ date, type, editable, onChangeStatus }) {
                 onClick={() => setShowMenu(!showMenu)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border ${colors[type]} hover:shadow-md transition-all cursor-pointer`}
             >
-                {icons[type]} {formatDate(dateStr)} <Edit3 size={10} className="ml-1 opacity-50" />
+                {icons[type]} {formatDateShort(dateStr)} <Edit3 size={10} className="ml-1 opacity-50" />
+                {hasExcuse && <div className="w-1.5 h-1.5 bg-blue-500 rounded-full ml-0.5"></div>}
             </button>
 
             {showMenu && (

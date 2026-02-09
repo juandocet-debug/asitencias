@@ -144,13 +144,15 @@ export default function Dashboard() {
                             color={stats.stats.attendance_rate >= 80 ? "bg-emerald-500" : "bg-amber-500"}
                             subtext="Promedio general"
                         />
-                        <StatCard
-                            title="Faltas Totales"
-                            value={stats.stats.total_absences || 0}
-                            icon={AlertCircle}
-                            color="bg-red-500"
-                            subtext="Inasistencias registradas"
-                        />
+                        <div onClick={() => navigate('/my-absences')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                            <StatCard
+                                title="Faltas Totales"
+                                value={stats.stats.total_absences || 0}
+                                icon={AlertCircle}
+                                color="bg-red-500"
+                                subtext="Gestionar excusas aquí"
+                            />
+                        </div>
                         <StatCard
                             title="Clases Hoy"
                             value={stats.today_classes?.length || 0}

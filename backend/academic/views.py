@@ -446,6 +446,36 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         
         return Response(result)
 
+    @action(detail=False, methods=['get'])
+    def all_my_absences(self, request):
+        """Obtener todas las faltas/retardos de un estudiante en todos sus cursos"""
+        absences = Attendance.objects.filter(
+            student=request.user,
+            status__in=['ABSENT', 'LATE']
+        ).select_related('session', 'session__course')
+        
+        result = []
+        for att in absences:
+            result.append({
+                'id': att.id,
+                'course_id': att.session.course.id,
+                'course_name': att.session.course.name,
+                'date': att.session.date.isoformat(),
+                'status': att.status,
+                'status_label': 'Falta' if att.status == 'ABSENT' else 'Retardo',
+                'has_excuse': bool(att.excuse_file or att.excuse_note),
+                'excuse_status': att.excuse_status,
+                'excuse_status_label': {
+                    'PENDING': 'En revisión',
+                    'APPROVED': 'Aprobada',
+                    'REJECTED': 'Rechazada'
+                }.get(att.excuse_status, None),
+                'excuse_note': att.excuse_note,
+                'excuse_file': att.excuse_file.url if att.excuse_file else None
+            })
+        
+        return Response(result)
+
 class DashboardViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
