@@ -28,7 +28,6 @@ export default function DashboardLayout() {
     const { user } = useUser();
     const isAdmin = user?.role === 'ADMIN';
     const isTeacher = user?.role === 'TEACHER';
-    const isStudent = user?.role === 'STUDENT'; // Obtenemos el usuario del contexto
 
     // Proteger ruta: Si no hay token, enviar al login
     useEffect(() => {
@@ -128,7 +127,7 @@ export default function DashboardLayout() {
 
                 <div className="px-4 py-6 border-t border-slate-100 space-y-2">
                     {/* Solo ADMIN ve Configuración */}
-                    {user?.role === 'ADMIN' && (
+                    {isAdmin && (
                         <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
                     )}
                     <button
@@ -180,7 +179,7 @@ export default function DashboardLayout() {
                                         {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
                                     </p>
                                     <p className="text-xs text-slate-500">
-                                        {user?.role === 'ADMIN' ? 'Administrador' : user?.role === 'TEACHER' ? 'Docente' : 'Estudiante'}
+                                        {isAdmin ? 'Administrador' : isTeacher ? 'Docente' : 'Estudiante'}
                                     </p>
                                 </div>
                                 <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">

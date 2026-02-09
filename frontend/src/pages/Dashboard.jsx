@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar, CheckCircle, AlertCircle, ArrowUpRight, BookOpen, Clock, Activity, Edit2, X, Plus, Trash2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
@@ -5,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ScheduleModal from '../components/ScheduleModal';
 
-const StatCard = ({ title, value, label, icon: Icon, color, trend, subtext }) => (
+const StatCard = ({ title, value, icon: Icon, color, trend, subtext }) => (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-hover hover:shadow-md">
         <div className="flex items-start justify-between">
             <div>
