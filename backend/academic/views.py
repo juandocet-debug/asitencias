@@ -529,7 +529,7 @@ class DashboardViewSet(viewsets.ViewSet):
             # Simplificación: Usar la suma de registros de asistencia existentes
             total_recorded = total_present + total_late + total_absent + excused
             if total_recorded > 0:
-                 global_rate = round(((total_present + total_late + excused) / total_recorded) * 100, 1)
+                global_rate = round(((total_present + total_late + excused) / total_recorded) * 100, 1)
 
             return Response({
                 'role': 'STUDENT',
