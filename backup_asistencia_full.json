@@ -1,0 +1,828 @@
+[
+{
+  "model": "auth.permission",
+  "pk": 1,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 3,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 4,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 5,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 3,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 6,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 3,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 7,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 3,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 8,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 3,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 9,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 2,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 10,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 2,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 11,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 2,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 12,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 2,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 13,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 4,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 14,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 4,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 15,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 4,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 16,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 4,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 17,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 5,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 18,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 5,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 19,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 5,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 20,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 5,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 21,
+  "fields": {
+    "name": "Can add user",
+    "content_type": 6,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 22,
+  "fields": {
+    "name": "Can change user",
+    "content_type": 6,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 23,
+  "fields": {
+    "name": "Can delete user",
+    "content_type": 6,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 24,
+  "fields": {
+    "name": "Can view user",
+    "content_type": 6,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 25,
+  "fields": {
+    "name": "Can add attendance",
+    "content_type": 7,
+    "codename": "add_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 26,
+  "fields": {
+    "name": "Can change attendance",
+    "content_type": 7,
+    "codename": "change_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 27,
+  "fields": {
+    "name": "Can delete attendance",
+    "content_type": 7,
+    "codename": "delete_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 28,
+  "fields": {
+    "name": "Can view attendance",
+    "content_type": 7,
+    "codename": "view_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 29,
+  "fields": {
+    "name": "Can add course",
+    "content_type": 8,
+    "codename": "add_course"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 30,
+  "fields": {
+    "name": "Can change course",
+    "content_type": 8,
+    "codename": "change_course"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 31,
+  "fields": {
+    "name": "Can delete course",
+    "content_type": 8,
+    "codename": "delete_course"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 32,
+  "fields": {
+    "name": "Can view course",
+    "content_type": 8,
+    "codename": "view_course"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 33,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 9,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 34,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 9,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 35,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 9,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 36,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 9,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 37,
+  "fields": {
+    "name": "Can add badge",
+    "content_type": 10,
+    "codename": "add_badge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 38,
+  "fields": {
+    "name": "Can change badge",
+    "content_type": 10,
+    "codename": "change_badge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 39,
+  "fields": {
+    "name": "Can delete badge",
+    "content_type": 10,
+    "codename": "delete_badge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 40,
+  "fields": {
+    "name": "Can view badge",
+    "content_type": 10,
+    "codename": "view_badge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 41,
+  "fields": {
+    "name": "Can add user badge",
+    "content_type": 11,
+    "codename": "add_userbadge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 42,
+  "fields": {
+    "name": "Can change user badge",
+    "content_type": 11,
+    "codename": "change_userbadge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 43,
+  "fields": {
+    "name": "Can delete user badge",
+    "content_type": 11,
+    "codename": "delete_userbadge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 44,
+  "fields": {
+    "name": "Can view user badge",
+    "content_type": 11,
+    "codename": "view_userbadge"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 45,
+  "fields": {
+    "name": "Can add password reset token",
+    "content_type": 12,
+    "codename": "add_passwordresettoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 46,
+  "fields": {
+    "name": "Can change password reset token",
+    "content_type": 12,
+    "codename": "change_passwordresettoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 47,
+  "fields": {
+    "name": "Can delete password reset token",
+    "content_type": 12,
+    "codename": "delete_passwordresettoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 48,
+  "fields": {
+    "name": "Can view password reset token",
+    "content_type": 12,
+    "codename": "view_passwordresettoken"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "users",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "academic",
+    "model": "attendance"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "academic",
+    "model": "course"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "academic",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "gamification",
+    "model": "badge"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "gamification",
+    "model": "userbadge"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "users",
+    "model": "passwordresettoken"
+  }
+},
+{
+  "model": "users.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$8pvBAH627NhBWM1q11yhdr$CAeAEtup+Bvy6Fe3C3EU+o0TXZMHc055tllNcZUuj6g=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "juandocet@gmail.com",
+    "first_name": "Juan",
+    "last_name": "Ramirez",
+    "email": "juandocet@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-02-05T02:47:45.672Z",
+    "role": "ADMIN",
+    "document_number": "",
+    "second_name": "",
+    "second_lastname": "",
+    "personal_email": "",
+    "phone_number": "",
+    "photo": "image/upload/profile_photos/PERSON.jpg",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$sohTUsUvzWhsSmXJ76uttb$e/LJPLbsOkXeQeXnz3mXOyeDeg/ufGZiFJKJvZJxbOs=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "jdrara@upn.edu.co",
+    "first_name": "Juan",
+    "last_name": "Ramirez",
+    "email": "jdrara@upn.edu.co",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-05T04:10:45.781Z",
+    "role": "TEACHER",
+    "document_number": "123213123",
+    "second_name": "David",
+    "second_lastname": "Cardozo",
+    "personal_email": "jd@gmail.com",
+    "phone_number": null,
+    "photo": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$5YFiGraxoXbf3ZrdMkJWYo$AInmQ10P0YffiWNwUEMy7DQaR4hhH1KkN8bUx7QwbAA=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "AS@GMAIL.COM",
+    "first_name": "ASAS",
+    "last_name": "ASAS",
+    "email": "AS@GMAIL.COM",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-05T04:43:43.754Z",
+    "role": "STUDENT",
+    "document_number": "12123",
+    "second_name": "ASAS",
+    "second_lastname": "ASAS",
+    "personal_email": "ASAS@GMAIL.COM",
+    "phone_number": "ASAS",
+    "photo": "image/upload/profile_photos/5075551.png",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$CBFBNu4flIF3hwQAaGu1DX$dTH05vanAdkQ5cwUEPVxX9pXQeHpZTMNbjYsLqwfIwI=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "ASAS@AHJKLAS.COM",
+    "first_name": "SILVIO",
+    "last_name": "ASAS",
+    "email": "ASAS@AHJKLAS.COM",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-05T04:54:11.565Z",
+    "role": "STUDENT",
+    "document_number": "123123123",
+    "second_name": "ASAS",
+    "second_lastname": "ASAS",
+    "personal_email": "ASASAS@SDS.COM",
+    "phone_number": "12213123213",
+    "photo": "image/upload/profile_photos/mapa_1.jpg",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$QJlNawMSuIH6Wbgk3i2JPD$MRdk2XhjDlO3aQr0ycwvZVpuNVzWmKz1sop+F/E8grc=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@admin.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-02-05T20:26:11.049Z",
+    "role": "ADMIN",
+    "document_number": null,
+    "second_name": "",
+    "second_lastname": "",
+    "personal_email": "",
+    "phone_number": "",
+    "photo": "image/upload/profile_photos/mapa_1_HLPWbZb.jpg",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "academic.course",
+  "pk": 3,
+  "fields": {
+    "teacher": 1,
+    "name": "fundamnetos",
+    "code": "TIRJYR",
+    "year": 2026,
+    "period": 2,
+    "start_date": "2026-02-25",
+    "end_date": "2026-02-17",
+    "schedule": [],
+    "students": [
+      2,
+      3,
+      4
+    ]
+  }
+},
+{
+  "model": "academic.course",
+  "pk": 4,
+  "fields": {
+    "teacher": 1,
+    "name": "ASA",
+    "code": "7XCA5O",
+    "year": 2026,
+    "period": 1,
+    "start_date": "2026-02-05",
+    "end_date": "2026-02-05",
+    "schedule": [],
+    "students": []
+  }
+},
+{
+  "model": "academic.session",
+  "pk": 1,
+  "fields": {
+    "course": 3,
+    "date": "2026-02-06",
+    "topic": ""
+  }
+},
+{
+  "model": "academic.session",
+  "pk": 2,
+  "fields": {
+    "course": 3,
+    "date": "2026-02-12",
+    "topic": ""
+  }
+},
+{
+  "model": "academic.session",
+  "pk": 3,
+  "fields": {
+    "course": 3,
+    "date": "2026-02-05",
+    "topic": ""
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 1,
+  "fields": {
+    "session": 1,
+    "student": 2,
+    "status": "PRESENT",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 2,
+  "fields": {
+    "session": 1,
+    "student": 3,
+    "status": "EXCUSED",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 3,
+  "fields": {
+    "session": 2,
+    "student": 2,
+    "status": "PRESENT",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 4,
+  "fields": {
+    "session": 2,
+    "student": 3,
+    "status": "PRESENT",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 5,
+  "fields": {
+    "session": 2,
+    "student": 4,
+    "status": "PRESENT",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 6,
+  "fields": {
+    "session": 3,
+    "student": 2,
+    "status": "PRESENT",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 7,
+  "fields": {
+    "session": 3,
+    "student": 3,
+    "status": "ABSENT",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+},
+{
+  "model": "academic.attendance",
+  "pk": 8,
+  "fields": {
+    "session": 3,
+    "student": 4,
+    "status": "ABSENT",
+    "excuse_file": "",
+    "excuse_note": null,
+    "excuse_status": null,
+    "excuse_submitted_at": null,
+    "excuse_reviewed_at": null
+  }
+}
+]

@@ -100,14 +100,9 @@ export default function RegisterStudent() {
         if (codeFromUrl) {
             setFormData(prev => ({ ...prev, class_code: codeFromUrl }));
 
-            // Si NO está logueado y viene con código, sugerir login primero
+            // Si NO está logueado y viene con código, sugerir que se registre o inicie sesión
             if (!user && !localStorage.getItem('access_token')) {
-                showToast("Si ya tienes cuenta, inicia sesión primero para unirte a la clase.", "warning");
-                // Pequeño delay para que lean el toast antes de redirigir (opcional)
-                const timer = setTimeout(() => {
-                    navigate(`/login?code=${codeFromUrl}`);
-                }, 2000);
-                return () => clearTimeout(timer);
+                showToast("Regístrate para unirte a la clase. Si ya tienes cuenta, inicia sesión primero.", "info");
             }
 
             showToast(`Código de clase detectado: ${codeFromUrl}`, 'success');
