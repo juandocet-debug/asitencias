@@ -4,8 +4,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Lock, ArrowRight, Eye, EyeOff, CreditCard } from 'lucide-react';
 import api from '../services/api';
+import { useUser } from '../context/UserContext';
 
 export default function Login() {
+    const { fetchUser } = useUser();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -28,6 +30,11 @@ export default function Login() {
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
             localStorage.setItem('username', username);
+
+            // ACTUALIZAR CONTEXTO GLOBAL INMEDIATAMENTE
+            if (fetchUser) {
+                await fetchUser();
+            }
 
             // Redirigir
             navigate('/dashboard');

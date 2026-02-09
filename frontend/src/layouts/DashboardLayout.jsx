@@ -26,7 +26,7 @@ export default function DashboardLayout() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    const { user } = useUser();
+    const { user, setUser } = useUser();
     const isAdmin = user?.role === 'ADMIN';
     const isTeacher = user?.role === 'TEACHER';
 
@@ -39,7 +39,10 @@ export default function DashboardLayout() {
     }, [navigate]);
 
     const handleLogout = () => {
-        // Aquí iría la lógica de limpiar tokens, etc.
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('username');
+        if (setUser) setUser(null);
         navigate('/login');
     };
 
