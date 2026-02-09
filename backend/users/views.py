@@ -1,8 +1,12 @@
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import get_user_model
 from .serializers import StudentRegisterSerializer, UserSerializer, UserProfileSerializer
 from rest_framework.decorators import action
+from .models import PasswordResetToken
+from django.core.mail import send_mail
+from django.conf import settings
 
 User = get_user_model()
 
@@ -46,3 +50,88 @@ class StudentRegisterView(generics.CreateAPIView):
             },
             "message": "Estudiante registrado exitosamente"
         }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def password_reset_request(request):
+    """
+    Solicita un reset de contraseña. Envía un email al correo personal del usuario.
+    """
+    email = request.data.get('email')
+    
+    if not email:
+        return Response({'error': 'El correo es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(personal_email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'No existe un usuario con ese correo personal'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Crear token de reset
+    reset_token = PasswordResetToken.objects.create(user=user)
+    
+    # Construir URL de reset
+    frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else 'http://localhost:5173'
+    reset_url = f"{frontend_url}/reset-password?token={reset_token.token}"
+    
+    # Enviar email
+    try:
+        send_mail(
+            subject='Recuperación de Contraseña - UPN',
+            message=f'''
+Hola {user.first_name},
+
+Has solicitado recuperar tu contraseña para el Sistema de Gestión Académica de la UPN.
+
+Para establecer una nueva contraseña, haz clic en el siguiente enlace:
+{reset_url}
+
+Este enlace expirará en 24 horas.
+
+Si no solicitaste este cambio, puedes ignorar este correo.
+
+Saludos,
+Sistema de Gestión Académica
+Universidad Pedagógica Nacional
+            ''',
+            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@upn.edu.co',
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        return Response({'message': 'Correo de recuperación enviado exitosamente'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return Response({'error': 'Error al enviar el correo. Intenta nuevamente.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def password_reset_confirm(request):
+    """
+    Confirma el reset de contraseña usando el token.
+    """
+    token = request.data.get('token')
+    password = request.data.get('password')
+    
+    if not token or not password:
+        return Response({'error': 'Token y contraseña son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        reset_token = PasswordResetToken.objects.get(token=token)
+    except PasswordResetToken.DoesNotExist:
+        return Response({'error': 'Token inválido'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not reset_token.is_valid():
+        return Response({'error': 'El token ha expirado o ya fue usado'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Cambiar contraseña
+    user = reset_token.user
+    user.set_password(password)
+    user.save()
+    
+    # Marcar token como usado
+    reset_token.used = True
+    reset_token.save()
+    
+    return Response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)

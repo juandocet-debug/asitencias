@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, ArrowRight, Eye, EyeOff, CreditCard } from 'lucide-react';
 import api from '../services/api';
 
 export default function Login() {
@@ -82,11 +82,11 @@ export default function Login() {
                             <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl"></div>
                         </div>
                         <div className="relative z-10">
-                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl inline-block mb-4 border border-white/20 shadow-lg">
+                            <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-lg">
                                 <img
                                     src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
                                     alt="Logo UPN Mobile"
-                                    className="h-20 mx-auto filter brightness-0 invert"
+                                    className="h-20 mx-auto object-contain"
                                 />
                             </div>
                             <h2 className="text-xl font-bold leading-tight">Gestión Académica</h2>
@@ -101,22 +101,23 @@ export default function Login() {
                     >
                         <div className="text-center md:text-left mb-10">
                             <h2 className="text-3xl font-bold text-slate-900 mb-2">Iniciar sesión</h2>
-                            <p className="text-slate-500">Ingrese sus credenciales institucionales.</p>
+                            <p className="text-slate-500">Ingrese su número de cédula y contraseña.</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700 ml-1">Correo institucional</label>
+                                <label className="text-sm font-semibold text-slate-700 ml-1">Número de Cédula</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <User className="h-5 w-5 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
+                                        <CreditCard className="h-5 w-5 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
                                     </div>
                                     <input
                                         type="text"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                         className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-600 transition-all font-medium"
-                                        placeholder="usuario@upn.edu.co"
+                                        placeholder="1234567890"
+                                        inputMode="numeric"
                                     />
                                 </div>
                             </div>
@@ -149,9 +150,9 @@ export default function Login() {
                                     <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-upn-600 focus:ring-upn-500" />
                                     <span className="text-slate-600">Recordarme</span>
                                 </label>
-                                <a href="#" className="font-semibold text-upn-600 hover:text-upn-700 hover:underline">
+                                <Link to="/forgot-password" className="text-upn-600 hover:text-upn-700 font-semibold transition-colors">
                                     ¿Olvidaste tu contraseña?
-                                </a>
+                                </Link>
                             </div>
 
                             {error && (

@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Mail, ArrowRight, ArrowLeft, CheckCircle2,
-    CreditCard, Smartphone, Camera, Upload, X, AlertCircle, Loader2
+    CreditCard, Smartphone, Camera, Upload, X, AlertCircle, Loader2, Lock, Eye, EyeOff
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -42,7 +42,7 @@ function SuccessModal({ onClose }) {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-2">¡Registro Exitoso!</h3>
                 <p className="text-slate-500 mb-6">
-                    Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión usando tu <strong>correo institucional</strong> y tu <strong>número de documento</strong> como contraseña.
+                    Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión usando tu <strong>número de cédula</strong> y la <strong>contraseña</strong> que estableciste.
                 </p>
                 <button
                     onClick={onClose}
@@ -75,8 +75,14 @@ export default function RegisterStudent() {
         email: '',
         institutional_email: '',
         phone_number: '',
-        class_code: ''
+        class_code: '',
+        password: '',
+        password_confirm: ''
     });
+
+    // Password visibility states
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
     // Photo States
     const [photo, setPhoto] = useState(null);
@@ -189,6 +195,19 @@ export default function RegisterStudent() {
             showToast("El correo personal no tiene un formato válido", "error");
             return false;
         }
+        // Validar contraseña
+        if (!formData.password.trim()) {
+            showToast("La contraseña es obligatoria", "error");
+            return false;
+        }
+        if (formData.password.length < 6) {
+            showToast("La contraseña debe tener al menos 6 caracteres", "error");
+            return false;
+        }
+        if (formData.password !== formData.password_confirm) {
+            showToast("Las contraseñas no coinciden", "error");
+            return false;
+        }
         return true;
     };
 
@@ -246,7 +265,7 @@ export default function RegisterStudent() {
         data.append('personal_email', formData.email.trim());
         data.append('username', formData.institutional_email.trim());
         data.append('email', formData.institutional_email.trim());
-        data.append('password', formData.document_number.trim());
+        data.append('password', formData.password.trim());
         data.append('phone_number', formData.phone_number.trim());
         if (formData.class_code.trim()) data.append('class_code', formData.class_code.trim());
         if (photo) data.append('photo', photo);
@@ -395,14 +414,61 @@ export default function RegisterStudent() {
                                             onChange={handleInputChange}
                                             required
                                             icon={<CreditCard className="h-4 w-4" />}
-                                            helper="Este número será tu contraseña inicial."
+                                            helper="Este será tu usuario para iniciar sesión."
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                                         <InputGroup label="Correo Institucional" name="institutional_email" type="email" value={formData.institutional_email} onChange={handleInputChange} required icon={<Mail className="h-4 w-4" />} placeholder="usuario@upn.edu.co" />
-                                        <InputGroup label="Correo Personal" name="email" type="email" value={formData.email} onChange={handleInputChange} icon={<Mail className="h-4 w-4" />} />
+                                        <InputGroup label="Correo Personal" name="email" type="email" value={formData.email} onChange={handleInputChange} icon={<Mail className="h-4 w-4" />} helper="Para recuperación de contraseña" />
                                         <InputGroup label="Celular" name="phone_number" type="tel" value={formData.phone_number} onChange={handleInputChange} icon={<Smartphone className="h-4 w-4" />} placeholder="300 123 4567" />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-slate-700 ml-1">Contraseña *</label>
+                                            <div className="relative group">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    name="password"
+                                                    value={formData.password}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                    className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all"
+                                                    placeholder="Mínimo 6 caracteres"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-slate-700 ml-1">Confirmar Contraseña *</label>
+                                            <div className="relative group">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
+                                                <input
+                                                    type={showPasswordConfirm ? "text" : "password"}
+                                                    name="password_confirm"
+                                                    value={formData.password_confirm}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                    className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all"
+                                                    placeholder="Repite tu contraseña"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                >
+                                                    {showPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <button
@@ -520,7 +586,7 @@ export default function RegisterStudent() {
                     <canvas ref={canvasRef} className="hidden" />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 

@@ -7,6 +7,8 @@ import Classes from './pages/Classes';
 import ClassDetails from './pages/ClassDetails';
 import ClassReports from './pages/ClassReports';
 import RegisterStudent from './pages/RegisterStudent';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import UsersPage from './pages/Users';
 import Profile from './pages/Profile';
 import { UserProvider } from './context/UserContext';
@@ -66,6 +68,8 @@ function App() {
 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<RegisterStudent />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected Routes */}
           <Route element={
