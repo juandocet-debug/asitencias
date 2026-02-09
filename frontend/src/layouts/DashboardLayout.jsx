@@ -136,11 +136,11 @@ export default function DashboardLayout() {
                         onClick={() => setIsSidebarOpen(false)}
                     />
 
-                    {/* Solo ADMIN y TEACHER ven Usuarios/Estudiantes */}
-                    {(isAdmin || isTeacher) && (
+                    {/* Solo ADMIN ve Gestión de Usuarios */}
+                    {isAdmin && (
                         <SidebarItem
                             icon={Users}
-                            label={isAdmin ? 'Usuarios' : 'Estudiantes'}
+                            label="Usuarios"
                             to="/users"
                             onClick={() => setIsSidebarOpen(false)}
                         />
