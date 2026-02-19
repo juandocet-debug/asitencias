@@ -6,6 +6,15 @@ import { useUser } from '../context/UserContext';
 import api from '../services/api';
 import ConfirmationModal from '../components/ConfirmationModal';
 
+const COLOR_PALETTE = {
+    blue: { gradient: 'linear-gradient(135deg, #3b82f6, #4f46e5)', lightBg: '#eff6ff', color: '#1d4ed8', label: 'Azul' },
+    violet: { gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', lightBg: '#f5f3ff', color: '#6d28d9', label: 'Violeta' },
+    emerald: { gradient: 'linear-gradient(135deg, #10b981, #0d9488)', lightBg: '#ecfdf5', color: '#047857', label: 'Esmeralda' },
+    amber: { gradient: 'linear-gradient(135deg, #f59e0b, #ea580c)', lightBg: '#fffbeb', color: '#b45309', label: 'Ámbar' },
+    rose: { gradient: 'linear-gradient(135deg, #f43f5e, #ec4899)', lightBg: '#fff1f2', color: '#be123c', label: 'Rosa' },
+    cyan: { gradient: 'linear-gradient(135deg, #06b6d4, #0284c7)', lightBg: '#ecfeff', color: '#0e7490', label: 'Cian' },
+};
+
 export default function Classes() {
     const { user } = useUser();
     const navigate = useNavigate();
@@ -23,6 +32,7 @@ export default function Classes() {
 
     const [formData, setFormData] = useState({
         name: '',
+        color: 'blue',
         year: currentYear,
         period: 1,
         start_date: today,
@@ -74,6 +84,7 @@ export default function Classes() {
     const resetForm = () => {
         setFormData({
             name: '',
+            color: 'blue',
             year: currentYear,
             period: 1,
             start_date: today,
@@ -85,6 +96,7 @@ export default function Classes() {
     const handleEdit = (course) => {
         setFormData({
             name: course.name,
+            color: course.color || 'blue',
             year: course.year,
             period: course.period,
             start_date: course.start_date,
@@ -187,17 +199,9 @@ export default function Classes() {
 
             {/* Grid de Clases */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                {filteredCourses.map((course, idx) => {
+                {filteredCourses.map((course) => {
                     const studentCount = course.students ? course.students.length : 0;
-                    const palette = [
-                        { gradient: 'linear-gradient(135deg, #3b82f6, #4f46e5)', lightBg: '#eff6ff', color: '#1d4ed8' },
-                        { gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', lightBg: '#f5f3ff', color: '#6d28d9' },
-                        { gradient: 'linear-gradient(135deg, #10b981, #0d9488)', lightBg: '#ecfdf5', color: '#047857' },
-                        { gradient: 'linear-gradient(135deg, #f59e0b, #ea580c)', lightBg: '#fffbeb', color: '#b45309' },
-                        { gradient: 'linear-gradient(135deg, #f43f5e, #ec4899)', lightBg: '#fff1f2', color: '#be123c' },
-                        { gradient: 'linear-gradient(135deg, #06b6d4, #0284c7)', lightBg: '#ecfeff', color: '#0e7490' },
-                    ];
-                    const p = palette[idx % palette.length];
+                    const p = COLOR_PALETTE[course.color] || COLOR_PALETTE.blue;
 
                     return (
                         <div key={course.id}
@@ -369,6 +373,31 @@ export default function Classes() {
                                             onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 transition-all font-medium"
                                         />
+                                    </div>
+                                </div>
+
+                                {/* Color Picker */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Color de la Clase</label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {Object.entries(COLOR_PALETTE).map(([key, val]) => (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, color: key })}
+                                                className="relative w-10 h-10 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
+                                                style={{
+                                                    background: val.gradient,
+                                                    boxShadow: formData.color === key ? `0 0 0 3px white, 0 0 0 5px ${val.color}` : 'none',
+                                                    transform: formData.color === key ? 'scale(1.1)' : 'scale(1)',
+                                                }}
+                                                title={val.label}
+                                            >
+                                                {formData.color === key && (
+                                                    <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 

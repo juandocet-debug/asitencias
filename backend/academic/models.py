@@ -13,10 +13,20 @@ class Course(models.Model):
         (1, '1'),
         (2, '2'),
     )
+
+    COLOR_CHOICES = (
+        ('blue', 'Azul'),
+        ('violet', 'Violeta'),
+        ('emerald', 'Esmeralda'),
+        ('amber', 'Ámbar'),
+        ('rose', 'Rosa'),
+        ('cyan', 'Cian'),
+    )
     
     teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='teaching_courses')
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=8, unique=True, default=generate_course_code)
+    color = models.CharField(max_length=10, choices=COLOR_CHOICES, default='blue')
     year = models.IntegerField(default=2026)
     period = models.IntegerField(choices=PERIOD_CHOICES, default=1)
     start_date = models.DateField(default=date.today)
