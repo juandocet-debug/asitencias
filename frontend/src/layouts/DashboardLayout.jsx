@@ -1,9 +1,10 @@
 /* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
+import api from '../services/api';
 
 // Sidebar Item Component
 const SidebarItem = ({ icon: Icon, label, to, onClick, subtitle }) => (
@@ -34,6 +35,44 @@ export default function DashboardLayout() {
     const { user, setUser, loading } = useUser();
     const isAdmin = user?.role === 'ADMIN';
     const isTeacher = user?.role === 'TEACHER';
+    const isStudent = user?.role === 'STUDENT';
+
+    // Estado modal "Unirse a clase"
+    const [joinModalOpen, setJoinModalOpen] = useState(false);
+    const [classCode, setClassCode] = useState('');
+    const [joinLoading, setJoinLoading] = useState(false);
+    const [joinError, setJoinError] = useState('');
+    const [joinSuccess, setJoinSuccess] = useState('');
+
+    const handleJoinClass = async (e) => {
+        e.preventDefault();
+        if (!classCode.trim()) return;
+        setJoinLoading(true);
+        setJoinError('');
+        setJoinSuccess('');
+        try {
+            const res = await api.post('/users/join-class/', { class_code: classCode.trim().toUpperCase() });
+            setJoinSuccess(res.data?.message || '¡Te uniste a la clase exitosamente!');
+            setClassCode('');
+            setTimeout(() => {
+                setJoinModalOpen(false);
+                setJoinSuccess('');
+                navigate('/classes');
+            }, 2000);
+        } catch (err) {
+            setJoinError(err.response?.data?.error || err.response?.data?.detail || 'Código inválido o ya estás inscrito.');
+        } finally {
+            setJoinLoading(false);
+        }
+    };
+
+    const openJoinModal = () => {
+        setClassCode('');
+        setJoinError('');
+        setJoinSuccess('');
+        setJoinModalOpen(true);
+        setIsSidebarOpen(false);
+    };
 
     // Proteger ruta: Si no hay token, enviar al login
     useEffect(() => {
@@ -170,6 +209,22 @@ export default function DashboardLayout() {
                             subtitle="Excusas pendientes"
                         />
                     )}
+
+                    {/* Botón Unirse a Clase - Solo ESTUDIANTES */}
+                    {isStudent && (
+                        <button
+                            onClick={openJoinModal}
+                            className="flex items-center gap-3 px-4 py-3.5 rounded-xl w-full bg-upn-50 text-upn-700 border border-upn-200 hover:bg-upn-100 transition-all duration-200 group mt-2"
+                        >
+                            <div className="w-6 h-6 rounded-full bg-upn-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <Plus size={14} />
+                            </div>
+                            <div className="flex flex-col text-left">
+                                <span className="text-sm font-bold">Unirse a Clase</span>
+                                <span className="text-[10px] opacity-70 font-normal">Ingresa código del profesor</span>
+                            </div>
+                        </button>
+                    )}
                 </nav>
 
                 <div className="px-4 py-6 border-t border-slate-100 space-y-2">
@@ -281,6 +336,95 @@ export default function DashboardLayout() {
                     <Outlet />
                 </div>
             </main>
+
+            {/* ===== MODAL UNIRSE A CLASE ===== */}
+            {joinModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setJoinModalOpen(false)}>
+                    <div
+                        className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in fade-in zoom-in-95 duration-200"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header modal */}
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-upn-100 flex items-center justify-center">
+                                    <Hash size={24} className="text-upn-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900">Unirse a Clase</h3>
+                                    <p className="text-xs text-slate-500">Ingresa el código que te dio tu profesor</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setJoinModalOpen(false)}
+                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Feedback de éxito */}
+                        {joinSuccess && (
+                            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                                <CheckCircle2 size={22} className="text-emerald-600 flex-shrink-0" />
+                                <p className="text-sm font-semibold text-emerald-700">{joinSuccess}</p>
+                            </div>
+                        )}
+
+                        {/* Feedback de error */}
+                        {joinError && (
+                            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                                <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
+                                <p className="text-sm font-semibold text-red-600">{joinError}</p>
+                            </div>
+                        )}
+
+                        {/* Formulario */}
+                        {!joinSuccess && (
+                            <form onSubmit={handleJoinClass} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        Código de la Clase
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={classCode}
+                                        onChange={e => setClassCode(e.target.value.toUpperCase())}
+                                        placeholder="Ej: AB12CD"
+                                        maxLength={8}
+                                        autoFocus
+                                        className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-mono text-2xl font-black tracking-widest text-upn-900 placeholder:text-slate-300 placeholder:font-sans placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-upn-500 focus:ring-4 focus:ring-upn-100 transition-all uppercase"
+                                    />
+                                    <p className="text-xs text-slate-400 mt-2 text-center">
+                                        El código tiene 6 caracteres entre letras y números
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setJoinModalOpen(false)}
+                                        className="flex-1 py-3.5 border-2 border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={joinLoading || !classCode.trim()}
+                                        className="flex-1 py-3.5 bg-upn-600 hover:bg-upn-700 text-white font-bold rounded-2xl shadow-lg shadow-upn-600/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {joinLoading ? (
+                                            <><Loader2 size={18} className="animate-spin" /> Uniendo...</>
+                                        ) : (
+                                            <><Plus size={18} /> Unirse</>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

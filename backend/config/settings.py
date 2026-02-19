@@ -186,6 +186,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    # Deshabilitar paginación global para que los cursos devuelvan TODOS los estudiantes
+    'DEFAULT_PAGINATION_CLASS': None,
+    'PAGE_SIZE': None,
 }
 
 from datetime import timedelta
