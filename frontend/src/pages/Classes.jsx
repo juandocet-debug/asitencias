@@ -189,39 +189,38 @@ export default function Classes() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                 {filteredCourses.map((course, idx) => {
                     const studentCount = course.students ? course.students.length : 0;
-                    const colors = [
-                        { from: 'from-blue-500', to: 'to-indigo-600', light: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200' },
-                        { from: 'from-violet-500', to: 'to-purple-600', light: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-200' },
-                        { from: 'from-emerald-500', to: 'to-teal-600', light: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
-                        { from: 'from-amber-500', to: 'to-orange-600', light: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
-                        { from: 'from-rose-500', to: 'to-pink-600', light: 'bg-rose-50', text: 'text-rose-700', ring: 'ring-rose-200' },
-                        { from: 'from-cyan-500', to: 'to-sky-600', light: 'bg-cyan-50', text: 'text-cyan-700', ring: 'ring-cyan-200' },
+                    const palette = [
+                        { gradient: 'linear-gradient(135deg, #3b82f6, #4f46e5)', lightBg: '#eff6ff', color: '#1d4ed8' },
+                        { gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', lightBg: '#f5f3ff', color: '#6d28d9' },
+                        { gradient: 'linear-gradient(135deg, #10b981, #0d9488)', lightBg: '#ecfdf5', color: '#047857' },
+                        { gradient: 'linear-gradient(135deg, #f59e0b, #ea580c)', lightBg: '#fffbeb', color: '#b45309' },
+                        { gradient: 'linear-gradient(135deg, #f43f5e, #ec4899)', lightBg: '#fff1f2', color: '#be123c' },
+                        { gradient: 'linear-gradient(135deg, #06b6d4, #0284c7)', lightBg: '#ecfeff', color: '#0e7490' },
                     ];
-                    const c = colors[idx % colors.length];
+                    const p = palette[idx % palette.length];
 
                     return (
                         <div key={course.id}
                             className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 hover:-translate-y-1 group overflow-hidden cursor-pointer"
                             onClick={() => navigate(`/classes/${course.id}`)}
                         >
-                            {/* Card Header with Gradient */}
-                            <div className={`relative bg-gradient-to-br ${c.from} ${c.to} px-5 py-5`}>
-                                {/* Decorative circles */}
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
-                                <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full translate-y-6 -translate-x-4"></div>
+                            {/* Card Header */}
+                            <div className="relative px-5 py-5 overflow-hidden" style={{ background: p.gradient }}>
+                                {/* Decorative */}
+                                <div className="absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-8 translate-x-8" style={{ background: 'rgba(255,255,255,0.12)' }}></div>
+                                <div className="absolute bottom-0 left-0 w-16 h-16 rounded-full translate-y-6 -translate-x-4" style={{ background: 'rgba(255,255,255,0.08)' }}></div>
 
                                 <div className="relative flex items-start justify-between">
                                     <div className="flex items-center gap-3.5">
-                                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-black text-xl border border-white/30 shadow-lg">
+                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-xl border shadow-lg"
+                                            style={{ background: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)' }}>
                                             {course.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
-                                            <h3 className="text-white font-bold text-base leading-tight line-clamp-2 drop-shadow-sm">
+                                            <h3 className="text-white font-bold text-base leading-tight drop-shadow-sm" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                 {course.name}
                                             </h3>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-white/80 text-xs font-medium">{course.year}-{course.period}</span>
-                                            </div>
+                                            <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>{course.year}-{course.period}</span>
                                         </div>
                                     </div>
 
@@ -229,14 +228,16 @@ export default function Classes() {
                                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleEdit(course); }}
-                                                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-white transition-colors"
+                                                style={{ background: 'rgba(255,255,255,0.2)' }}
                                                 title="Editar"
                                             >
                                                 <Edit2 size={14} />
                                             </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); confirmDelete(course.id); }}
-                                                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-red-500/80 flex items-center justify-center text-white transition-colors"
+                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-white transition-colors hover:bg-red-500/80"
+                                                style={{ background: 'rgba(255,255,255,0.2)' }}
                                                 title="Eliminar"
                                             >
                                                 <Trash2 size={14} />
@@ -250,10 +251,11 @@ export default function Classes() {
                             <div className="px-5 py-4 space-y-3.5">
                                 {/* Code chip */}
                                 <div className="flex items-center justify-between">
-                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${c.light} ${c.text} text-xs font-bold`}>
-                                        <span className="opacity-60">#</span> {course.code}
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+                                        style={{ background: p.lightBg, color: p.color }}>
+                                        <span style={{ opacity: 0.6 }}>#</span> {course.code}
                                     </span>
-                                    <span className="text-[11px] text-slate-400 font-medium">
+                                    <span className="text-slate-400 font-medium" style={{ fontSize: '11px' }}>
                                         {course.start_date && new Date(course.start_date).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}
                                         {course.end_date && ` — ${new Date(course.end_date).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}`}
                                     </span>
@@ -262,15 +264,16 @@ export default function Classes() {
                                 {/* Students count */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-8 h-8 rounded-lg ${c.light} flex items-center justify-center`}>
-                                            <Users size={15} className={c.text} />
+                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: p.lightBg }}>
+                                            <Users size={15} style={{ color: p.color }} />
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-slate-800">{studentCount}</p>
-                                            <p className="text-[10px] text-slate-400 -mt-0.5">Estudiantes</p>
+                                            <p className="text-slate-400" style={{ fontSize: '10px', marginTop: '-2px' }}>Estudiantes</p>
                                         </div>
                                     </div>
-                                    <div className={`px-3 py-1.5 rounded-xl ${c.light} ${c.text} text-xs font-bold flex items-center gap-1.5 group-hover:shadow-md transition-shadow`}>
+                                    <div className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 group-hover:shadow-md transition-shadow"
+                                        style={{ background: p.lightBg, color: p.color }}>
                                         <Eye size={13} /> Ver
                                     </div>
                                 </div>
