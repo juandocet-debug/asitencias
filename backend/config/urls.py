@@ -37,16 +37,31 @@ urlpatterns = [
 from django.http import JsonResponse
 def debug_courses(request):
     from academic.models import Course
-    data = []
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    courses_data = []
     for c in Course.objects.all().prefetch_related('students'):
-        data.append({
+        courses_data.append({
             'id': c.id,
             'name': c.name,
             'code': c.code,
             'student_count': c.students.count(),
-            'students': [f'{s.id}: {s.first_name} {s.last_name}' for s in c.students.all()]
+            'students': [f'{s.id}: {s.first_name} {s.last_name} ({s.email})' for s in c.students.all()]
         })
-    return JsonResponse({'courses': data, 'total_courses': len(data)})
+    
+    all_students = User.objects.filter(role='STUDENT').order_by('-date_joined')
+    students_data = [
+        {'id': u.id, 'name': f'{u.first_name} {u.last_name}', 'email': u.email, 'doc': u.document_number, 'joined': str(u.date_joined)}
+        for u in all_students
+    ]
+    
+    return JsonResponse({
+        'courses': courses_data,
+        'total_courses': len(courses_data),
+        'all_students': students_data,
+        'total_students': len(students_data),
+    })
 
 urlpatterns.insert(0, path('api/debug/courses/', debug_courses))
 # === FIN DEBUG ===
