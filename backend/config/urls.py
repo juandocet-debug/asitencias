@@ -33,6 +33,24 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
 
+# === TEMPORAL DEBUG ENDPOINT - ELIMINAR DESPUES ===
+from django.http import JsonResponse
+def debug_courses(request):
+    from academic.models import Course
+    data = []
+    for c in Course.objects.all().prefetch_related('students'):
+        data.append({
+            'id': c.id,
+            'name': c.name,
+            'code': c.code,
+            'student_count': c.students.count(),
+            'students': [f'{s.id}: {s.first_name} {s.last_name}' for s in c.students.all()]
+        })
+    return JsonResponse({'courses': data, 'total_courses': len(data)})
+
+urlpatterns.insert(0, path('api/debug/courses/', debug_courses))
+# === FIN DEBUG ===
+
 from django.conf import settings
 from django.conf.urls.static import static
 

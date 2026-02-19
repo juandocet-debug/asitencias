@@ -49,6 +49,21 @@ class CourseViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("No tienes permiso para eliminar esta clase")
 
+    @action(detail=True, methods=['get'], url_path='debug-students')
+    def debug_students(self, request, pk=None):
+        """Debug: ver cuántos estudiantes tiene un curso"""
+        course = self.get_object()
+        students = course.students.all()
+        return Response({
+            'course_id': course.id,
+            'course_name': course.name,
+            'total_students_count': students.count(),
+            'students': [
+                {'id': s.id, 'name': f'{s.first_name} {s.last_name}', 'doc': s.document_number}
+                for s in students
+            ]
+        })
+
     @action(detail=True, methods=['get'])
     def attendance_stats(self, request, pk=None):
         """Obtener estadísticas de asistencia de un curso"""
