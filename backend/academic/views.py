@@ -7,7 +7,7 @@ from .models import Course, Session, Attendance
 from .serializers import CourseSerializer, SessionSerializer, AttendanceSerializer, AttendanceCreateSerializer
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all()
+    queryset = Course.objects.all().prefetch_related('students')
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -17,11 +17,11 @@ class CourseViewSet(viewsets.ModelViewSet):
             return Course.objects.none()
             
         if user.role == 'ADMIN' or user.is_superuser:
-            return Course.objects.all()
+            return Course.objects.all().prefetch_related('students')
         elif user.role == 'TEACHER':
-            return Course.objects.filter(teacher=user)
+            return Course.objects.filter(teacher=user).prefetch_related('students')
         elif user.role == 'STUDENT':
-            return Course.objects.filter(students=user)
+            return Course.objects.filter(students=user).prefetch_related('students')
         return Course.objects.none()
 
     def perform_create(self, serializer):
