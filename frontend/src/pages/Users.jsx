@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Mail, User, Upload, X, AlertTriangle, Check, Loader2, Shield, GraduationCap, BookOpen } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Mail, User, Upload, X, AlertTriangle, Check, Loader2, Shield, GraduationCap, BookOpen, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 
 // Mapeo de roles a español
@@ -31,6 +31,8 @@ export default function UsersPage() {
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [toast, setToast] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [formErrors, setFormErrors] = useState({});
+    const [showPassword, setShowPassword] = useState(false);
 
     const [formData, setFormData] = useState({
         username: '',
@@ -86,6 +88,8 @@ export default function UsersPage() {
             role: 'STUDENT',
             document_number: ''
         });
+        setFormErrors({});
+        setShowPassword(false);
         setEditingUser(null);
     };
 
@@ -103,30 +107,73 @@ export default function UsersPage() {
         setIsModalOpen(true);
     };
 
+    /**
+     * Convierte los errores del backend (campo: [mensajes]) a un objeto plano
+     * y muestra el primer error global como toast si no hay errores de campo.
+     */
+    const handleApiErrors = (error) => {
+        const data = error.response?.data;
+        if (!data) {
+            showToast('Error de red. Intenta de nuevo.', 'error');
+            return;
+        }
+
+        // Errores por campo (ej: { password: ['Esta contraseña es demasiado común.'] })
+        const fieldErrors = {};
+        let hasFieldErrors = false;
+        const knownFields = ['username', 'password', 'first_name', 'last_name', 'email', 'document_number', 'role'];
+
+        for (const key of knownFields) {
+            if (data[key]) {
+                fieldErrors[key] = Array.isArray(data[key]) ? data[key].join(' ') : data[key];
+                hasFieldErrors = true;
+            }
+        }
+
+        if (hasFieldErrors) {
+            setFormErrors(fieldErrors);
+            showToast('Revisa los errores en el formulario.', 'error');
+        } else {
+            // Error global (ej: { error: 'Solo los administradores...' } o { detail: '...' })
+            const msg = data.error || data.detail || data.non_field_errors?.[0] || 'Error al guardar usuario.';
+            showToast(msg, 'error');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setFormErrors({});
+
+        // Validación local de contraseña mínima
+        if (!editingUser && formData.password.length < 8) {
+            setFormErrors({ password: 'La contraseña debe tener al menos 8 caracteres.' });
+            return;
+        }
+
         setSaving(true);
-
         try {
-            if (editingUser) {
-                // Actualizar usuario existente
-                const updateData = { ...formData };
-                if (!updateData.password) delete updateData.password; // No enviar contraseña vacía
+            // Usar document_number como username si no se especificó uno
+            const payload = {
+                ...formData,
+                username: formData.username || formData.document_number || formData.email,
+            };
 
-                await api.patch(`/users/${editingUser.id}/`, updateData);
-                showToast("Usuario actualizado correctamente", "success");
+            if (editingUser) {
+                // Actualizar: no enviar contraseña si está vacía
+                if (!payload.password) delete payload.password;
+                await api.patch(`/users/${editingUser.id}/`, payload);
+                showToast('Usuario actualizado correctamente', 'success');
             } else {
-                // Crear nuevo usuario
-                await api.post('/users/', formData);
-                showToast("Usuario creado correctamente", "success");
+                await api.post('/users/', payload);
+                showToast('Usuario creado correctamente. Ya puede iniciar sesión.', 'success');
             }
 
             setIsModalOpen(false);
             resetForm();
             fetchUsers();
         } catch (error) {
-            console.error("Error:", error);
-            showToast(editingUser ? "Error al actualizar usuario" : "Error al crear usuario", "error");
+            console.error('Error al guardar usuario:', error);
+            handleApiErrors(error);
         } finally {
             setSaving(false);
         }
@@ -353,46 +400,48 @@ export default function UsersPage() {
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+                            {/* Nombres */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre *</label>
                                     <input
                                         required
+                                        placeholder="Ej: Juan"
                                         value={formData.first_name}
                                         onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
+                                        className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 ${formErrors.first_name ? 'border-red-400 bg-red-50' : 'border-slate-200'
+                                            }`}
                                     />
+                                    {formErrors.first_name && <p className="text-xs text-red-500 mt-1">{formErrors.first_name}</p>}
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Apellido</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Apellido *</label>
                                     <input
                                         required
+                                        placeholder="Ej: Pérez"
                                         value={formData.last_name}
                                         onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
+                                        className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 ${formErrors.last_name ? 'border-red-400 bg-red-50' : 'border-slate-200'
+                                            }`}
                                     />
+                                    {formErrors.last_name && <p className="text-xs text-red-500 mt-1">{formErrors.last_name}</p>}
                                 </div>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 uppercase">Correo Electrónico</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value, username: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
-                                />
-                            </div>
-
+                            {/* Documento y Correo */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Documento</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">N° Documento *</label>
                                     <input
+                                        required
+                                        placeholder="Ej: 1234567890"
                                         value={formData.document_number}
                                         onChange={(e) => setFormData({ ...formData, document_number: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
+                                        className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 ${formErrors.document_number ? 'border-red-400 bg-red-50' : 'border-slate-200'
+                                            }`}
                                     />
+                                    {formErrors.document_number && <p className="text-xs text-red-500 mt-1">{formErrors.document_number}</p>}
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-slate-500 uppercase">Rol</label>
@@ -408,18 +457,48 @@ export default function UsersPage() {
                                 </div>
                             </div>
 
+                            {/* Correo */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-500 uppercase">Correo Institucional</label>
+                                <input
+                                    type="email"
+                                    placeholder="usuario@upn.edu.co"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 ${formErrors.email ? 'border-red-400 bg-red-50' : 'border-slate-200'
+                                        }`}
+                                />
+                                {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
+                            </div>
+
+                            {/* Contraseña */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-500 uppercase">
-                                    {editingUser ? 'Nueva Contraseña (dejar vacío para mantener)' : 'Contraseña'}
+                                    {editingUser ? 'Nueva Contraseña (vacío = sin cambio)' : 'Contraseña *'}
                                 </label>
-                                <input
-                                    type="password"
-                                    required={!editingUser}
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
-                                    placeholder={editingUser ? '••••••••' : ''}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        required={!editingUser}
+                                        minLength={!editingUser ? 8 : undefined}
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        className={`w-full px-3 py-2 pr-10 bg-slate-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 ${formErrors.password ? 'border-red-400 bg-red-50' : 'border-slate-200'
+                                            }`}
+                                        placeholder={editingUser ? '••••••••' : 'Mínimo 8 caracteres'}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                                {formErrors.password && <p className="text-xs text-red-500 mt-1">{formErrors.password}</p>}
+                                {!editingUser && !formErrors.password && (
+                                    <p className="text-xs text-slate-400">El usuario iniciará sesión con su N° de documento y esta contraseña.</p>
+                                )}
                             </div>
 
                             <div className="pt-4 flex gap-3">

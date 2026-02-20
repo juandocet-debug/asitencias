@@ -2,7 +2,10 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import get_user_model
-from .serializers import StudentRegisterSerializer, UserSerializer, UserProfileSerializer
+from .serializers import (
+    StudentRegisterSerializer, UserSerializer, UserProfileSerializer,
+    AdminUserCreateSerializer, AdminUserUpdateSerializer
+)
 from rest_framework.decorators import action
 from .models import PasswordResetToken
 from django.core.mail import send_mail
@@ -11,26 +14,65 @@ from django.conf import settings
 User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
-    serializer_class = UserSerializer
-    # Protegido: Solo usuarios autenticados pueden ver la lista
-    permission_classes = [permissions.IsAuthenticated] 
+    """
+    CRUD de usuarios para el ADMIN.
+    Usa diferentes serializers según la operación para manejar correctamente
+    el hasheo de contraseñas y la validación de campos.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        """Seleccionar serializer según la acción."""
+        if self.action == 'create':
+            return AdminUserCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return AdminUserUpdateSerializer
+        return UserSerializer
 
     def get_queryset(self):
         user = self.request.user
-        
+
         # 1. ADMIN ve TODO
         if user.role == 'ADMIN' or user.is_superuser:
             return User.objects.all().order_by('-date_joined')
-            
+
         # 2. TEACHER ve solo sus ESTUDIANTES
         if user.role == 'TEACHER':
             from academic.models import Course
-            # Obtener IDs de estudiantes en sus cursos
             student_ids = Course.objects.filter(teacher=user).values_list('students__id', flat=True).distinct()
             return User.objects.filter(id__in=student_ids).order_by('-date_joined')
-            
-        # 3. STUDENT no ve a nadie (el frontend lo bloquea, pero por seguridad mandamos vacío)
+
+        # 3. STUDENT no ve a nadie
         return User.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        """Crear usuario — solo ADMIN."""
+        if request.user.role != 'ADMIN' and not request.user.is_superuser:
+            return Response(
+                {'error': 'Solo los administradores pueden crear usuarios.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        # Devolver errores detallados para que el frontend los muestre
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        """Actualizar usuario — solo ADMIN."""
+        if request.user.role != 'ADMIN' and not request.user.is_superuser:
+            return Response(
+                {'error': 'Solo los administradores pueden editar usuarios.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(UserSerializer(user).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'put', 'patch'])
     def me(self, request):
