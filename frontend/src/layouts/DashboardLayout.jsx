@@ -84,18 +84,23 @@ export default function DashboardLayout() {
 
     if (loading) {
         return (
-            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
+            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 gap-5">
                 <div className="relative">
-                    <div className="w-16 h-16 border-4 border-upn-200 border-t-upn-600 rounded-full animate-spin"></div>
+                    <div className="w-20 h-20 border-4 border-upn-200 border-t-upn-600 rounded-full animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <img
                             src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
-                            className="h-6 w-6 object-contain animate-pulse"
+                            className="h-8 w-8 object-contain"
                             alt="UPN"
                         />
                     </div>
                 </div>
-                <p className="mt-4 text-slate-500 font-medium animate-pulse">Sincronizando perfil...</p>
+                <img
+                    src="https://i.ibb.co/Z65WrSjJ/Chat-GPT-Image-20-feb-2026-09-58-44-a-m-removebg-preview.png"
+                    alt="ESTE AGON"
+                    className="h-16 object-contain animate-pulse"
+                />
+                <p className="text-slate-500 font-medium text-sm">Sincronizando perfil...</p>
             </div>
         );
     }
@@ -128,12 +133,24 @@ export default function DashboardLayout() {
         transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-                <div className="p-6 text-center">
+                {/* Cabecera del sidebar: UPN + ESTE AGON */}
+                <div className="p-5 text-center border-b border-slate-100">
                     <img
                         src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
                         alt="Logo UPN"
-                        className="h-24 mx-auto object-contain"
+                        className="h-20 mx-auto object-contain"
                     />
+                    <div className="flex items-center justify-center gap-2 mt-3 bg-upn-50 rounded-xl px-3 py-2 border border-upn-100">
+                        <img
+                            src="https://i.ibb.co/Z65WrSjJ/Chat-GPT-Image-20-feb-2026-09-58-44-a-m-removebg-preview.png"
+                            alt="ESTE AGON"
+                            className="h-7 object-contain"
+                        />
+                        <div className="text-left">
+                            <p className="text-[10px] font-black text-upn-700 uppercase tracking-wider leading-none">ESTE AGON</p>
+                            <p className="text-[9px] text-slate-400 leading-none mt-0.5">Gestión Académica</p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* User Profile Card in Sidebar */}

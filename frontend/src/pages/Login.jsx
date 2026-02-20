@@ -6,6 +6,9 @@ import { User, Lock, ArrowRight, Eye, EyeOff, CreditCard } from 'lucide-react';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 
+const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
+const ESTE_AGON = 'https://i.ibb.co/Z65WrSjJ/Chat-GPT-Image-20-feb-2026-09-58-44-a-m-removebg-preview.png';
+
 export default function Login() {
     const { fetchUser } = useUser();
     const [username, setUsername] = useState('');
@@ -25,27 +28,20 @@ export default function Login() {
         setLoading(true);
 
         try {
-            // Petición real al backend
             const response = await api.post('/token/', { username, password });
-
-            // Guardar tokens
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
             localStorage.setItem('username', username);
 
-            // ACTUALIZAR CONTEXTO GLOBAL INMEDIATAMENTE
-            if (fetchUser) {
-                await fetchUser();
-            }
+            if (fetchUser) await fetchUser();
 
-            // Redirigir
             if (classCode) {
                 navigate(`/register?code=${classCode}`);
             } else {
                 navigate('/dashboard');
             }
         } catch (err) {
-            console.error("Login error:", err);
+            console.error('Login error:', err);
             setError('Credenciales inválidas. Verifique su usuario y contraseña.');
         } finally {
             setLoading(false);
@@ -55,59 +51,101 @@ export default function Login() {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row shadow-2xl overflow-hidden">
 
-            {/* Sección Izquierda - Informativa */}
+            {/* ── Panel izquierdo — Desktop ───────────────────────────────── */}
             <div className="hidden md:flex md:w-1/2 bg-upn-700 relative flex-col justify-center items-center text-white p-12 overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                    <div className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] rounded-full bg-white blur-3xl"></div>
-                    <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-blue-400 blur-3xl"></div>
+
+                {/* Fondos decorativos */}
+                <div className="absolute inset-0 pointer-events-none opacity-10">
+                    <div className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] rounded-full bg-white blur-3xl" />
+                    <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-blue-400 blur-3xl" />
                 </div>
 
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="relative z-10 text-center space-y-8"
+                    transition={{ duration: 0.65 }}
+                    className="relative z-10 text-center w-full max-w-sm space-y-6"
                 >
-                    <div className="bg-white/10 backdrop-blur-sm p-8 rounded-3xl border border-white/20 shadow-xl inline-block mb-4">
+                    {/* Logo UPN */}
+                    <div className="bg-white/10 backdrop-blur-sm p-6 rounded-3xl border border-white/20 shadow-xl inline-block">
                         <img
-                            src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                            src={UPN_LOGO}
                             alt="Logo UPN"
-                            className="h-48 object-contain filter drop-shadow-lg mx-auto bg-white rounded-xl p-4"
+                            className="h-36 object-contain mx-auto bg-white rounded-xl p-3 drop-shadow-lg"
                         />
                     </div>
 
-                    <div className="space-y-4 max-w-lg mx-auto">
-                        <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
+                    {/* Título */}
+                    <div className="space-y-2">
+                        <h1 className="text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
                             Sistema de Control de Gestión Académica
                         </h1>
-                        <p className="text-xl text-blue-100 font-medium tracking-wide uppercase">
+                        <p className="text-blue-200 font-medium tracking-widest uppercase text-sm">
                             Licenciatura en Recreación
                         </p>
                     </div>
+
+                    {/* Separador */}
+                    <div className="flex items-center gap-3">
+                        <div className="flex-1 h-px bg-white/20" />
+                        <span className="text-white/45 text-[10px] font-bold uppercase tracking-widest">Potenciado por</span>
+                        <div className="flex-1 h-px bg-white/20" />
+                    </div>
+
+                    {/* Mascota ESTE AGON */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.75 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.45, duration: 0.55, type: 'spring', stiffness: 120 }}
+                        className="flex flex-col items-center gap-3"
+                    >
+                        {/* Halo de luz */}
+                        <div className="relative">
+                            <div className="absolute inset-0 rounded-full bg-blue-300/25 blur-3xl scale-150 animate-pulse" />
+                            <img
+                                src={ESTE_AGON}
+                                alt="ESTE AGON — Mascota del sistema"
+                                className="relative h-52 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500 cursor-default"
+                            />
+                        </div>
+                        {/* Badge del nombre */}
+                        <div className="bg-white/15 backdrop-blur-md rounded-2xl px-6 py-2.5 border border-white/25 shadow-lg">
+                            <p className="text-sm font-black tracking-widest text-white uppercase">ESTE AGON</p>
+                            <p className="text-[11px] text-blue-200 text-center mt-0.5">Tu asistente académico inteligente</p>
+                        </div>
+                    </motion.div>
                 </motion.div>
             </div>
 
-            {/* Sección Derecha - Formulario */}
+            {/* ── Panel derecho — Formulario ─────────────────────────────── */}
             <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 lg:p-24 bg-white">
                 <div className="w-full max-w-md space-y-8">
 
-                    <div className="md:hidden mb-8 -mt-6 -mx-6 bg-upn-700 p-8 rounded-b-[3rem] shadow-xl relative overflow-hidden text-center text-white">
-                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                            <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl"></div>
+                    {/* Mobile header — ambos logos en fila */}
+                    <div className="md:hidden mb-6 -mt-6 -mx-6 bg-upn-700 px-6 py-5 rounded-b-[2.5rem] shadow-xl relative overflow-hidden text-white">
+                        <div className="absolute inset-0 opacity-10 pointer-events-none">
+                            <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl" />
                         </div>
-                        <div className="relative z-10">
-                            <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-lg">
-                                <img
-                                    src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
-                                    alt="Logo UPN Mobile"
-                                    className="h-20 mx-auto object-contain"
-                                />
+                        <div className="relative z-10 flex items-center gap-4">
+                            {/* UPN */}
+                            <div className="bg-white p-2 rounded-xl shadow-md flex-shrink-0">
+                                <img src={UPN_LOGO} alt="UPN" className="h-12 object-contain" />
                             </div>
-                            <h2 className="text-xl font-bold leading-tight">Gestión Académica</h2>
-                            <p className="text-blue-200 text-xs font-medium tracking-widest uppercase mt-2">Licenciatura en Recreación</p>
+                            {/* Texto */}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold leading-tight">Gestión Académica</p>
+                                <p className="text-blue-200 text-[10px] tracking-widest uppercase mt-0.5">Licenciatura en Recreación</p>
+                            </div>
+                            {/* Mascota */}
+                            <img
+                                src={ESTE_AGON}
+                                alt="ESTE AGON"
+                                className="h-16 object-contain drop-shadow-lg flex-shrink-0"
+                            />
                         </div>
                     </div>
 
+                    {/* Formulario */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -125,6 +163,7 @@ export default function Login() {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Cédula */}
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700 ml-1">Número de Cédula</label>
                                 <div className="relative group">
@@ -142,6 +181,7 @@ export default function Login() {
                                 </div>
                             </div>
 
+                            {/* Contraseña */}
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700 ml-1">Contraseña</label>
                                 <div className="relative group">
@@ -149,7 +189,7 @@ export default function Login() {
                                         <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-upn-600 transition-colors" />
                                     </div>
                                     <input
-                                        type={showPassword ? "text" : "password"}
+                                        type={showPassword ? 'text' : 'password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="block w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-600 transition-all font-medium"
@@ -176,8 +216,8 @@ export default function Login() {
                             </div>
 
                             {error && (
-                                <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-100 animate-pulse">
-                                    {error}
+                                <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-100 flex items-center gap-2">
+                                    <span>⚠️</span> {error}
                                 </div>
                             )}
 
@@ -189,19 +229,21 @@ export default function Login() {
                                 {loading ? 'Ingresando...' : 'Iniciar sesión'} <ArrowRight className="h-5 w-5" />
                             </button>
 
-                            <div className="text-center pt-4">
+                            <div className="text-center pt-2">
                                 <p className="text-slate-500 text-sm">
                                     ¿No tienes cuenta?{' '}
-                                    <Link to={classCode ? `/register?code=${classCode}` : "/register"} className="text-upn-700 font-bold hover:underline">
+                                    <Link to={classCode ? `/register?code=${classCode}` : '/register'} className="text-upn-700 font-bold hover:underline">
                                         Regístrate como Estudiante
                                     </Link>
                                 </p>
                             </div>
                         </form>
 
-                        <div className="mt-12 text-center">
+                        {/* Footer con ESTE AGON pegueño en desktop */}
+                        <div className="mt-10 flex items-center justify-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
+                            <img src={ESTE_AGON} alt="ESTE AGON" className="h-8 object-contain" />
                             <p className="text-xs text-slate-400">
-                                © 2026 Universidad Pedagógica Nacional
+                                ESTE AGON · © 2026 Universidad Pedagógica Nacional
                             </p>
                         </div>
                     </motion.div>
