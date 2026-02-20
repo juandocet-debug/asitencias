@@ -854,13 +854,12 @@ class DashboardViewSet(viewsets.ViewSet):
                     break
 
         # ── 9. Info del sistema (servidor) ───────────────────────────────
-        import os
+        from django.conf import settings as django_settings
         python_version = sys.version.split(' ')[0]
         django_version = django.get_version()
         os_info = f"{platform.system()} {platform.release()}"
         db_backend = 'PostgreSQL' if 'psycopg2' in str(sys.modules) else 'SQLite (dev)'
-        uptime_start = getattr(settings_module := __import__('django.conf', fromlist=['settings']).settings,
-                               'SERVER_START_TIME', None)
+        is_production = not django_settings.DEBUG
 
         return Response({
             'generated_at': today.isoformat(),
@@ -897,8 +896,8 @@ class DashboardViewSet(viewsets.ViewSet):
                 'django_version': django_version,
                 'os': os_info,
                 'database': db_backend,
-                'environment': 'Production' if not __import__('django.conf', fromlist=['settings']).settings.DEBUG else 'Development',
-                'debug_mode': __import__('django.conf', fromlist=['settings']).settings.DEBUG,
+                'environment': 'Production' if is_production else 'Development',
+                'debug_mode': django_settings.DEBUG,
                 'total_db_records': {
                     'users': total_users,
                     'courses': total_courses,

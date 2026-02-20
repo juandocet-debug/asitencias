@@ -131,7 +131,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 function SysBadge({ ok, label }) {
     return (
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold ${ok ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
+            : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
             {ok ? <CheckCircle size={13} /> : <XCircle size={13} />}
             {label}
@@ -143,17 +143,22 @@ function SysBadge({ ok, label }) {
 export default function AdminDashboard() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [lastRefresh, setLastRefresh] = useState(new Date());
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchAnalytics = async () => {
         setRefreshing(true);
+        setError(null);
         try {
             const res = await api.get('/academic/dashboard/admin-analytics/');
             setData(res.data);
             setLastRefresh(new Date());
         } catch (err) {
             console.error('Error cargando analytics admin:', err);
+            const status = err?.response?.status;
+            const detail = err?.response?.data?.detail || err?.response?.data?.error || err?.message || 'Error desconocido';
+            setError(`[${status || 'RED'}] ${detail}`);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -178,8 +183,20 @@ export default function AdminDashboard() {
 
     if (!data) {
         return (
-            <div className="flex items-center justify-center h-72 text-slate-400">
-                <AlertTriangle className="mr-2" /> No se pudo cargar la información.
+            <div className="flex flex-col items-center justify-center h-72 gap-3 text-slate-400">
+                <AlertTriangle size={36} className="text-amber-400" />
+                <p className="font-semibold text-slate-700">No se pudo cargar la información</p>
+                {error && (
+                    <p className="text-xs text-red-500 bg-red-50 px-4 py-2 rounded-lg border border-red-100 max-w-md text-center">
+                        {error}
+                    </p>
+                )}
+                <button
+                    onClick={fetchAnalytics}
+                    className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                    <RefreshCw size={14} /> Reintentar
+                </button>
             </div>
         );
     }
