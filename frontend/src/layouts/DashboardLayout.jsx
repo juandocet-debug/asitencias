@@ -89,14 +89,14 @@ export default function DashboardLayout() {
                     <div className="w-20 h-20 border-4 border-upn-200 border-t-upn-600 rounded-full animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <img
-                            src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                            src="/upn-logo.png"
                             className="h-8 w-8 object-contain"
                             alt="UPN"
                         />
                     </div>
                 </div>
                 <img
-                    src="https://i.ibb.co/Z65WrSjJ/Chat-GPT-Image-20-feb-2026-09-58-44-a-m-removebg-preview.png"
+                    src="/este-agon.png"
                     alt="ESTE AGON"
                     className="h-16 object-contain animate-pulse"
                 />
@@ -136,13 +136,13 @@ export default function DashboardLayout() {
                 {/* Cabecera del sidebar: UPN + ESTE AGON */}
                 <div className="p-5 text-center border-b border-slate-100">
                     <img
-                        src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                        src="/upn-logo.png"
                         alt="Logo UPN"
                         className="h-20 mx-auto object-contain"
                     />
                     <div className="flex items-center justify-center gap-2 mt-3 bg-upn-50 rounded-xl px-3 py-2 border border-upn-100">
                         <img
-                            src="https://i.ibb.co/Z65WrSjJ/Chat-GPT-Image-20-feb-2026-09-58-44-a-m-removebg-preview.png"
+                            src="/este-agon.png"
                             alt="ESTE AGON"
                             className="h-7 object-contain"
                         />

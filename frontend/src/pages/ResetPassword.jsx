@@ -101,7 +101,7 @@ export default function ResetPassword() {
                     <div className="text-center mb-8">
                         <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-lg">
                             <img
-                                src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                                src="/upn-logo.png"
                                 alt="Logo UPN"
                                 className="h-20 mx-auto object-contain"
                             />

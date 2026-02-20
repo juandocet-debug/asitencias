@@ -72,7 +72,7 @@ export default function ForgotPassword() {
                 >
                     <div className="bg-white/10 backdrop-blur-sm p-8 rounded-3xl border border-white/20 shadow-xl inline-block mb-4">
                         <img
-                            src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                            src="/upn-logo.png"
                             alt="Logo UPN"
                             className="h-48 object-contain filter drop-shadow-lg mx-auto bg-white rounded-xl p-4"
                         />
@@ -103,7 +103,7 @@ export default function ForgotPassword() {
                         <div className="relative z-10">
                             <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-lg">
                                 <img
-                                    src="https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png"
+                                    src="/upn-logo.png"
                                     alt="Logo UPN Mobile"
                                     className="h-20 mx-auto object-contain"
                                 />

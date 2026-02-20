@@ -6,8 +6,8 @@ import { User, Lock, ArrowRight, Eye, EyeOff, CreditCard } from 'lucide-react';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 
-const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
-const ESTE_AGON = 'https://i.ibb.co/Z65WrSjJ/Chat-GPT-Image-20-feb-2026-09-58-44-a-m-removebg-preview.png';
+const UPN_LOGO = '/upn-logo.png';
+const ESTE_AGON = '/este-agon.png';
 
 export default function Login() {
     const { fetchUser } = useUser();
