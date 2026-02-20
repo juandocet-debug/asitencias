@@ -1,36 +1,48 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import DashboardLayout from './layouts/DashboardLayout';
-import Dashboard from './pages/Dashboard';
-import Classes from './pages/Classes';
-import ClassDetails from './pages/ClassDetails';
-import ClassReports from './pages/ClassReports';
-import RegisterStudent from './pages/RegisterStudent';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import UsersPage from './pages/Users';
-import Profile from './pages/Profile';
-import MyAbsences from './pages/MyAbsences';
-import TeacherReviews from './pages/TeacherReviews';
 import { UserProvider } from './context/UserContext';
-
 import { useUser } from './context/UserContext';
 
+// ──────────────────────────────────────────────
+// Carga diferida (lazy) de todas las páginas
+// Esto reduce el bundle inicial y acelera la carga de la app
+// ──────────────────────────────────────────────
+const Login = lazy(() => import('./pages/Login'));
+const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Classes = lazy(() => import('./pages/Classes'));
+const ClassDetails = lazy(() => import('./pages/ClassDetails'));
+const ClassReports = lazy(() => import('./pages/ClassReports'));
+const RegisterStudent = lazy(() => import('./pages/RegisterStudent'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const UsersPage = lazy(() => import('./pages/Users'));
+const Profile = lazy(() => import('./pages/Profile'));
+const MyAbsences = lazy(() => import('./pages/MyAbsences'));
+const TeacherReviews = lazy(() => import('./pages/TeacherReviews'));
+
+// ──────────────────────────────────────────────
+// Spinner de carga global — se muestra mientras
+// se descarga cualquier módulo lazy
+// ──────────────────────────────────────────────
+const PageLoader = () => (
+  <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 gap-4">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-upn-600"></div>
+    <p className="text-slate-400 text-sm font-medium">Cargando...</p>
+  </div>
+);
+
+// ──────────────────────────────────────────────
+// Ruta protegida: muestra spinner mientras carga
+// el usuario, redirige al login si no hay sesión
+// ──────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
   const token = localStorage.getItem('access_token');
 
-  if (loading) {
-    // Spinner de carga mientras verificamos sesión
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-upn-600"></div>
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
-  // Si no hay usuario cargado O no hay token, redirigir
+  // Tiene token aunque user todavía no llegó → dejar pasar (useContext sigue cargando)
   if (!user && !token) {
     return <Navigate to="/login" replace />;
   }
@@ -38,63 +50,66 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Componente para manejar la ruta raíz
+// ──────────────────────────────────────────────
+// Ruta raíz: redirige según el estado de sesión
+// ──────────────────────────────────────────────
 const RootRedirect = () => {
   const { user, loading } = useUser();
   const token = localStorage.getItem('access_token');
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-upn-600"></div>
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
-  // Si hay usuario o token, ir al dashboard
   if (user || token) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Si no hay sesión, ir al login
   return <Navigate to="/login" replace />;
 };
 
+// ──────────────────────────────────────────────
+// App principal
+// ──────────────────────────────────────────────
 function App() {
   return (
     <UserProvider>
       <BrowserRouter>
-        <Routes>
-          {/* Ruta raíz con lógica de redirección */}
-          <Route path="/" element={<RootRedirect />} />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Ruta raíz */}
+            <Route path="/" element={<RootRedirect />} />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<RegisterStudent />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Rutas públicas */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<RegisterStudent />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Protected Routes */}
-          <Route element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/classes/:id" element={<ClassDetails />} />
-            <Route path="/classes/:id/reports" element={<ClassReports />} />
-            <Route path="/users" element={<UsersPage />} />
-            <Route path="/my-absences" element={<MyAbsences />} />
-            <Route path="/reviews" element={<TeacherReviews />} />
-            <Route path="/badges" element={<div className="p-4">Módulo de Insignias: En Construcción</div>} />
-            <Route path="/settings" element={<div className="p-4">Configuración: En Construcción</div>} />
-            <Route path="/profile" element={<Profile />} />
-          </Route>
-        </Routes>
+            {/* Rutas protegidas — dentro del layout del dashboard */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <DashboardLayout />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/classes" element={<Classes />} />
+              <Route path="/classes/:id" element={<ClassDetails />} />
+              <Route path="/classes/:id/reports" element={<ClassReports />} />
+              <Route path="/users" element={<UsersPage />} />
+              <Route path="/my-absences" element={<MyAbsences />} />
+              <Route path="/reviews" element={<TeacherReviews />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/badges" element={<div className="p-4">Módulo de Insignias: En Construcción</div>} />
+              <Route path="/settings" element={<div className="p-4">Configuración: En Construcción</div>} />
+            </Route>
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </UserProvider>
   );
 }
-
 
 export default App;
