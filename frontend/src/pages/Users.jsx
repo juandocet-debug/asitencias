@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2, Mail, User, Upload, X, AlertTriangle, Check, Loader2, Shield, GraduationCap, BookOpen, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 
@@ -23,9 +24,11 @@ const ROLE_ICONS = {
 };
 
 export default function UsersPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeRole, setActiveRole] = useState(searchParams.get('role') || 'ALL');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -33,6 +36,22 @@ export default function UsersPage() {
     const [saving, setSaving] = useState(false);
     const [formErrors, setFormErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
+
+    // Sincronizar pestaña activa cuando cambie la URL (ej: navegación desde dashboard)
+    useEffect(() => {
+        const roleParam = searchParams.get('role');
+        setActiveRole(roleParam || 'ALL');
+    }, [searchParams]);
+
+    const handleRoleFilter = (role) => {
+        setActiveRole(role);
+        if (role === 'ALL') {
+            searchParams.delete('role');
+        } else {
+            searchParams.set('role', role);
+        }
+        setSearchParams(searchParams, { replace: true });
+    };
 
     const [formData, setFormData] = useState({
         username: '',
@@ -191,12 +210,15 @@ export default function UsersPage() {
         }
     };
 
-    const filteredUsers = users.filter(user =>
-        user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.document_number?.includes(searchTerm) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredUsers = users.filter(user => {
+        const matchesSearch =
+            user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.document_number?.includes(searchTerm) ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesRole = activeRole === 'ALL' || user.role === activeRole;
+        return matchesSearch && matchesRole;
+    });
 
     // Estadísticas
     const stats = {
@@ -286,9 +308,10 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="relative w-full md:w-96">
+            {/* Search + Filtros de rol */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-3 items-start md:items-center">
+                {/* Buscador */}
+                <div className="relative w-full md:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <input
                         type="text"
@@ -298,6 +321,35 @@ export default function UsersPage() {
                         className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-upn-100"
                     />
                 </div>
+
+                {/* Pestañas de rol */}
+                <div className="flex gap-1.5 flex-wrap">
+                    {[
+                        { key: 'ALL', label: 'Todos', count: users.length, icon: <User size={13} />, style: 'bg-slate-700 text-white', plain: 'bg-slate-100 text-slate-600 hover:bg-slate-200' },
+                        { key: 'STUDENT', label: 'Estudiantes', count: stats.students, icon: <GraduationCap size={13} />, style: 'bg-blue-600 text-white', plain: 'bg-blue-50 text-blue-700 hover:bg-blue-100' },
+                        { key: 'TEACHER', label: 'Docentes', count: stats.teachers, icon: <BookOpen size={13} />, style: 'bg-purple-600 text-white', plain: 'bg-purple-50 text-purple-700 hover:bg-purple-100' },
+                        { key: 'ADMIN', label: 'Admins', count: stats.admins, icon: <Shield size={13} />, style: 'bg-upn-600 text-white', plain: 'bg-upn-50 text-upn-700 hover:bg-upn-100' },
+                    ].map(({ key, label, count, icon, style, plain }) => (
+                        <button
+                            key={key}
+                            onClick={() => handleRoleFilter(key)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeRole === key ? style : plain
+                                }`}
+                        >
+                            {icon}
+                            {label}
+                            <span className={`px-1.5 py-0.5 rounded-full text-xs ${activeRole === key ? 'bg-white/20' : 'bg-slate-200/60'
+                                }`}>{count}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Indicador de filtro activo */}
+                {activeRole !== 'ALL' && (
+                    <span className="text-xs text-slate-400">
+                        Mostrando {filteredUsers.length} {activeRole === 'STUDENT' ? 'estudiante(s)' : activeRole === 'TEACHER' ? 'docente(s)' : 'admin(s)'}
+                    </span>
+                )}
             </div>
 
             {/* Table */}
