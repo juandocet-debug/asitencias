@@ -160,7 +160,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 function SysBadge({ ok, label }) {
     return (
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold ${ok ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
+            : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
             {ok ? <CheckCircle size={13} /> : <XCircle size={13} />}
             {label}
@@ -233,8 +233,11 @@ export default function AdminDashboard() {
     const { kpis, charts, system } = data;
     const attendanceOk = kpis.today_attendance_rate >= 75;
 
-    // ─── Navegación centralizada ───────────────────────────────────────────────
-    const goTo = (path) => navigate(path);
+    // ─── Navegación centralizada — usar objeto para soportar query params ─────
+    const goTo = (path) => {
+        const [pathname, search] = path.split('?');
+        navigate({ pathname, search: search ? `?${search}` : '' });
+    };
 
     return (
         <div className="space-y-6">
