@@ -725,3 +725,185 @@ class DashboardViewSet(viewsets.ViewSet):
             })
         
         return Response({'error': 'Rol no reconocido o no autorizado'}, status=403)
+
+    @action(detail=False, methods=['get'], url_path='admin-analytics')
+    def admin_analytics(self, request):
+        """
+        Endpoint exclusivo ADMIN: métricas detalladas tipo Power BI.
+        Devuelve indicadores de usuarios, asistencia, cursos y sistema.
+        """
+        import platform, sys, django
+        from datetime import datetime, timedelta
+        from django.db.models import Avg, Count, Q
+        from django.db.models.functions import TruncMonth
+        from django.contrib.auth import get_user_model
+        from django.utils import timezone
+
+        user = request.user
+        if user.role != 'ADMIN' and not user.is_superuser:
+            return Response({'error': 'Acceso restringido a administradores'}, status=403)
+
+        User = get_user_model()
+        today = date.today()
+
+        # ── 1. Distribución de usuarios por rol ─────────────────────────
+        total_users = User.objects.count()
+        students_count = User.objects.filter(role='STUDENT').count()
+        teachers_count = User.objects.filter(role='TEACHER').count()
+        admins_count = User.objects.filter(role='ADMIN').count()
+
+        # ── 2. Registros de nuevos usuarios por mes (últimos 6 meses) ────
+        six_months_ago = today - timedelta(days=180)
+        monthly_users = (
+            User.objects.filter(date_joined__gte=six_months_ago)
+            .annotate(month=TruncMonth('date_joined'))
+            .values('month')
+            .annotate(count=Count('id'))
+            .order_by('month')
+        )
+        monthly_users_data = [
+            {
+                'month': entry['month'].strftime('%b %Y'),
+                'count': entry['count']
+            }
+            for entry in monthly_users
+        ]
+
+        # ── 3. Estadísticas globales de cursos ───────────────────────────
+        total_courses = Course.objects.count()
+        active_courses = Course.objects.filter(year=str(today.year)).count()
+        total_sessions = Session.objects.count()
+
+        # ── 4. Asistencia global por mes (últimos 6 meses) ───────────────
+        sessions_6m = Session.objects.filter(date__gte=six_months_ago)
+        monthly_attendance = []
+        for i in range(5, -1, -1):
+            month_date = (today.replace(day=1) - timedelta(days=i * 28))
+            month_start = month_date.replace(day=1)
+            if month_date.month == 12:
+                month_end = month_date.replace(year=month_date.year + 1, month=1, day=1)
+            else:
+                month_end = month_date.replace(month=month_date.month + 1, day=1)
+
+            sessions_in_month = Session.objects.filter(date__gte=month_start, date__lt=month_end)
+            total_att = Attendance.objects.filter(session__in=sessions_in_month).count()
+            present_att = Attendance.objects.filter(session__in=sessions_in_month, status='PRESENT').count()
+            late_att = Attendance.objects.filter(session__in=sessions_in_month, status='LATE').count()
+            absent_att = Attendance.objects.filter(session__in=sessions_in_month, status='ABSENT').count()
+            rate = round(((present_att + late_att) / total_att) * 100, 1) if total_att > 0 else 0
+
+            monthly_attendance.append({
+                'month': month_start.strftime('%b'),
+                'rate': rate,
+                'present': present_att,
+                'absent': absent_att,
+                'late': late_att,
+                'total': total_att,
+            })
+
+        # ── 5. Top 5 cursos por asistencia ───────────────────────────────
+        top_courses = []
+        for course in Course.objects.all()[:20]:
+            sessions = Session.objects.filter(course=course)
+            total = Attendance.objects.filter(session__in=sessions).count()
+            present = Attendance.objects.filter(session__in=sessions, status='PRESENT').count()
+            rate = round((present / total) * 100, 1) if total > 0 else 0
+            top_courses.append({
+                'name': course.name[:30],
+                'code': course.code,
+                'students': course.students.count(),
+                'sessions': sessions.count(),
+                'attendance_rate': rate,
+                'teacher': f"{course.teacher.first_name} {course.teacher.last_name}" if course.teacher else 'Sin docente',
+            })
+        top_courses = sorted(top_courses, key=lambda x: x['attendance_rate'], reverse=True)[:5]
+
+        # ── 6. Rendimiento por docente (top 5) ───────────────────────────
+        teacher_stats = []
+        for teacher in User.objects.filter(role='TEACHER')[:10]:
+            courses = Course.objects.filter(teacher=teacher)
+            student_count = sum(c.students.count() for c in courses)
+            sessions = Session.objects.filter(course__in=courses)
+            total = Attendance.objects.filter(session__in=sessions).count()
+            present = Attendance.objects.filter(session__in=sessions, status='PRESENT').count()
+            rate = round((present / total) * 100, 1) if total > 0 else 0
+            teacher_stats.append({
+                'name': f"{teacher.first_name} {teacher.last_name}",
+                'courses': courses.count(),
+                'students': student_count,
+                'attendance_rate': rate,
+            })
+        teacher_stats = sorted(teacher_stats, key=lambda x: x['attendance_rate'], reverse=True)[:5]
+
+        # ── 7. Asistencia global hoy ─────────────────────────────────────
+        today_sessions = Session.objects.filter(date=today)
+        today_total = Attendance.objects.filter(session__in=today_sessions).count()
+        today_present = Attendance.objects.filter(session__in=today_sessions, status='PRESENT').count()
+        today_absent = Attendance.objects.filter(session__in=today_sessions, status='ABSENT').count()
+        today_rate = round((today_present / today_total) * 100, 1) if today_total > 0 else 0
+
+        # ── 8. Alertas de estudiantes en riesgo ──────────────────────────
+        at_risk_count = 0
+        for student in User.objects.filter(role='STUDENT'):
+            for course in Course.objects.filter(students=student):
+                absences = Attendance.objects.filter(
+                    session__course=course, student=student, status='ABSENT'
+                ).count()
+                if absences >= 3:
+                    at_risk_count += 1
+                    break
+
+        # ── 9. Info del sistema (servidor) ───────────────────────────────
+        import os
+        python_version = sys.version.split(' ')[0]
+        django_version = django.get_version()
+        os_info = f"{platform.system()} {platform.release()}"
+        db_backend = 'PostgreSQL' if 'psycopg2' in str(sys.modules) else 'SQLite (dev)'
+        uptime_start = getattr(settings_module := __import__('django.conf', fromlist=['settings']).settings,
+                               'SERVER_START_TIME', None)
+
+        return Response({
+            'generated_at': today.isoformat(),
+            # KPIs principales
+            'kpis': {
+                'total_users': total_users,
+                'total_students': students_count,
+                'total_teachers': teachers_count,
+                'total_admins': admins_count,
+                'total_courses': total_courses,
+                'active_courses': active_courses,
+                'total_sessions': total_sessions,
+                'at_risk_students': at_risk_count,
+                'today_attendance_rate': today_rate,
+                'today_present': today_present,
+                'today_absent': today_absent,
+                'today_sessions': today_sessions.count(),
+            },
+            # Gráficas
+            'charts': {
+                'monthly_attendance': monthly_attendance,
+                'monthly_new_users': monthly_users_data,
+                'top_courses': top_courses,
+                'teacher_performance': teacher_stats,
+                'user_distribution': [
+                    {'label': 'Estudiantes', 'value': students_count, 'color': '#3B82F6'},
+                    {'label': 'Docentes', 'value': teachers_count, 'color': '#8B5CF6'},
+                    {'label': 'Admins', 'value': admins_count, 'color': '#0EA5E9'},
+                ],
+            },
+            # Info del sistema
+            'system': {
+                'python_version': python_version,
+                'django_version': django_version,
+                'os': os_info,
+                'database': db_backend,
+                'environment': 'Production' if not __import__('django.conf', fromlist=['settings']).settings.DEBUG else 'Development',
+                'debug_mode': __import__('django.conf', fromlist=['settings']).settings.DEBUG,
+                'total_db_records': {
+                    'users': total_users,
+                    'courses': total_courses,
+                    'sessions': total_sessions,
+                    'attendance_records': Attendance.objects.count(),
+                },
+            }
+        })

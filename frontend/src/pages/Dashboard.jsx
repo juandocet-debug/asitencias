@@ -5,6 +5,7 @@ import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ScheduleModal from '../components/ScheduleModal';
+import AdminDashboard from './AdminDashboard';
 
 const StatCard = ({ title, value, icon: Icon, color, trend, subtext }) => (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-hover hover:shadow-md">
@@ -47,8 +48,12 @@ export default function Dashboard() {
     const [selectedCourse, setSelectedCourse] = useState(null);
 
     useEffect(() => {
-        fetchStats();
-    }, [year, period]);
+        if (!isAdmin) fetchStats();
+    }, [year, period, isAdmin]);
+
+    // ── ADMIN: renderizar panel Power BI dedicado ─────────────────────
+    if (isAdmin) return <AdminDashboard />;
+
 
     const fetchStats = async () => {
         setLoading(true);
