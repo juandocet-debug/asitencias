@@ -143,11 +143,11 @@ export default function DashboardLayout() {
                     <div className="flex items-center justify-center gap-2 mt-3 bg-upn-50 rounded-xl px-3 py-2 border border-upn-100">
                         <img
                             src="/este-agon.png"
-                            alt="ESTE AGON"
+                            alt="AGON"
                             className="h-7 object-contain"
                         />
                         <div className="text-left">
-                            <p className="text-[10px] font-black text-upn-700 uppercase tracking-wider leading-none">ESTE AGON</p>
+                            <p className="text-[10px] font-black text-upn-700 uppercase tracking-wider leading-none">AGON</p>
                             <p className="text-[9px] text-slate-400 leading-none mt-0.5">Gestión Académica</p>
                         </div>
                     </div>

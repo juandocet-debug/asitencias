@@ -7,7 +7,7 @@ import api from '../services/api';
 import { useUser } from '../context/UserContext';
 
 const UPN_LOGO = '/upn-logo.png';
-const ESTE_AGON = '/este-agon.png';
+const AGON_IMG = '/este-agon.png';
 
 export default function Login() {
     const { fetchUser } = useUser();
@@ -52,68 +52,84 @@ export default function Login() {
         <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row shadow-2xl overflow-hidden">
 
             {/* ── Panel izquierdo — Desktop ───────────────────────────────── */}
-            <div className="hidden md:flex md:w-1/2 bg-upn-700 relative flex-col justify-center items-center text-white p-12 overflow-hidden">
+            <div className="hidden md:flex md:w-1/2 bg-upn-700 relative flex-col justify-between items-center text-white p-10 overflow-hidden">
 
                 {/* Fondos decorativos */}
-                <div className="absolute inset-0 pointer-events-none opacity-10">
-                    <div className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] rounded-full bg-white blur-3xl" />
-                    <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-blue-400 blur-3xl" />
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-[-15%] left-[-15%] w-[600px] h-[600px] rounded-full bg-white/5 blur-3xl" />
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-400/10 blur-3xl" />
                 </div>
 
+                {/* ── Sección superior: logo UPN oficial ── */}
+                <motion.div
+                    initial={{ opacity: 0, y: -16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative z-10 text-center pt-4 w-full"
+                >
+                    <div className="inline-block bg-white rounded-2xl px-6 py-4 shadow-2xl shadow-black/20">
+                        <img src={UPN_LOGO} alt="Logo UPN" className="h-24 object-contain mx-auto" />
+                    </div>
+                    <p className="text-white/50 text-[10px] font-bold uppercase tracking-[0.3em] mt-3">
+                        Universidad Pedagógica Nacional
+                    </p>
+                </motion.div>
+
+                {/* ── Sección central: título ── */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.25, duration: 0.5 }}
+                    className="relative z-10 text-center space-y-2 px-4"
+                >
+                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight leading-snug">
+                        Sistema de Control de<br />Gestión Académica
+                    </h1>
+                    <p className="text-blue-200/80 font-medium tracking-[0.2em] uppercase text-xs">
+                        Licenciatura en Recreación
+                    </p>
+                </motion.div>
+
+                {/* ── Sección inferior: AGON en tarjeta blanca ── */}
                 <motion.div
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.65 }}
-                    className="relative z-10 text-center w-full max-w-sm space-y-6"
+                    transition={{ delay: 0.4, duration: 0.6, type: 'spring', stiffness: 100 }}
+                    className="relative z-10 w-full pb-2"
                 >
-                    {/* Logo UPN */}
-                    <div className="bg-white/10 backdrop-blur-sm p-6 rounded-3xl border border-white/20 shadow-xl inline-block">
-                        <img
-                            src={UPN_LOGO}
-                            alt="Logo UPN"
-                            className="h-36 object-contain mx-auto bg-white rounded-xl p-3 drop-shadow-lg"
-                        />
+                    {/* Etiqueta "Desarrollado con" */}
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="flex-1 h-px bg-white/15" />
+                        <span className="text-white/40 text-[10px] font-bold uppercase tracking-[0.25em]">Desarrollado con</span>
+                        <div className="flex-1 h-px bg-white/15" />
                     </div>
 
-                    {/* Título */}
-                    <div className="space-y-2">
-                        <h1 className="text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
-                            Sistema de Control de Gestión Académica
-                        </h1>
-                        <p className="text-blue-200 font-medium tracking-widest uppercase text-sm">
-                            Licenciatura en Recreación
-                        </p>
-                    </div>
+                    {/* Tarjeta blanca AGON */}
+                    <div className="bg-white rounded-3xl shadow-2xl shadow-black/25 overflow-hidden">
+                        {/* Cabecera de la tarjeta */}
+                        <div className="bg-gradient-to-r from-upn-600 to-blue-500 px-5 py-3 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-black tracking-[0.25em] text-white uppercase">AGON</p>
+                                <p className="text-[10px] text-blue-100/90 font-medium mt-0.5">Tu asistente académico inteligente</p>
+                            </div>
+                            {/* Indicador activo */}
+                            <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-2.5 py-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                                <span className="text-[10px] text-white font-bold">Activo</span>
+                            </div>
+                        </div>
 
-                    {/* Separador */}
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 h-px bg-white/20" />
-                        <span className="text-white/45 text-[10px] font-bold uppercase tracking-widest">Potenciado por</span>
-                        <div className="flex-1 h-px bg-white/20" />
-                    </div>
-
-                    {/* Mascota ESTE AGON */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.75 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.45, duration: 0.55, type: 'spring', stiffness: 120 }}
-                        className="flex flex-col items-center gap-3"
-                    >
-                        {/* Halo de luz */}
-                        <div className="relative">
-                            <div className="absolute inset-0 rounded-full bg-blue-300/25 blur-3xl scale-150 animate-pulse" />
+                        {/* Mascota sobre fondo blanco */}
+                        <div className="bg-white flex items-end justify-center pt-2 pb-0 relative overflow-hidden">
+                            {/* Sombra suave debajo de la mascota */}
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-200/50 blur-xl rounded-full" />
                             <img
-                                src={ESTE_AGON}
-                                alt="ESTE AGON — Mascota del sistema"
-                                className="relative h-52 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500 cursor-default"
+                                src={AGON_IMG}
+                                alt="AGON — Mascota del sistema"
+                                className="relative h-44 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-500 cursor-default"
                             />
                         </div>
-                        {/* Badge del nombre */}
-                        <div className="bg-white/15 backdrop-blur-md rounded-2xl px-6 py-2.5 border border-white/25 shadow-lg">
-                            <p className="text-sm font-black tracking-widest text-white uppercase">ESTE AGON</p>
-                            <p className="text-[11px] text-blue-200 text-center mt-0.5">Tu asistente académico inteligente</p>
-                        </div>
-                    </motion.div>
+                    </div>
                 </motion.div>
             </div>
 
@@ -138,7 +154,7 @@ export default function Login() {
                             </div>
                             {/* Mascota */}
                             <img
-                                src={ESTE_AGON}
+                                src={AGON_IMG}
                                 alt="ESTE AGON"
                                 className="h-16 object-contain drop-shadow-lg flex-shrink-0"
                             />
@@ -241,9 +257,9 @@ export default function Login() {
 
                         {/* Footer con ESTE AGON pegueño en desktop */}
                         <div className="mt-10 flex items-center justify-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
-                            <img src={ESTE_AGON} alt="ESTE AGON" className="h-8 object-contain" />
+                            <img src={AGON_IMG} alt="AGON" className="h-8 object-contain" />
                             <p className="text-xs text-slate-400">
-                                ESTE AGON · © 2026 Universidad Pedagógica Nacional
+                                AGON · © 2026 Universidad Pedagógica Nacional
                             </p>
                         </div>
                     </motion.div>
