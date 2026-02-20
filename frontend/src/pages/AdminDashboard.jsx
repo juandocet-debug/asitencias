@@ -1,32 +1,22 @@
 /* eslint-disable */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Users, BookOpen, Calendar, Activity, AlertTriangle, TrendingUp,
     TrendingDown, Server, Database, Cpu, Shield, RefreshCw, CheckCircle,
     XCircle, Clock, ArrowUpRight, ArrowDownRight, GraduationCap, Award,
-    BarChart2, Globe, Zap
+    BarChart2, Globe, Zap, ChevronRight
 } from 'lucide-react';
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadialBarChart, RadialBar
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import api from '../services/api';
 
-// ─── Paleta de colores UPN ────────────────────────────────────────────────────
-const COLORS = {
-    primary: '#1D4ED8',
-    secondary: '#7C3AED',
-    success: '#059669',
-    warning: '#D97706',
-    danger: '#DC2626',
-    info: '#0EA5E9',
-    slate: '#64748B',
-};
-
 const PIE_COLORS = ['#3B82F6', '#8B5CF6', '#0EA5E9'];
 
-// ─── KPI Card animado ─────────────────────────────────────────────────────────
-function KpiCard({ title, value, subtitle, icon: Icon, color, trend, trendValue, delay = 0 }) {
+// ─── KPI Card clickeable y animado ───────────────────────────────────────────
+function KpiCard({ title, value, subtitle, icon: Icon, color, trend, trendValue, delay = 0, onClick }) {
     const [displayed, setDisplayed] = useState(0);
     const numericValue = parseFloat(String(value).replace(/[^0-9.]/g, '')) || 0;
     const suffix = String(value).includes('%') ? '%' : '';
@@ -50,9 +40,17 @@ function KpiCard({ title, value, subtitle, icon: Icon, color, trend, trendValue,
 
     const isPositive = trend === 'up';
     const TrendIcon = isPositive ? ArrowUpRight : ArrowDownRight;
+    const isClickable = Boolean(onClick);
 
     return (
-        <div className={`bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-lg transition-all duration-300 group relative overflow-hidden`}>
+        <div
+            onClick={onClick}
+            className={`bg-white rounded-2xl border border-slate-100 p-5 shadow-sm transition-all duration-300 group relative overflow-hidden
+                ${isClickable
+                    ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 hover:ring-2 hover:ring-blue-200 active:scale-[0.98]'
+                    : 'hover:shadow-md'
+                }`}
+        >
             {/* Fondo decorativo */}
             <div className={`absolute top-0 right-0 w-24 h-24 rounded-full opacity-5 -translate-y-6 translate-x-6 ${color}`} />
 
@@ -60,13 +58,18 @@ function KpiCard({ title, value, subtitle, icon: Icon, color, trend, trendValue,
                 <div className={`p-3 rounded-xl ${color} bg-opacity-10 group-hover:scale-110 transition-transform`}>
                     <Icon size={22} className={`${color.replace('bg-', 'text-')}`} />
                 </div>
-                {trendValue !== undefined && (
-                    <span className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
-                        }`}>
-                        <TrendIcon size={12} />
-                        {trendValue}%
-                    </span>
-                )}
+                <div className="flex items-center gap-1">
+                    {trendValue !== undefined && (
+                        <span className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+                            }`}>
+                            <TrendIcon size={12} />
+                            {trendValue}%
+                        </span>
+                    )}
+                    {isClickable && (
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
+                    )}
+                </div>
             </div>
 
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">{title}</p>
@@ -74,30 +77,56 @@ function KpiCard({ title, value, subtitle, icon: Icon, color, trend, trendValue,
                 {numericValue % 1 !== 0 ? numericValue.toFixed(1) : displayed}{suffix}
             </h3>
             {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+
+            {isClickable && (
+                <p className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 mt-2 font-semibold transition-opacity">
+                    Ver detalle →
+                </p>
+            )}
         </div>
     );
 }
 
 // ─── Tarjeta contenedora de gráfica ──────────────────────────────────────────
-function ChartCard({ title, subtitle, children, className = '' }) {
+function ChartCard({ title, subtitle, children, className = '', onClick }) {
+    const isClickable = Boolean(onClick);
     return (
-        <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm p-6 ${className}`}>
-            <div className="mb-4">
-                <h4 className="text-base font-bold text-slate-800">{title}</h4>
-                {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+        <div
+            onClick={onClick}
+            className={`bg-white rounded-2xl border border-slate-100 shadow-sm p-6 ${className}
+                ${isClickable ? 'cursor-pointer hover:shadow-md hover:ring-2 hover:ring-blue-100 transition-all' : ''}`}
+        >
+            <div className="flex items-start justify-between mb-4">
+                <div>
+                    <h4 className="text-base font-bold text-slate-800">{title}</h4>
+                    {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+                </div>
+                {isClickable && (
+                    <span className="text-xs text-blue-500 font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg">
+                        Ver todo <ChevronRight size={13} />
+                    </span>
+                )}
             </div>
             {children}
         </div>
     );
 }
 
-// ─── Barra de progreso simple ─────────────────────────────────────────────────
-function ProgressBar({ value, color = 'bg-blue-500', label, sublabel }) {
+// ─── Barra de progreso clickeable ─────────────────────────────────────────────
+function ProgressBar({ value, color = 'bg-blue-500', label, sublabel, onClick }) {
+    const isClickable = Boolean(onClick);
     return (
-        <div className="space-y-1">
+        <div
+            onClick={onClick}
+            className={`space-y-1 rounded-xl p-2 -mx-2 transition-all ${isClickable ? 'cursor-pointer hover:bg-slate-50 hover:ring-1 hover:ring-slate-200' : ''
+                }`}
+        >
             <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold text-slate-700 truncate max-w-[180px]">{label}</span>
-                <span className="text-sm font-bold text-slate-800 ml-2">{value}%</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-800">{value}%</span>
+                    {isClickable && <ChevronRight size={14} className="text-slate-300" />}
+                </div>
             </div>
             {sublabel && <p className="text-xs text-slate-400">{sublabel}</p>}
             <div className="w-full bg-slate-100 rounded-full h-2.5">
@@ -110,7 +139,7 @@ function ProgressBar({ value, color = 'bg-blue-500', label, sublabel }) {
     );
 }
 
-// ─── Tooltip personalizado para Recharts ──────────────────────────────────────
+// ─── Tooltip Recharts ─────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload || !payload.length) return null;
     return (
@@ -120,18 +149,18 @@ const CustomTooltip = ({ active, payload, label }) => {
                 <div key={i} className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full inline-block" style={{ background: p.color }} />
                     <span className="text-slate-300">{p.name}:</span>
-                    <span className="font-bold">{p.value}{p.name?.includes('rate') || p.name?.includes('Asistencia') ? '%' : ''}</span>
+                    <span className="font-bold">{p.value}{p.name?.includes('Asistencia') ? '%' : ''}</span>
                 </div>
             ))}
         </div>
     );
 };
 
-// ─── Badge de estado del sistema ──────────────────────────────────────────────
+// ─── Badge del sistema ────────────────────────────────────────────────────────
 function SysBadge({ ok, label }) {
     return (
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold ${ok ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : 'bg-red-50 text-red-700 border border-red-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
             {ok ? <CheckCircle size={13} /> : <XCircle size={13} />}
             {label}
@@ -141,6 +170,7 @@ function SysBadge({ ok, label }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function AdminDashboard() {
+    const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -158,7 +188,7 @@ export default function AdminDashboard() {
             console.error('Error cargando analytics admin:', err);
             const status = err?.response?.status;
             const detail = err?.response?.data?.detail || err?.response?.data?.error || err?.message || 'Error desconocido';
-            setError(`[${status || 'RED'}] ${detail}`);
+            setError(`[${status || 'SIN CONEXIÓN'}] ${detail}`);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -167,7 +197,6 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         fetchAnalytics();
-        // Auto-refresh cada 5 minutos
         const interval = setInterval(fetchAnalytics, 5 * 60 * 1000);
         return () => clearInterval(interval);
     }, []);
@@ -183,7 +212,7 @@ export default function AdminDashboard() {
 
     if (!data) {
         return (
-            <div className="flex flex-col items-center justify-center h-72 gap-3 text-slate-400">
+            <div className="flex flex-col items-center justify-center h-72 gap-3">
                 <AlertTriangle size={36} className="text-amber-400" />
                 <p className="font-semibold text-slate-700">No se pudo cargar la información</p>
                 {error && (
@@ -203,6 +232,9 @@ export default function AdminDashboard() {
 
     const { kpis, charts, system } = data;
     const attendanceOk = kpis.today_attendance_rate >= 75;
+
+    // ─── Navegación centralizada ───────────────────────────────────────────────
+    const goTo = (path) => navigate(path);
 
     return (
         <div className="space-y-6">
@@ -230,34 +262,105 @@ export default function AdminDashboard() {
 
             {/* ── KPIs Row 1: Usuarios ──────────────────────────────────────── */}
             <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">👥 Usuarios del Sistema</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    👥 Usuarios del Sistema
+                    <span className="text-blue-400 font-normal normal-case tracking-normal">— haz clic para ir</span>
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KpiCard title="Total Usuarios" value={kpis.total_users} icon={Users} color="bg-blue-500" subtitle="Todos los roles" delay={0} />
-                    <KpiCard title="Estudiantes" value={kpis.total_students} icon={GraduationCap} color="bg-indigo-500" subtitle="Registrados" delay={80} />
-                    <KpiCard title="Docentes" value={kpis.total_teachers} icon={BookOpen} color="bg-purple-500" subtitle="Activos" delay={160} />
-                    <KpiCard title="En Riesgo" value={kpis.at_risk_students} icon={AlertTriangle} color="bg-red-500" subtitle="≥3 inasistencias" delay={240} />
+                    <KpiCard
+                        title="Total Usuarios"
+                        value={kpis.total_users}
+                        icon={Users}
+                        color="bg-blue-500"
+                        subtitle="Todos los roles"
+                        delay={0}
+                        onClick={() => goTo('/users')}
+                    />
+                    <KpiCard
+                        title="Estudiantes"
+                        value={kpis.total_students}
+                        icon={GraduationCap}
+                        color="bg-indigo-500"
+                        subtitle="Registrados"
+                        delay={80}
+                        onClick={() => goTo('/users?role=STUDENT')}
+                    />
+                    <KpiCard
+                        title="Docentes"
+                        value={kpis.total_teachers}
+                        icon={BookOpen}
+                        color="bg-purple-500"
+                        subtitle="Activos"
+                        delay={160}
+                        onClick={() => goTo('/users?role=TEACHER')}
+                    />
+                    <KpiCard
+                        title="En Riesgo"
+                        value={kpis.at_risk_students}
+                        icon={AlertTriangle}
+                        color="bg-red-500"
+                        subtitle="≥3 inasistencias"
+                        delay={240}
+                        onClick={() => goTo('/users?risk=1')}
+                    />
                 </div>
             </div>
 
             {/* ── KPIs Row 2: Académico ─────────────────────────────────────── */}
             <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📚 Indicadores Académicos</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    📚 Indicadores Académicos
+                    <span className="text-blue-400 font-normal normal-case tracking-normal">— haz clic para ir</span>
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KpiCard title="Cursos Totales" value={kpis.total_courses} icon={BookOpen} color="bg-cyan-500" subtitle="Sin filtrar año" delay={0} />
-                    <KpiCard title="Cursos Activos" value={kpis.active_courses} icon={Zap} color="bg-emerald-500" subtitle={`Año ${new Date().getFullYear()}`} delay={80} />
-                    <KpiCard title="Sesiones Totales" value={kpis.total_sessions} icon={Calendar} color="bg-amber-500" subtitle="Clases registradas" delay={160} />
-                    <KpiCard title="Asistencia Hoy" value={`${kpis.today_attendance_rate}%`} icon={Activity} color={attendanceOk ? "bg-emerald-500" : "bg-red-500"} subtitle={`${kpis.today_present} presentes · ${kpis.today_absent} ausentes`} delay={240} />
+                    <KpiCard
+                        title="Cursos Totales"
+                        value={kpis.total_courses}
+                        icon={BookOpen}
+                        color="bg-cyan-500"
+                        subtitle="Sin filtrar año"
+                        delay={0}
+                        onClick={() => goTo('/classes')}
+                    />
+                    <KpiCard
+                        title="Cursos Activos"
+                        value={kpis.active_courses}
+                        icon={Zap}
+                        color="bg-emerald-500"
+                        subtitle={`Año ${new Date().getFullYear()}`}
+                        delay={80}
+                        onClick={() => goTo('/classes')}
+                    />
+                    <KpiCard
+                        title="Sesiones Totales"
+                        value={kpis.total_sessions}
+                        icon={Calendar}
+                        color="bg-amber-500"
+                        subtitle="Clases registradas"
+                        delay={160}
+                        onClick={() => goTo('/classes')}
+                    />
+                    <KpiCard
+                        title="Asistencia Hoy"
+                        value={`${kpis.today_attendance_rate}%`}
+                        icon={Activity}
+                        color={attendanceOk ? 'bg-emerald-500' : 'bg-red-500'}
+                        subtitle={`${kpis.today_present} presentes · ${kpis.today_absent} ausentes`}
+                        delay={240}
+                        onClick={() => goTo('/classes')}
+                    />
                 </div>
             </div>
 
             {/* ── Gráficas principales ──────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Asistencia mensual — gráfica de área */}
+                {/* Asistencia mensual — área */}
                 <ChartCard
                     title="Tendencia de Asistencia"
                     subtitle="Últimos 6 meses — presencia + tardanzas"
                     className="lg:col-span-2"
+                    onClick={() => goTo('/classes')}
                 >
                     <ResponsiveContainer width="100%" height={220}>
                         <AreaChart data={charts.monthly_attendance} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -276,8 +379,8 @@ export default function AdminDashboard() {
                     </ResponsiveContainer>
                 </ChartCard>
 
-                {/* Distribución por rol — Pie chart */}
-                <ChartCard title="Distribución de Usuarios" subtitle="Por rol en el sistema">
+                {/* Distribución por rol — Pie clickeable por segmento */}
+                <ChartCard title="Distribución de Usuarios" subtitle="Clic en cada rol para ver la lista">
                     <ResponsiveContainer width="100%" height={160}>
                         <PieChart>
                             <Pie
@@ -288,31 +391,52 @@ export default function AdminDashboard() {
                                 outerRadius={70}
                                 paddingAngle={3}
                                 dataKey="value"
+                                onClick={(entry) => {
+                                    if (entry.label === 'Estudiantes') goTo('/users?role=STUDENT');
+                                    else if (entry.label === 'Docentes') goTo('/users?role=TEACHER');
+                                    else goTo('/users');
+                                }}
+                                cursor="pointer"
                             >
-                                {charts.user_distribution.map((entry, index) => (
+                                {charts.user_distribution.map((_, index) => (
                                     <Cell key={index} fill={PIE_COLORS[index]} stroke="none" />
                                 ))}
                             </Pie>
                             <Tooltip formatter={(val, name) => [val, name]} />
                         </PieChart>
                     </ResponsiveContainer>
+                    {/* Leyenda clickeable */}
                     <div className="space-y-2 mt-2">
-                        {charts.user_distribution.map((item, i) => (
-                            <div key={i} className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i] }} />
-                                    <span className="text-slate-600 font-medium">{item.label}</span>
+                        {charts.user_distribution.map((item, i) => {
+                            const roleMap = { 'Estudiantes': '/users?role=STUDENT', 'Docentes': '/users?role=TEACHER', 'Admins': '/users' };
+                            return (
+                                <div
+                                    key={i}
+                                    onClick={() => goTo(roleMap[item.label] || '/users')}
+                                    className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1.5 transition-colors group"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i] }} />
+                                        <span className="text-slate-600 font-medium">{item.label}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="font-bold text-slate-800">{item.value}</span>
+                                        <ChevronRight size={12} className="text-slate-300 group-hover:text-blue-400 transition-colors" />
+                                    </div>
                                 </div>
-                                <span className="font-bold text-slate-800">{item.value}</span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </ChartCard>
             </div>
 
-            {/* ── Gráfica de barras: Asistencia mensual en detalle ─────────── */}
+            {/* ── Desglose mensual + Nuevos usuarios ────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartCard title="Desglose Mensual de Asistencia" subtitle="Presentes · Tardanzas · Ausentes">
+                <ChartCard
+                    title="Desglose Mensual de Asistencia"
+                    subtitle="Presentes · Tardanzas · Ausentes"
+                    onClick={() => goTo('/classes')}
+                >
                     <ResponsiveContainer width="100%" height={220}>
                         <BarChart data={charts.monthly_attendance} margin={{ top: 5, right: 10, left: -20, bottom: 0 }} barSize={16}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
@@ -327,8 +451,11 @@ export default function AdminDashboard() {
                     </ResponsiveContainer>
                 </ChartCard>
 
-                {/* Nuevos usuarios por mes */}
-                <ChartCard title="Nuevos Usuarios Registrados" subtitle="Últimos 6 meses">
+                <ChartCard
+                    title="Nuevos Usuarios Registrados"
+                    subtitle="Últimos 6 meses"
+                    onClick={() => goTo('/users')}
+                >
                     {charts.monthly_new_users.length > 0 ? (
                         <ResponsiveContainer width="100%" height={220}>
                             <LineChart data={charts.monthly_new_users} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -350,25 +477,28 @@ export default function AdminDashboard() {
                 </ChartCard>
             </div>
 
-            {/* ── Rankings: Top Cursos + Rendimiento Docentes ────────────────── */}
+            {/* ── Rankings ──────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                {/* Top 5 cursos por asistencia */}
-                <ChartCard title="🏆 Top Cursos por Asistencia" subtitle="Ordenados por tasa de presencia">
+                {/* Top 5 cursos */}
+                <ChartCard
+                    title="🏆 Top Cursos por Asistencia"
+                    subtitle="Clic en cada curso para ver el detalle"
+                >
                     {charts.top_courses.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-1">
                             {charts.top_courses.map((course, i) => (
-                                <div key={i}>
-                                    <ProgressBar
-                                        value={course.attendance_rate}
-                                        label={`${i + 1}. ${course.name}`}
-                                        sublabel={`${course.teacher} · ${course.students} estudiantes · ${course.sessions} sesiones`}
-                                        color={
-                                            course.attendance_rate >= 85 ? 'bg-emerald-500' :
-                                                course.attendance_rate >= 70 ? 'bg-amber-500' : 'bg-red-500'
-                                        }
-                                    />
-                                </div>
+                                <ProgressBar
+                                    key={i}
+                                    value={course.attendance_rate}
+                                    label={`${i + 1}. ${course.name}`}
+                                    sublabel={`${course.teacher} · ${course.students} est. · ${course.sessions} sesiones`}
+                                    color={
+                                        course.attendance_rate >= 85 ? 'bg-emerald-500' :
+                                            course.attendance_rate >= 70 ? 'bg-amber-500' : 'bg-red-500'
+                                    }
+                                    onClick={() => goTo('/classes')}
+                                />
                             ))}
                         </div>
                     ) : (
@@ -376,30 +506,49 @@ export default function AdminDashboard() {
                             <p className="text-sm">Sin datos suficientes</p>
                         </div>
                     )}
+                    {charts.top_courses.length > 0 && (
+                        <button
+                            onClick={() => goTo('/classes')}
+                            className="mt-4 w-full text-center text-xs text-blue-500 hover:text-blue-700 font-bold py-2 hover:bg-blue-50 rounded-xl transition-colors flex items-center justify-center gap-1"
+                        >
+                            Ver todos los cursos <ChevronRight size={13} />
+                        </button>
+                    )}
                 </ChartCard>
 
-                {/* Rendimiento por docente */}
-                <ChartCard title="👨‍🏫 Rendimiento por Docente" subtitle="Top 5 por tasa de asistencia en sus cursos">
+                {/* Rendimiento docentes */}
+                <ChartCard
+                    title="👨‍🏫 Rendimiento por Docente"
+                    subtitle="Clic para ver la lista de usuarios"
+                >
                     {charts.teacher_performance.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-1">
                             {charts.teacher_performance.map((teacher, i) => (
-                                <div key={i}>
-                                    <ProgressBar
-                                        value={teacher.attendance_rate}
-                                        label={`${i + 1}. ${teacher.name}`}
-                                        sublabel={`${teacher.courses} cursos · ${teacher.students} estudiantes`}
-                                        color={
-                                            teacher.attendance_rate >= 85 ? 'bg-blue-500' :
-                                                teacher.attendance_rate >= 70 ? 'bg-purple-500' : 'bg-orange-500'
-                                        }
-                                    />
-                                </div>
+                                <ProgressBar
+                                    key={i}
+                                    value={teacher.attendance_rate}
+                                    label={`${i + 1}. ${teacher.name}`}
+                                    sublabel={`${teacher.courses} cursos · ${teacher.students} estudiantes`}
+                                    color={
+                                        teacher.attendance_rate >= 85 ? 'bg-blue-500' :
+                                            teacher.attendance_rate >= 70 ? 'bg-purple-500' : 'bg-orange-500'
+                                    }
+                                    onClick={() => goTo('/users?role=TEACHER')}
+                                />
                             ))}
                         </div>
                     ) : (
                         <div className="flex items-center justify-center h-32 text-slate-300">
                             <p className="text-sm">Sin datos de docentes</p>
                         </div>
+                    )}
+                    {charts.teacher_performance.length > 0 && (
+                        <button
+                            onClick={() => goTo('/users?role=TEACHER')}
+                            className="mt-4 w-full text-center text-xs text-blue-500 hover:text-blue-700 font-bold py-2 hover:bg-blue-50 rounded-xl transition-colors flex items-center justify-center gap-1"
+                        >
+                            Ver todos los docentes <ChevronRight size={13} />
+                        </button>
                     )}
                 </ChartCard>
             </div>
@@ -423,56 +572,54 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                        <Cpu size={16} className="text-blue-400 mb-2" />
-                        <p className="text-xs text-slate-400">Python</p>
-                        <p className="text-base font-bold text-white">v{system.python_version}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                        <Globe size={16} className="text-purple-400 mb-2" />
-                        <p className="text-xs text-slate-400">Django</p>
-                        <p className="text-base font-bold text-white">v{system.django_version}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                        <Database size={16} className="text-cyan-400 mb-2" />
-                        <p className="text-xs text-slate-400">Base de Datos</p>
-                        <p className="text-base font-bold text-white">{system.database}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                        <Shield size={16} className="text-amber-400 mb-2" />
-                        <p className="text-xs text-slate-400">Entorno</p>
-                        <p className={`text-base font-bold ${system.environment === 'Production' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {system.environment}
-                        </p>
-                    </div>
+                    {[
+                        { icon: Cpu, color: 'text-blue-400', label: 'Python', value: `v${system.python_version}` },
+                        { icon: Globe, color: 'text-purple-400', label: 'Django', value: `v${system.django_version}` },
+                        { icon: Database, color: 'text-cyan-400', label: 'Base de Datos', value: system.database },
+                        {
+                            icon: Shield, color: 'text-amber-400', label: 'Entorno', value: system.environment,
+                            valueClass: system.environment === 'Production' ? 'text-emerald-400' : 'text-amber-400'
+                        },
+                    ].map(({ icon: Icon, color, label, value, valueClass }, i) => (
+                        <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/10">
+                            <Icon size={16} className={`${color} mb-2`} />
+                            <p className="text-xs text-slate-400">{label}</p>
+                            <p className={`text-base font-bold ${valueClass || 'text-white'}`}>{value}</p>
+                        </div>
+                    ))}
                 </div>
 
-                {/* Registros en DB */}
+                {/* Registros DB — clickeables */}
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10 mb-4">
                     <p className="text-xs text-slate-400 font-bold uppercase mb-3">📦 Registros en Base de Datos</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {[
-                            { label: 'Usuarios', value: system.total_db_records.users, icon: Users, color: 'text-blue-400' },
-                            { label: 'Cursos', value: system.total_db_records.courses, icon: BookOpen, color: 'text-purple-400' },
-                            { label: 'Sesiones', value: system.total_db_records.sessions, icon: Calendar, color: 'text-cyan-400' },
-                            { label: 'Asistencias', value: system.total_db_records.attendance_records, icon: CheckCircle, color: 'text-emerald-400' },
-                        ].map(({ label, value, icon: Icon, color }, i) => (
-                            <div key={i} className="text-center">
-                                <Icon size={16} className={`${color} mx-auto mb-1`} />
+                            { label: 'Usuarios', value: system.total_db_records.users, icon: Users, color: 'text-blue-400', path: '/users' },
+                            { label: 'Cursos', value: system.total_db_records.courses, icon: BookOpen, color: 'text-purple-400', path: '/classes' },
+                            { label: 'Sesiones', value: system.total_db_records.sessions, icon: Calendar, color: 'text-cyan-400', path: '/classes' },
+                            { label: 'Asistencias', value: system.total_db_records.attendance_records, icon: CheckCircle, color: 'text-emerald-400', path: '/classes' },
+                        ].map(({ label, value, icon: Icon, color, path }, i) => (
+                            <div
+                                key={i}
+                                onClick={() => goTo(path)}
+                                className="text-center cursor-pointer hover:bg-white/10 rounded-xl p-2 transition-colors group"
+                            >
+                                <Icon size={16} className={`${color} mx-auto mb-1 group-hover:scale-110 transition-transform`} />
                                 <p className="text-xl font-black text-white">{value.toLocaleString()}</p>
                                 <p className="text-xs text-slate-500">{label}</p>
+                                <p className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">Ver →</p>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Badges de estado */}
+                {/* Badges */}
                 <div className="flex flex-wrap gap-2">
                     <SysBadge ok={true} label="API REST activa" />
                     <SysBadge ok={!system.debug_mode} label={system.debug_mode ? 'Debug MODE ON' : 'Debug OFF'} />
                     <SysBadge ok={system.database.includes('PostgreSQL')} label={system.database.includes('PostgreSQL') ? 'PostgreSQL OK' : 'SQLite (dev)'} />
                     <SysBadge ok={system.environment === 'Production'} label={system.environment} />
-                    <SysBadge ok={kpis.today_attendance_rate > 0} label={kpis.today_sessions > 0 ? `${kpis.today_sessions} sesiones hoy` : 'Sin sesiones hoy'} />
+                    <SysBadge ok={kpis.today_sessions > 0} label={kpis.today_sessions > 0 ? `${kpis.today_sessions} sesiones hoy` : 'Sin sesiones hoy'} />
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
                         <Clock size={13} />
                         SO: {system.os}
