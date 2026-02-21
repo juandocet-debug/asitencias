@@ -213,24 +213,22 @@ export default function DashboardLayout() {
                 )}
             </nav>
 
-            {/* ── Footer: logout + branding ── */}
+            {/* Footer sidebar — branding AGON */}
             <div className="px-4 py-4 border-t border-upn-800/50">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-upn-800/50 mb-3">
-                    <div className="bg-white rounded-full p-1 shadow-md flex-shrink-0">
-                        <img src="/este-agon.png" alt="AGON" className="h-7 w-7 object-contain rounded-full" />
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-upn-800/50">
+                    <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-md">
+                        <img src="/este-agon.png" alt="AGON" className="h-6 w-6 object-contain" />
                     </div>
-                    <div>
-                        <p className="text-white font-black text-sm tracking-widest uppercase">AGON</p>
-                        <p className="text-upn-300 text-[10px] font-medium">Gestión Académica</p>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-white text-xs font-semibold truncate">AGON</p>
+                        <p className="text-upn-300 text-[10px] truncate">Gestión Académica</p>
                     </div>
+                    <button onClick={handleLogout}
+                        className="text-upn-300 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-400/10"
+                        title="Cerrar sesión">
+                        <LogOut className="h-4 w-4" />
+                    </button>
                 </div>
-                <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-upn-300 hover:text-red-400 hover:bg-red-400/10 w-full transition-all duration-200 text-sm"
-                >
-                    <LogOut size={18} />
-                    <span className="font-medium">Cerrar Sesión</span>
-                </button>
             </div>
         </div>
     );
