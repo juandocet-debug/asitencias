@@ -63,8 +63,8 @@ export default function Login() {
                         transition={{ duration: 0.55 }}
                         className="flex flex-col items-center gap-2"
                     >
-                        <div className="bg-white/95 rounded-2xl px-5 py-3 shadow-xl shadow-black/20 backdrop-blur">
-                            <img src={UPN_LOGO} alt="UPN" className="h-16 object-contain" />
+                        <div className="w-28 h-28 rounded-full bg-white shadow-2xl shadow-black/30 flex items-center justify-center">
+                            <img src={UPN_LOGO} alt="UPN" className="w-20 h-20 object-contain" />
                         </div>
                         <p className="text-white/40 text-[9px] font-bold uppercase tracking-[0.35em]">
                             Universidad Pedagógica Nacional
@@ -81,7 +81,7 @@ export default function Login() {
                         <img
                             src={AGON_LOGO}
                             alt="AGON"
-                            className="w-48 h-48 object-cover rounded-[2rem] shadow-2xl shadow-black/40"
+                            className="w-64 h-28 object-contain rounded-3xl shadow-2xl shadow-black/40"
                             style={{ filter: 'drop-shadow(0 12px 40px rgba(0,0,0,0.35))' }}
                         />
                         <div className="text-center space-y-1">
