@@ -133,56 +133,46 @@ export default function DashboardLayout() {
         transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-                {/* Cabecera del sidebar: UPN + ESTE AGON */}
-                <div className="p-5 text-center border-b border-slate-100">
-                    <img
-                        src="/upn-logo.png"
-                        alt="Logo UPN"
-                        className="h-20 mx-auto object-contain"
-                    />
-                    <div className="flex items-center justify-center gap-2 mt-3 bg-upn-50 rounded-xl px-3 py-2 border border-upn-100">
-                        <img
-                            src="/este-agon.png"
-                            alt="AGON"
-                            className="h-7 object-contain"
-                        />
-                        <div className="text-left">
-                            <p className="text-[10px] font-black text-upn-700 uppercase tracking-wider leading-none">AGON</p>
-                            <p className="text-[9px] text-slate-400 leading-none mt-0.5">Gestión Académica</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* User Profile Card in Sidebar */}
-                <div className="mx-4 mb-6 p-4 bg-upn-50/50 rounded-2xl border border-upn-100">
+                {/* ── Cabecera: Perfil del usuario ── */}
+                <div className="px-5 pt-6 pb-4">
                     <div className="flex items-center gap-3">
-                        <div className="relative">
+                        <div className="relative flex-shrink-0">
                             {user?.photo ? (
                                 <img
                                     src={user.photo}
                                     alt="User"
-                                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-upn-100 shadow-sm"
                                 />
                             ) : (
-                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center border-2 border-white shadow-sm">
-                                    <User className="text-slate-400" size={20} />
+                                <div className="w-12 h-12 rounded-full bg-upn-50 flex items-center justify-center border-2 border-upn-100 shadow-sm">
+                                    <User className="text-upn-400" size={20} />
                                 </div>
                             )}
                             <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
                         </div>
-                        <div>
-                            <p className="text-xs text-slate-500 font-medium">Buen día 👋</p>
-                            <h3 className="text-sm font-bold text-slate-800">
+                        <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-bold text-slate-800 truncate">
                                 {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
                             </h3>
-                            <p className="text-[10px] text-upn-600 font-semibold bg-upn-100 px-2 py-0.5 rounded-full w-fit mt-1">
-                                {user?.role === 'ADMIN' ? 'ADMINISTRADOR' : user?.role === 'TEACHER' ? 'DOCENTE' : 'ESTUDIANTE'}
+                            <p className="text-[11px] text-upn-600 font-semibold">
+                                {user?.role === 'ADMIN' ? 'Administrador' : user?.role === 'TEACHER' ? 'Docente' : 'Estudiante'}
                             </p>
                         </div>
                     </div>
+                    {/* Editar perfil */}
+                    <button
+                        onClick={() => { setIsSidebarOpen(false); navigate('/profile'); }}
+                        className="flex items-center gap-2 mt-3 px-3 py-2 w-full rounded-xl text-xs font-semibold text-upn-600 bg-upn-50 hover:bg-upn-100 border border-upn-100 transition-all"
+                    >
+                        <User size={14} />
+                        Editar perfil
+                    </button>
                 </div>
+                {/* Línea sutil */}
+                <div className="mx-5 border-t border-slate-100"></div>
 
-                <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+                {/* ── Navegación ── */}
+                <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
                     <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
 
                     <SidebarItem
@@ -242,20 +232,33 @@ export default function DashboardLayout() {
                             </div>
                         </button>
                     )}
-                </nav>
 
-                <div className="px-4 py-6 border-t border-slate-100 space-y-2">
                     {/* Solo ADMIN ve Configuración */}
                     {isAdmin && (
                         <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
                     )}
+                </nav>
+
+                {/* ── Footer: Logo del sistema + Cerrar sesión ── */}
+                <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-3">
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 w-full transition-all duration-200"
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500 w-full transition-all duration-200 text-sm"
                     >
-                        <LogOut size={20} />
+                        <LogOut size={18} />
                         <span className="font-medium">Cerrar Sesión</span>
                     </button>
+                    <div className="flex items-center gap-3 px-3 py-3 bg-upn-50/60 rounded-xl border border-upn-100/60">
+                        <img
+                            src="/este-agon.png"
+                            alt="AGON"
+                            className="h-8 object-contain flex-shrink-0"
+                        />
+                        <div>
+                            <p className="text-xs font-black text-upn-700 uppercase tracking-wider leading-none">AGON</p>
+                            <p className="text-[9px] text-slate-400 leading-none mt-0.5">Gestión Académica · UPN</p>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
