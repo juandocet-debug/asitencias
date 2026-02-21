@@ -1,6 +1,8 @@
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from django.db.models import Q
+from rest_framework.filters import SearchFilter
 from django.contrib.auth import get_user_model
 from .serializers import (
     StudentRegisterSerializer, UserSerializer, UserProfileSerializer,
@@ -18,8 +20,11 @@ class UserViewSet(viewsets.ModelViewSet):
     CRUD de usuarios para el ADMIN.
     Usa diferentes serializers según la operación para manejar correctamente
     el hasheo de contraseñas y la validación de campos.
+    Soporta ?search=término para buscar por nombre, apellido o cédula.
     """
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = ['first_name', 'last_name', 'username', 'email']
 
     def get_serializer_class(self):
         """Seleccionar serializer según la acción."""
@@ -31,19 +36,29 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        search = self.request.query_params.get('search', '').strip()
 
-        # 1. ADMIN ve TODO
+        # Base queryset según rol
         if user.role == 'ADMIN' or user.is_superuser:
-            return User.objects.all().order_by('-date_joined')
-
-        # 2. TEACHER ve solo sus ESTUDIANTES
-        if user.role == 'TEACHER':
+            qs = User.objects.all()
+        elif user.role == 'TEACHER':
             from academic.models import Course
             student_ids = Course.objects.filter(teacher=user).values_list('students__id', flat=True).distinct()
-            return User.objects.filter(id__in=student_ids).order_by('-date_joined')
+            qs = User.objects.filter(id__in=student_ids)
+        else:
+            qs = User.objects.none()
 
-        # 3. STUDENT no ve a nadie
-        return User.objects.none()
+        # Filtro de búsqueda manual (además de SearchFilter)
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(username__icontains=search) |
+                Q(email__icontains=search)
+            )
+
+        return qs.order_by('first_name', 'last_name')
 
     def create(self, request, *args, **kwargs):
         """Crear usuario — solo ADMIN."""
@@ -193,6 +208,29 @@ def password_reset_confirm(request):
     reset_token.save()
     
     return Response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def search_all_users(request):
+    """
+    Busca usuarios de AGON por nombre, apellido, cédula o email.
+    Accesible por cualquier usuario autenticado (para ILINYX - Actas).
+    ?q=término   → filtra por nombre/apellido/cédula/email
+    """
+    q = request.query_params.get('q', '').strip()
+    if len(q) < 2:
+        return Response([])
+
+    qs = User.objects.filter(
+        Q(first_name__icontains=q) |
+        Q(last_name__icontains=q) |
+        Q(username__icontains=q) |
+        Q(email__icontains=q)
+    ).order_by('first_name', 'last_name')[:20]
+
+    from .serializers import UserSerializer
+    return Response(UserSerializer(qs, many=True, context={'request': request}).data)
 
 
 @api_view(['POST'])
