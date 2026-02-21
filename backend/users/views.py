@@ -211,11 +211,11 @@ def password_reset_confirm(request):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def search_all_users(request):
     """
     Busca usuarios de AGON por nombre, apellido, cédula o email.
-    Accesible por cualquier usuario autenticado (para ILINYX - Actas).
+    Público — usado por ILINYX para el autocomplete de Actas.
     ?q=término   → filtra por nombre/apellido/cédula/email
     """
     q = request.query_params.get('q', '').strip()
