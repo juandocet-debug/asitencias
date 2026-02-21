@@ -10,9 +10,12 @@ export default {
         upn: {
           50: '#eef6ff',
           100: '#d9ebff',
-          500: '#2b7fff', // Azul brillante referencia
-          600: '#0051ff', // Azul fuerte
-          700: '#004aad', // Azul institucional aproximado UPN
+          200: '#b3d4ff',
+          300: '#80b8ff',
+          400: '#4d9aff',
+          500: '#2b7fff',
+          600: '#0051ff',
+          700: '#004aad',
           800: '#003d8f',
           900: '#1e3a8a',
         },

@@ -1,30 +1,29 @@
 /* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 
-// Sidebar Item Component
+// Sidebar Item Component — estilo ILINYX (fondo oscuro, texto claro)
 const SidebarItem = ({ icon: Icon, label, to, onClick, subtitle }) => (
     <NavLink
         to={to}
         onClick={onClick}
         className={({ isActive }) =>
-            `flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group ${isActive
-                ? 'bg-upn-600 text-white shadow-lg shadow-upn-600/30 font-bold'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-upn-600'
-            }`
+            `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group
+            ${isActive
+                ? 'bg-upn-600 text-white shadow-lg shadow-upn-900/30'
+                : 'text-upn-200 hover:bg-upn-800/60 hover:text-white'}`
         }
     >
-        <div className="flex items-center gap-3">
-            <Icon size={20} className="flex-shrink-0" />
-            <div className="flex flex-col">
-                <span className="text-sm">{label}</span>
-                {subtitle && <span className="text-[10px] opacity-70 font-normal leading-none mt-0.5">{subtitle}</span>}
-            </div>
+        <Icon className="h-5 w-5 flex-shrink-0" />
+        <div className="flex flex-col flex-1">
+            <span>{label}</span>
+            {subtitle && <span className="text-[10px] opacity-70 font-normal leading-none mt-0.5">{subtitle}</span>}
         </div>
+        <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
     </NavLink>
 );
 
@@ -115,155 +114,154 @@ export default function DashboardLayout() {
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full">
+            {/* ── Cabecera: Perfil del usuario ── */}
+            <div className="px-5 pt-6 pb-4">
+                <div className="flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
+                        {user?.photo ? (
+                            <img
+                                src={user.photo}
+                                alt="User"
+                                className="w-11 h-11 rounded-full object-cover border-2 border-white/20 shadow-sm"
+                            />
+                        ) : (
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-upn-400 to-upn-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                            </div>
+                        )}
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-upn-900 rounded-full"></span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-bold text-white truncate">
+                            {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
+                        </h3>
+                        <p className="text-[11px] text-upn-300 font-medium">
+                            {user?.role === 'ADMIN' ? 'Administrador' : user?.role === 'TEACHER' ? 'Docente' : 'Estudiante'}
+                        </p>
+                    </div>
+                </div>
+                {/* Editar perfil */}
+                <button
+                    onClick={() => { setIsSidebarOpen(false); navigate('/profile'); }}
+                    className="flex items-center gap-2 mt-3 px-3 py-2 w-full rounded-xl text-xs font-semibold text-upn-200 bg-upn-800/50 hover:bg-upn-800 border border-upn-700/50 transition-all"
+                >
+                    <User size={14} />
+                    Editar perfil
+                </button>
+            </div>
+            {/* Línea sutil */}
+            <div className="mx-5 border-t border-upn-800/50"></div>
+
+            {/* ── Navegación ── */}
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
+
+                <SidebarItem
+                    icon={BookOpen}
+                    label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
+                    to="/classes"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+
+                {isAdmin && (
+                    <SidebarItem icon={Users} label="Usuarios" to="/users" onClick={() => setIsSidebarOpen(false)} />
+                )}
+
+                {isAdmin && (
+                    <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
+                )}
+
+                {user?.role === 'STUDENT' && (
+                    <SidebarItem
+                        icon={AlertCircle}
+                        label="Mis Faltas"
+                        to="/my-absences"
+                        onClick={() => setIsSidebarOpen(false)}
+                        subtitle="Justificar inasistencias"
+                    />
+                )}
+
+                {user?.role === 'TEACHER' && (
+                    <SidebarItem
+                        icon={ClipboardCheck}
+                        label="Revisiones"
+                        to="/reviews"
+                        onClick={() => setIsSidebarOpen(false)}
+                        subtitle="Excusas pendientes"
+                    />
+                )}
+
+                {isStudent && (
+                    <button
+                        onClick={openJoinModal}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-upn-200 hover:bg-upn-800/60 hover:text-white transition-all duration-200 group mt-1"
+                    >
+                        <div className="w-5 h-5 rounded-full bg-upn-500 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                            <Plus size={12} />
+                        </div>
+                        <div className="flex flex-col text-left">
+                            <span className="text-sm font-medium">Unirse a Clase</span>
+                            <span className="text-[10px] opacity-60 font-normal">Código del profesor</span>
+                        </div>
+                    </button>
+                )}
+
+                {isAdmin && (
+                    <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
+                )}
+            </nav>
+
+            {/* ── Footer: logout + branding ── */}
+            <div className="px-4 py-4 border-t border-upn-800/50">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-upn-800/50 mb-3">
+                    <div className="bg-white rounded-full p-1 shadow-md flex-shrink-0">
+                        <img src="/este-agon.png" alt="AGON" className="h-7 w-7 object-contain rounded-full" />
+                    </div>
+                    <div>
+                        <p className="text-white font-black text-sm tracking-widest uppercase">AGON</p>
+                        <p className="text-upn-300 text-[10px] font-medium">Gestión Académica</p>
+                    </div>
+                </div>
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-upn-300 hover:text-red-400 hover:bg-red-400/10 w-full transition-all duration-200 text-sm"
+                >
+                    <LogOut size={18} />
+                    <span className="font-medium">Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <div className="flex h-screen bg-slate-50/50">
 
-            {/* Mobile Overlay */}
-            {isSidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-20 md:hidden glass"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside className={`
-        fixed md:static inset-y-0 left-0 z-30
-        w-72 bg-white border-r border-slate-100 flex flex-col
-        transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-      `}>
-                {/* ── Cabecera: Perfil del usuario ── */}
-                <div className="px-5 pt-6 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="relative flex-shrink-0">
-                            {user?.photo ? (
-                                <img
-                                    src={user.photo}
-                                    alt="User"
-                                    className="w-12 h-12 rounded-full object-cover border-2 border-upn-100 shadow-sm"
-                                />
-                            ) : (
-                                <div className="w-12 h-12 rounded-full bg-upn-50 flex items-center justify-center border-2 border-upn-100 shadow-sm">
-                                    <User className="text-upn-400" size={20} />
-                                </div>
-                            )}
-                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <h3 className="text-sm font-bold text-slate-800 truncate">
-                                {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
-                            </h3>
-                            <p className="text-[11px] text-upn-600 font-semibold">
-                                {user?.role === 'ADMIN' ? 'Administrador' : user?.role === 'TEACHER' ? 'Docente' : 'Estudiante'}
-                            </p>
-                        </div>
-                    </div>
-                    {/* Editar perfil */}
-                    <button
-                        onClick={() => { setIsSidebarOpen(false); navigate('/profile'); }}
-                        className="flex items-center gap-2 mt-3 px-3 py-2 w-full rounded-xl text-xs font-semibold text-upn-600 bg-upn-50 hover:bg-upn-100 border border-upn-100 transition-all"
-                    >
-                        <User size={14} />
-                        Editar perfil
-                    </button>
-                </div>
-                {/* Línea sutil */}
-                <div className="mx-5 border-t border-slate-100"></div>
-
-                {/* ── Navegación ── */}
-                <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-                    <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
-
-                    <SidebarItem
-                        icon={BookOpen}
-                        label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
-                        to="/classes"
-                        onClick={() => setIsSidebarOpen(false)}
-                    />
-
-                    {/* Solo ADMIN ve Gestión de Usuarios */}
-                    {isAdmin && (
-                        <SidebarItem
-                            icon={Users}
-                            label="Usuarios"
-                            to="/users"
-                            onClick={() => setIsSidebarOpen(false)}
-                        />
-                    )}
-
-                    {/* Solo ADMIN ve Insignias */}
-                    {isAdmin && (
-                        <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
-                    )}
-
-                    {user?.role === 'STUDENT' && (
-                        <SidebarItem
-                            icon={AlertCircle}
-                            label="Mis Faltas"
-                            to="/my-absences"
-                            onClick={() => setIsSidebarOpen(false)}
-                            subtitle="Justificar inasistencias"
-                        />
-                    )}
-
-                    {user?.role === 'TEACHER' && (
-                        <SidebarItem
-                            icon={ClipboardCheck}
-                            label="Revisiones"
-                            to="/reviews"
-                            onClick={() => setIsSidebarOpen(false)}
-                            subtitle="Excusas pendientes"
-                        />
-                    )}
-
-                    {/* Botón Unirse a Clase - Solo ESTUDIANTES */}
-                    {isStudent && (
-                        <button
-                            onClick={openJoinModal}
-                            className="flex items-center gap-3 px-4 py-3.5 rounded-xl w-full bg-upn-50 text-upn-700 border border-upn-200 hover:bg-upn-100 transition-all duration-200 group mt-2"
-                        >
-                            <div className="w-6 h-6 rounded-full bg-upn-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                <Plus size={14} />
-                            </div>
-                            <div className="flex flex-col text-left">
-                                <span className="text-sm font-bold">Unirse a Clase</span>
-                                <span className="text-[10px] opacity-70 font-normal">Ingresa código del profesor</span>
-                            </div>
-                        </button>
-                    )}
-
-                    {/* Solo ADMIN ve Configuración */}
-                    {isAdmin && (
-                        <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
-                    )}
-                </nav>
-
-                {/* ── Footer: Logo del sistema + Cerrar sesión ── */}
-                <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-3">
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500 w-full transition-all duration-200 text-sm"
-                    >
-                        <LogOut size={18} />
-                        <span className="font-medium">Cerrar Sesión</span>
-                    </button>
-                    <div className="flex items-center gap-3 px-3 py-3 bg-upn-50/60 rounded-xl border border-upn-100/60">
-                        <img
-                            src="/este-agon.png"
-                            alt="AGON"
-                            className="h-8 object-contain flex-shrink-0"
-                        />
-                        <div>
-                            <p className="text-xs font-black text-upn-700 uppercase tracking-wider leading-none">AGON</p>
-                            <p className="text-[9px] text-slate-400 leading-none mt-0.5">Gestión Académica · UPN</p>
-                        </div>
-                    </div>
-                </div>
+            {/* ── Sidebar Desktop ── */}
+            <aside className="hidden md:flex md:w-64 flex-col fixed inset-y-0 left-0 z-40 bg-upn-900 shadow-2xl">
+                <SidebarContent />
             </aside>
 
+            {/* ── Sidebar Mobile (drawer) ── */}
+            {isSidebarOpen && (
+                <>
+                    <div
+                        className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                    <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-upn-900 shadow-2xl md:hidden transition-transform duration-300">
+                        <button onClick={() => setIsSidebarOpen(false)}
+                            className="absolute top-4 right-4 text-upn-300 hover:text-white p-1">
+                            <X className="h-5 w-5" />
+                        </button>
+                        <SidebarContent />
+                    </aside>
+                </>
+            )}
+
             {/* Main Content */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
+            <main className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
                 {/* Header */}
                 <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 md:px-8 relative z-20">
                     <div className="flex items-center gap-4">
