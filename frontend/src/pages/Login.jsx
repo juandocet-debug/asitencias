@@ -6,8 +6,7 @@ import { Lock, ArrowRight, Eye, EyeOff, CreditCard } from 'lucide-react';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 
-const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
-const AGON_LOGO = 'https://i.ibb.co/WWbbDdhg/agonlogo.jpg';
+const AGON_LOGO = 'https://i.ibb.co/B2w4Ymcf/Chat-GPT-Image-20-feb-2026-08-22-06-p-m.png';
 
 export default function Login() {
     const { fetchUser } = useUser();
@@ -42,7 +41,7 @@ export default function Login() {
     return (
         <div className="min-h-screen flex overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-            {/* ══ Panel izquierdo — Azul ══ */}
+            {/* ══ Panel izquierdo — Azul AGON ══ */}
             <div
                 className="hidden md:flex md:w-[45%] relative flex-col justify-center items-center gap-10 overflow-hidden px-10"
                 style={{ background: 'linear-gradient(150deg, #001a6e 0%, #0047c8 60%, #0066f0 100%)' }}
@@ -53,36 +52,21 @@ export default function Login() {
                 <div className="absolute -bottom-28 -left-28 w-[380px] h-[380px] rounded-full"
                     style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)' }} />
 
-                {/* Logo UPN en círculo */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.55 }}
-                    className="relative z-10 flex flex-col items-center gap-3"
-                >
-                    <div className="w-28 h-28 rounded-full bg-white shadow-2xl shadow-black/30 flex items-center justify-center">
-                        <img src={UPN_LOGO} alt="UPN" className="w-20 h-20 object-contain" />
-                    </div>
-                    <p className="text-white/45 text-[9px] font-bold uppercase tracking-[0.3em] text-center">
-                        Universidad Pedagógica Nacional
-                    </p>
-                </motion.div>
-
-                {/* Logo AGON en círculo grande */}
+                {/* Logo AGON en círculo grande — único elemento */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2, duration: 0.6, type: 'spring', stiffness: 80 }}
-                    className="relative z-10 flex flex-col items-center gap-4"
+                    transition={{ duration: 0.65, type: 'spring', stiffness: 80 }}
+                    className="relative z-10 flex flex-col items-center gap-6"
                 >
-                    <div className="w-44 h-44 rounded-full bg-white shadow-2xl shadow-black/35 flex items-center justify-center"
-                        style={{ boxShadow: '0 0 0 8px rgba(255,255,255,0.12), 0 12px 48px rgba(0,0,0,0.4)' }}>
-                        <img src={AGON_LOGO} alt="AGON" className="w-36 h-36 object-contain rounded-full" />
+                    <div className="w-72 h-72 rounded-full overflow-hidden flex items-center justify-center"
+                        style={{ boxShadow: '0 0 0 14px rgba(255,255,255,0.18), 0 20px 70px rgba(0,0,0,0.5)' }}>
+                        <img src={AGON_LOGO} alt="AGON" className="w-full h-full object-cover" />
                     </div>
-                    <div className="text-center space-y-0.5">
-                        <p className="text-white font-black text-xl tracking-widest">AGON</p>
-                        <p className="text-blue-200/70 text-[10px] font-semibold uppercase tracking-[0.25em]">
-                            Control Académico · UPN
+                    <div className="text-center space-y-1.5">
+                        <p className="text-white font-black text-3xl tracking-[0.15em]">AGON</p>
+                        <p className="text-blue-200/75 text-xs font-semibold uppercase tracking-[0.22em]">
+                            Control de Gestión Académica
                         </p>
                     </div>
                 </motion.div>
@@ -98,12 +82,12 @@ export default function Login() {
 
                     {/* Mobile */}
                     <div className="md:hidden mb-8 flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-white border border-slate-200 shadow flex items-center justify-center overflow-hidden">
-                            <img src={AGON_LOGO} alt="AGON" className="w-9 h-9 object-contain" />
+                        <div className="w-11 h-11 rounded-full overflow-hidden shadow">
+                            <img src={AGON_LOGO} alt="AGON" className="w-full h-full object-cover" />
                         </div>
                         <div>
                             <p className="font-black text-blue-800 text-sm tracking-widest">AGON</p>
-                            <p className="text-slate-400 text-xs">Gestión Académica · UPN</p>
+                            <p className="text-slate-400 text-xs">Control de Gestión Académica</p>
                         </div>
                     </div>
 
@@ -176,10 +160,7 @@ export default function Login() {
                         </form>
 
                         <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-center gap-2">
-                            <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
-                                <img src={AGON_LOGO} alt="" className="w-4 h-4 object-contain" />
-                            </div>
-                            <span className="text-[11px] text-slate-400">AGON · © 2026 Universidad Pedagógica Nacional</span>
+                            <span className="text-[11px] text-slate-400">Elaborado por <span className="font-semibold text-slate-500">Lic. Juan Ramírez</span> · © 2026</span>
                         </div>
                     </motion.div>
                 </div>
