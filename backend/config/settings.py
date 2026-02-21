@@ -209,3 +209,7 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@upn.edu.co')
 # Frontend URL for password reset links
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
+# ── Clave compartida ILINYX ↔ AGON (server-to-server) ──────────────────────
+# Debe ser la misma clave en ambos backends. Configurar en Render como variable
+# de entorno: ILINYX_API_KEY=<uuid-aleatorio-largo>
+ILINYX_API_KEY = os.environ.get('ILINYX_API_KEY', '')

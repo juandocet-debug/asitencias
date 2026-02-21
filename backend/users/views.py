@@ -211,13 +211,21 @@ def password_reset_confirm(request):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.AllowAny])
+@permission_classes([permissions.AllowAny])  # La autenticación es via API key en el header
 def search_all_users(request):
     """
-    Busca usuarios de AGON por nombre, apellido, cédula o email.
-    Público — usado por ILINYX para el autocomplete de Actas.
-    ?q=término   → filtra por nombre/apellido/cédula/email
+    Busca usuarios de AGON para el autocomplete de ILINYX.
+    Requiere header  X-Ilinyx-Api-Key: <ILINYX_API_KEY>
+    Solo debe ser llamado desde el BACKEND de ILINYX, nunca desde el browser.
+    ?q=término  → filtra por nombre/apellido/cédula/email
     """
+    from django.conf import settings
+    expected_key = getattr(settings, 'ILINYX_API_KEY', None)
+    received_key = request.headers.get('X-Ilinyx-Api-Key', '')
+
+    if not expected_key or received_key != expected_key:
+        return Response({'detail': 'No autorizado.'}, status=status.HTTP_403_FORBIDDEN)
+
     q = request.query_params.get('q', '').strip()
     if len(q) < 2:
         return Response([])
