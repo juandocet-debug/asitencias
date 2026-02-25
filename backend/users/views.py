@@ -241,6 +241,55 @@ def search_all_users(request):
     return Response(UserSerializer(qs, many=True, context={'request': request}).data)
 
 
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])  # Autenticación via API key
+def list_courses_for_ilinyx(request):
+    """
+    Lista las clases de AGON con sus estudiantes para que ILINYX pueda
+    importar clases completas al crear actas (carga masiva de asistentes).
+    Requiere header X-Ilinyx-Api-Key.
+    Solo debe ser llamado desde el BACKEND de ILINYX, nunca desde el browser.
+    """
+    from django.conf import settings
+    from academic.models import Course
+
+    expected_key = getattr(settings, 'ILINYX_API_KEY', None)
+    received_key = request.headers.get('X-Ilinyx-Api-Key', '')
+
+    if not expected_key or received_key != expected_key:
+        return Response({'detail': 'No autorizado.'}, status=status.HTTP_403_FORBIDDEN)
+
+    courses = Course.objects.all().prefetch_related('students').select_related('teacher')
+
+    result = []
+    for course in courses:
+        students = []
+        for s in course.students.all():
+            students.append({
+                'id': s.id,
+                'first_name': s.first_name,
+                'last_name': s.last_name,
+                'email': s.email,
+                'role': s.role,
+                'document_number': s.document_number,
+                'photo': s.photo.url if s.photo else None,
+            })
+
+        result.append({
+            'id': course.id,
+            'name': course.name,
+            'code': course.code,
+            'year': course.year,
+            'period': course.period,
+            'teacher_name': f'{course.teacher.first_name} {course.teacher.last_name}'.strip(),
+            'teacher_id': course.teacher.id,
+            'student_count': len(students),
+            'students': students,
+        })
+
+    return Response(result)
+
+
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def join_class(request):
