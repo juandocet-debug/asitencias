@@ -6,10 +6,11 @@ from rest_framework.filters import SearchFilter
 from django.contrib.auth import get_user_model
 from .serializers import (
     StudentRegisterSerializer, UserSerializer, UserProfileSerializer,
-    AdminUserCreateSerializer, AdminUserUpdateSerializer
+    AdminUserCreateSerializer, AdminUserUpdateSerializer,
+    FacultySerializer, ProgramSerializer, CoordinatorProfileSerializer,
 )
+from .models import PasswordResetToken, Faculty, Program, CoordinatorProfile
 from rest_framework.decorators import action
-from .models import PasswordResetToken
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -326,3 +327,34 @@ def join_class(request):
             'code': course.code
         }
     }, status=status.HTTP_200_OK)
+
+
+# ════════════════════════════════════════════════════════════════
+# CATÁLOGOS — Facultades, Programas, Tipos de Coordinador
+# ════════════════════════════════════════════════════════════════
+
+class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
+    """Lista de facultades (solo lectura para el frontend)."""
+    queryset = Faculty.objects.all()
+    serializer_class = FacultySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ProgramViewSet(viewsets.ReadOnlyModelViewSet):
+    """Lista de programas (solo lectura para el frontend). Soporta ?faculty=id."""
+    serializer_class = ProgramSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Program.objects.select_related('faculty').all()
+        faculty_id = self.request.query_params.get('faculty')
+        if faculty_id:
+            qs = qs.filter(faculty_id=faculty_id)
+        return qs
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def coordinator_types(request):
+    """Devuelve la lista de tipos de coordinación disponibles."""
+    return Response(CoordinatorProfile.COORDINATOR_TYPE_CHOICES)

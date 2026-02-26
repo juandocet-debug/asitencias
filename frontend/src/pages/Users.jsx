@@ -1,26 +1,36 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, Mail, User, Upload, X, AlertTriangle, Check, Loader2, Shield, GraduationCap, BookOpen, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Mail, User, Upload, X, AlertTriangle, Check, Loader2, Shield, GraduationCap, BookOpen, Eye, EyeOff, Briefcase, Building2, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 
 // Mapeo de roles a español
 const ROLE_LABELS = {
     'STUDENT': 'Estudiante',
     'TEACHER': 'Docente',
+    'COORDINATOR': 'Coordinador',
     'ADMIN': 'Administrador'
 };
 
 const ROLE_STYLES = {
     'STUDENT': 'bg-blue-100 text-blue-800 border-blue-200',
     'TEACHER': 'bg-purple-100 text-purple-800 border-purple-200',
+    'COORDINATOR': 'bg-amber-100 text-amber-800 border-amber-200',
     'ADMIN': 'bg-upn-100 text-upn-800 border-upn-200'
 };
 
 const ROLE_ICONS = {
     'STUDENT': <GraduationCap size={14} />,
     'TEACHER': <BookOpen size={14} />,
+    'COORDINATOR': <Briefcase size={14} />,
     'ADMIN': <Shield size={14} />
+};
+
+const COORDINATOR_TYPE_LABELS = {
+    'PRACTICAS': 'Prácticas',
+    'PROGRAMA': 'Programa',
+    'INVESTIGACION': 'Investigación',
+    'EXTENSION': 'Extensión',
 };
 
 export default function UsersPage() {
@@ -36,6 +46,11 @@ export default function UsersPage() {
     const [saving, setSaving] = useState(false);
     const [formErrors, setFormErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
+
+    // Catálogos
+    const [faculties, setFaculties] = useState([]);
+    const [programs, setPrograms] = useState([]);
+    const [allPrograms, setAllPrograms] = useState([]);
 
     // Sincronizar pestaña activa cuando cambie la URL (ej: navegación desde dashboard)
     useEffect(() => {
@@ -60,7 +75,11 @@ export default function UsersPage() {
         last_name: '',
         email: '',
         role: 'STUDENT',
-        document_number: ''
+        roles: [],
+        document_number: '',
+        faculty: '',
+        program: '',
+        coordinator_profiles: [],
     });
 
     const showToast = (message, type = 'success') => {
@@ -77,6 +96,7 @@ export default function UsersPage() {
 
     useEffect(() => {
         fetchUsers();
+        fetchCatalogs();
     }, []);
 
     const fetchUsers = async () => {
@@ -87,15 +107,33 @@ export default function UsersPage() {
             console.error("Error fetching users:", error);
             const errorMessage = error.response?.data?.detail || error.message || "Error al cargar usuarios";
             showToast(errorMessage, "error");
-
-            // Si es error de autenticación (401), redirigir al login si es necesario
-            if (error.response?.status === 401) {
-                // Opcional: manejar logout
-            }
         } finally {
             setLoading(false);
         }
     };
+
+    const fetchCatalogs = async () => {
+        try {
+            const [facRes, progRes] = await Promise.all([
+                api.get('/users/faculties/'),
+                api.get('/users/programs/'),
+            ]);
+            setFaculties(facRes.data);
+            setAllPrograms(progRes.data);
+            setPrograms(progRes.data);
+        } catch (e) {
+            console.error('Error fetching catalogs:', e);
+        }
+    };
+
+    // Filtrar programas cuando cambie la facultad seleccionada
+    useEffect(() => {
+        if (formData.faculty) {
+            setPrograms(allPrograms.filter(p => String(p.faculty) === String(formData.faculty)));
+        } else {
+            setPrograms(allPrograms);
+        }
+    }, [formData.faculty, allPrograms]);
 
     const resetForm = () => {
         setFormData({
@@ -105,7 +143,11 @@ export default function UsersPage() {
             last_name: '',
             email: '',
             role: 'STUDENT',
-            document_number: ''
+            roles: [],
+            document_number: '',
+            faculty: '',
+            program: '',
+            coordinator_profiles: [],
         });
         setFormErrors({});
         setShowPassword(false);
@@ -116,12 +158,19 @@ export default function UsersPage() {
         setEditingUser(user);
         setFormData({
             username: user.username || user.email,
-            password: '', // No mostramos la contraseña
+            password: '',
             first_name: user.first_name || '',
             last_name: user.last_name || '',
             email: user.email || '',
             role: user.role || 'STUDENT',
-            document_number: user.document_number || ''
+            roles: user.roles || [user.role || 'STUDENT'],
+            document_number: user.document_number || '',
+            faculty: user.faculty || '',
+            program: user.program || '',
+            coordinator_profiles: (user.coordinator_profiles || []).map(cp => ({
+                coordinator_type: cp.coordinator_type,
+                program: cp.program,
+            })),
         });
         setIsModalOpen(true);
     };
@@ -137,10 +186,9 @@ export default function UsersPage() {
             return;
         }
 
-        // Errores por campo (ej: { password: ['Esta contraseña es demasiado común.'] })
         const fieldErrors = {};
         let hasFieldErrors = false;
-        const knownFields = ['username', 'password', 'first_name', 'last_name', 'email', 'document_number', 'role'];
+        const knownFields = ['username', 'password', 'first_name', 'last_name', 'email', 'document_number', 'role', 'faculty', 'program'];
 
         for (const key of knownFields) {
             if (data[key]) {
@@ -153,10 +201,56 @@ export default function UsersPage() {
             setFormErrors(fieldErrors);
             showToast('Revisa los errores en el formulario.', 'error');
         } else {
-            // Error global (ej: { error: 'Solo los administradores...' } o { detail: '...' })
             const msg = data.error || data.detail || data.non_field_errors?.[0] || 'Error al guardar usuario.';
             showToast(msg, 'error');
         }
+    };
+
+    // ── Multi-rol helpers ──
+
+    const toggleRole = (role) => {
+        setFormData(prev => {
+            let newRoles = [...(prev.roles || [])];
+            if (newRoles.includes(role)) {
+                newRoles = newRoles.filter(r => r !== role);
+            } else {
+                newRoles.push(role);
+            }
+            // El rol principal es el primero de la lista (o el que cambie el select principal)
+            const primaryRole = newRoles.includes(prev.role) ? prev.role : (newRoles[0] || 'STUDENT');
+            return {
+                ...prev,
+                roles: newRoles,
+                role: primaryRole,
+                // Reset coordinator profiles si COORDINATOR se quita
+                coordinator_profiles: newRoles.includes('COORDINATOR') ? prev.coordinator_profiles : [],
+            };
+        });
+    };
+
+    const addCoordinatorProfile = () => {
+        setFormData(prev => ({
+            ...prev,
+            coordinator_profiles: [
+                ...prev.coordinator_profiles,
+                { coordinator_type: 'PRACTICAS', program: formData.program || (programs[0]?.id || '') }
+            ]
+        }));
+    };
+
+    const updateCoordinatorProfile = (index, field, value) => {
+        setFormData(prev => {
+            const updated = [...prev.coordinator_profiles];
+            updated[index] = { ...updated[index], [field]: value };
+            return { ...prev, coordinator_profiles: updated };
+        });
+    };
+
+    const removeCoordinatorProfile = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            coordinator_profiles: prev.coordinator_profiles.filter((_, i) => i !== index),
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -171,14 +265,19 @@ export default function UsersPage() {
 
         setSaving(true);
         try {
-            // Usar document_number como username si no se especificó uno
             const payload = {
                 ...formData,
                 username: formData.username || formData.document_number || formData.email,
+                faculty: formData.faculty || null,
+                program: formData.program || null,
             };
 
+            // Si el rol incluye COORDINATOR, enviar coordinator_profiles
+            if (!(payload.roles || []).includes('COORDINATOR')) {
+                payload.coordinator_profiles = [];
+            }
+
             if (editingUser) {
-                // Actualizar: no enviar contraseña si está vacía
                 if (!payload.password) delete payload.password;
                 await api.patch(`/users/${editingUser.id}/`, payload);
                 showToast('Usuario actualizado correctamente', 'success');
@@ -216,7 +315,9 @@ export default function UsersPage() {
             user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.document_number?.includes(searchTerm) ||
             user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesRole = activeRole === 'ALL' || user.role === activeRole;
+        const matchesRole = activeRole === 'ALL'
+            || user.role === activeRole
+            || (user.roles || []).includes(activeRole);
         return matchesSearch && matchesRole;
     });
 
@@ -225,7 +326,8 @@ export default function UsersPage() {
         total: users.length,
         students: users.filter(u => u.role === 'STUDENT').length,
         teachers: users.filter(u => u.role === 'TEACHER').length,
-        admins: users.filter(u => u.role === 'ADMIN').length
+        coordinators: users.filter(u => (u.roles || []).includes('COORDINATOR')).length,
+        admins: users.filter(u => u.role === 'ADMIN').length,
     };
 
     if (loading) {
@@ -253,7 +355,7 @@ export default function UsersPage() {
                     <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <User className="text-upn-600" /> Gestión de Usuarios
                     </h2>
-                    <p className="text-slate-500 mt-1">Administra estudiantes, docentes y administrativos.</p>
+                    <p className="text-slate-500 mt-1">Administra estudiantes, docentes, coordinadores y administrativos.</p>
                 </div>
                 <div className="flex gap-2">
                     <button className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors flex items-center gap-2">
@@ -269,14 +371,14 @@ export default function UsersPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
                     <div className="p-3 bg-slate-100 rounded-xl">
                         <User size={20} className="text-slate-600" />
                     </div>
                     <div>
                         <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
-                        <p className="text-xs text-slate-500 font-medium">Total Usuarios</p>
+                        <p className="text-xs text-slate-500 font-medium">Total</p>
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
@@ -298,19 +400,27 @@ export default function UsersPage() {
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
+                    <div className="p-3 bg-amber-100 rounded-xl">
+                        <Briefcase size={20} className="text-amber-600" />
+                    </div>
+                    <div>
+                        <p className="text-2xl font-bold text-amber-600">{stats.coordinators}</p>
+                        <p className="text-xs text-slate-500 font-medium">Coordinadores</p>
+                    </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
                     <div className="p-3 bg-upn-100 rounded-xl">
                         <Shield size={20} className="text-upn-600" />
                     </div>
                     <div>
                         <p className="text-2xl font-bold text-upn-600">{stats.admins}</p>
-                        <p className="text-xs text-slate-500 font-medium">Administradores</p>
+                        <p className="text-xs text-slate-500 font-medium">Admins</p>
                     </div>
                 </div>
             </div>
 
             {/* Search + Filtros de rol */}
             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-3 items-start md:items-center">
-                {/* Buscador */}
                 <div className="relative w-full md:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <input
@@ -322,12 +432,12 @@ export default function UsersPage() {
                     />
                 </div>
 
-                {/* Pestañas de rol */}
                 <div className="flex gap-1.5 flex-wrap">
                     {[
                         { key: 'ALL', label: 'Todos', count: users.length, icon: <User size={13} />, style: 'bg-slate-700 text-white', plain: 'bg-slate-100 text-slate-600 hover:bg-slate-200' },
                         { key: 'STUDENT', label: 'Estudiantes', count: stats.students, icon: <GraduationCap size={13} />, style: 'bg-blue-600 text-white', plain: 'bg-blue-50 text-blue-700 hover:bg-blue-100' },
                         { key: 'TEACHER', label: 'Docentes', count: stats.teachers, icon: <BookOpen size={13} />, style: 'bg-purple-600 text-white', plain: 'bg-purple-50 text-purple-700 hover:bg-purple-100' },
+                        { key: 'COORDINATOR', label: 'Coordinadores', count: stats.coordinators, icon: <Briefcase size={13} />, style: 'bg-amber-600 text-white', plain: 'bg-amber-50 text-amber-700 hover:bg-amber-100' },
                         { key: 'ADMIN', label: 'Admins', count: stats.admins, icon: <Shield size={13} />, style: 'bg-upn-600 text-white', plain: 'bg-upn-50 text-upn-700 hover:bg-upn-100' },
                     ].map(({ key, label, count, icon, style, plain }) => (
                         <button
@@ -344,10 +454,9 @@ export default function UsersPage() {
                     ))}
                 </div>
 
-                {/* Indicador de filtro activo */}
                 {activeRole !== 'ALL' && (
                     <span className="text-xs text-slate-400">
-                        Mostrando {filteredUsers.length} {activeRole === 'STUDENT' ? 'estudiante(s)' : activeRole === 'TEACHER' ? 'docente(s)' : 'admin(s)'}
+                        Mostrando {filteredUsers.length} resultado(s)
                     </span>
                 )}
             </div>
@@ -360,7 +469,8 @@ export default function UsersPage() {
                             <tr>
                                 <th className="text-left px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario</th>
                                 <th className="text-left px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
-                                <th className="text-left px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Rol</th>
+                                <th className="text-left px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Rol(es)</th>
+                                <th className="text-left px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Programa</th>
                                 <th className="text-left px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
                                 <th className="text-right px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
                             </tr>
@@ -371,7 +481,6 @@ export default function UsersPage() {
                                     <tr key={user.id} className="hover:bg-slate-50/80 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                {/* Avatar con foto */}
                                                 <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold overflow-hidden">
                                                     {user.photo ? (
                                                         <img
@@ -395,10 +504,28 @@ export default function UsersPage() {
                                             {user.document_number || 'N/A'}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${ROLE_STYLES[user.role] || 'bg-slate-100 text-slate-800'}`}>
-                                                {ROLE_ICONS[user.role]}
-                                                {ROLE_LABELS[user.role] || user.role}
-                                            </span>
+                                            <div className="flex flex-wrap gap-1">
+                                                {(user.roles && user.roles.length > 0 ? user.roles : [user.role]).map(r => (
+                                                    <span key={r} className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${ROLE_STYLES[r] || 'bg-slate-100 text-slate-800'}`}>
+                                                        {ROLE_ICONS[r]}
+                                                        {ROLE_LABELS[r] || r}
+                                                    </span>
+                                                ))}
+                                                {/* Badges de tipo de coordinación */}
+                                                {user.coordinator_profiles?.map((cp, i) => (
+                                                    <span key={`cp-${i}`} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                        {COORDINATOR_TYPE_LABELS[cp.coordinator_type] || cp.coordinator_type}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 hidden lg:table-cell">
+                                            <div className="text-sm text-slate-600">
+                                                {user.program_name || <span className="text-slate-300">—</span>}
+                                            </div>
+                                            {user.faculty_name && (
+                                                <div className="text-[11px] text-slate-400">{user.faculty_name}</div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -428,7 +555,7 @@ export default function UsersPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-12 text-center text-slate-400">
+                                    <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
                                         No se encontraron usuarios
                                     </td>
                                 </tr>
@@ -438,11 +565,13 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            {/* Modal Create/Edit User */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* Modal Create/Edit User                                    */}
+            {/* ═══════════════════════════════════════════════════════════ */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-shrink-0">
                             <h3 className="text-lg font-bold text-slate-800">
                                 {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
                             </h3>
@@ -451,7 +580,7 @@ export default function UsersPage() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
 
                             {/* Nombres */}
                             <div className="grid grid-cols-2 gap-4">
@@ -481,7 +610,7 @@ export default function UsersPage() {
                                 </div>
                             </div>
 
-                            {/* Documento y Correo */}
+                            {/* Documento y Rol principal */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-slate-500 uppercase">N° Documento *</label>
@@ -496,18 +625,152 @@ export default function UsersPage() {
                                     {formErrors.document_number && <p className="text-xs text-red-500 mt-1">{formErrors.document_number}</p>}
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Rol</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Rol principal</label>
                                     <select
                                         value={formData.role}
-                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                        onChange={(e) => {
+                                            const newRole = e.target.value;
+                                            setFormData(prev => {
+                                                let newRoles = [...(prev.roles || [])];
+                                                // Quitar el rol anterior si ya no aplica
+                                                if (prev.role !== newRole && !newRoles.includes(newRole)) {
+                                                    newRoles.push(newRole);
+                                                }
+                                                return { ...prev, role: newRole, roles: newRoles };
+                                            });
+                                        }}
                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
                                     >
                                         <option value="STUDENT">Estudiante</option>
                                         <option value="TEACHER">Docente</option>
+                                        <option value="COORDINATOR">Coordinador</option>
                                         <option value="ADMIN">Administrador</option>
                                     </select>
                                 </div>
                             </div>
+
+                            {/* ── Multi-Rol: chips de roles adicionales ── */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase">Roles activos</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['STUDENT', 'TEACHER', 'COORDINATOR', 'ADMIN'].map(r => {
+                                        const active = (formData.roles || []).includes(r);
+                                        return (
+                                            <button
+                                                key={r}
+                                                type="button"
+                                                onClick={() => toggleRole(r)}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${active
+                                                    ? `${ROLE_STYLES[r]} ring-2 ring-offset-1 ring-current/20`
+                                                    : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                                                    }`}
+                                            >
+                                                {ROLE_ICONS[r]}
+                                                {ROLE_LABELS[r]}
+                                                {active && <Check size={12} className="ml-0.5" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <p className="text-[11px] text-slate-400">Un usuario puede tener varios roles simultáneamente.</p>
+                            </div>
+
+                            {/* ── Facultad y Programa ── */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                        <Building2 size={12} /> Facultad
+                                    </label>
+                                    <select
+                                        value={formData.faculty}
+                                        onChange={(e) => setFormData({ ...formData, faculty: e.target.value, program: '' })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
+                                    >
+                                        <option value="">— Seleccionar —</option>
+                                        {faculties.map(f => (
+                                            <option key={f.id} value={f.id}>{f.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                        <BookOpen size={12} /> Programa
+                                    </label>
+                                    <select
+                                        value={formData.program}
+                                        onChange={(e) => setFormData({ ...formData, program: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500"
+                                        disabled={!formData.faculty}
+                                    >
+                                        <option value="">— Seleccionar —</option>
+                                        {programs.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                    {!formData.faculty && <p className="text-[11px] text-slate-400">Selecciona primero una facultad</p>}
+                                </div>
+                            </div>
+
+                            {/* ── Sección de Coordinación (solo si COORDINATOR está activo) ── */}
+                            {(formData.roles || []).includes('COORDINATOR') && (
+                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-sm font-bold text-amber-800 flex items-center gap-2">
+                                            <Briefcase size={16} /> Asignaciones de Coordinación
+                                        </h4>
+                                        <button
+                                            type="button"
+                                            onClick={addCoordinatorProfile}
+                                            className="text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                                        >
+                                            <Plus size={14} /> Agregar
+                                        </button>
+                                    </div>
+
+                                    {formData.coordinator_profiles.length === 0 && (
+                                        <p className="text-xs text-amber-600 italic">
+                                            Haz clic en "Agregar" para asignar un tipo de coordinación.
+                                        </p>
+                                    )}
+
+                                    {formData.coordinator_profiles.map((cp, idx) => (
+                                        <div key={idx} className="flex gap-3 items-start bg-white p-3 rounded-lg border border-amber-200">
+                                            <div className="flex-1 space-y-1.5">
+                                                <label className="text-[11px] font-bold text-amber-700 uppercase">Tipo</label>
+                                                <select
+                                                    value={cp.coordinator_type}
+                                                    onChange={(e) => updateCoordinatorProfile(idx, 'coordinator_type', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-amber-50/50 border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                                >
+                                                    {Object.entries(COORDINATOR_TYPE_LABELS).map(([k, v]) => (
+                                                        <option key={k} value={k}>{v}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="flex-1 space-y-1.5">
+                                                <label className="text-[11px] font-bold text-amber-700 uppercase">Programa</label>
+                                                <select
+                                                    value={cp.program}
+                                                    onChange={(e) => updateCoordinatorProfile(idx, 'program', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-amber-50/50 border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                                >
+                                                    <option value="">— Seleccionar —</option>
+                                                    {allPrograms.map(p => (
+                                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeCoordinatorProfile(idx)}
+                                                className="mt-6 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             {/* Correo */}
                             <div className="space-y-1.5">

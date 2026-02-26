@@ -101,6 +101,11 @@ function App() {
               <Route path="/users" element={<UsersPage />} />
               <Route path="/my-absences" element={<MyAbsences />} />
               <Route path="/reviews" element={<TeacherReviews />} />
+              {/* Rutas de Coordinador */}
+              <Route path="/coordinator/practicas" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Prácticas</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
+              <Route path="/coordinator/programa" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Programa</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
+              <Route path="/coordinator/investigacion" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Investigación</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
+              <Route path="/coordinator/extension" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Extensión</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/badges" element={<div className="p-4">Módulo de Insignias: En Construcción</div>} />
               <Route path="/settings" element={<div className="p-4">Configuración: En Construcción</div>} />

@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash, ChevronRight, ChevronDown, Briefcase } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
@@ -27,6 +27,45 @@ const SidebarItem = ({ icon: Icon, label, to, onClick, subtitle }) => (
     </NavLink>
 );
 
+// Collapsible Sidebar Section with sub-items
+const SidebarSection = ({ icon: Icon, label, children, defaultOpen = false }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <div>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group w-full text-upn-200 hover:bg-upn-800/60 hover:text-white"
+            >
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                <span className="flex-1 text-left">{label}</span>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 opacity-60 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isOpen && (
+                <div className="ml-4 pl-4 border-l border-upn-700/40 mt-1 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Sub-item inside a collapsible section
+const SidebarSubItem = ({ label, to, onClick }) => (
+    <NavLink
+        to={to}
+        onClick={onClick}
+        className={({ isActive }) =>
+            `block px-3 py-2 rounded-lg text-[13px] font-medium transition-all
+            ${isActive
+                ? 'bg-upn-600/80 text-white'
+                : 'text-upn-300 hover:bg-upn-800/60 hover:text-white'}`
+        }
+    >
+        {label}
+    </NavLink>
+);
+
 export default function DashboardLayout() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,6 +74,7 @@ export default function DashboardLayout() {
     const isAdmin = user?.role === 'ADMIN';
     const isTeacher = user?.role === 'TEACHER';
     const isStudent = user?.role === 'STUDENT';
+    const isCoordinator = (user?.roles || []).includes('COORDINATOR');
 
     // Estado modal "Unirse a clase"
     const [joinModalOpen, setJoinModalOpen] = useState(false);
@@ -104,6 +144,16 @@ export default function DashboardLayout() {
         );
     }
 
+    // Rol display
+    const getRoleLabel = () => {
+        const roles = user?.roles || [user?.role];
+        if (roles.includes('ADMIN')) return 'Administrador';
+        if (roles.includes('COORDINATOR') && roles.includes('TEACHER')) return 'Docente · Coordinador';
+        if (roles.includes('COORDINATOR')) return 'Coordinador';
+        if (roles.includes('TEACHER')) return 'Docente';
+        return 'Estudiante';
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
@@ -138,7 +188,7 @@ export default function DashboardLayout() {
                             {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
                         </h3>
                         <p className="text-[11px] text-upn-300 font-medium">
-                            {user?.role === 'ADMIN' ? 'Administrador' : user?.role === 'TEACHER' ? 'Docente' : 'Estudiante'}
+                            {getRoleLabel()}
                         </p>
                     </div>
                 </div>
@@ -171,6 +221,16 @@ export default function DashboardLayout() {
 
                 {isAdmin && (
                     <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
+                )}
+
+                {/* ── Sección Coordinador ── */}
+                {isCoordinator && (
+                    <SidebarSection icon={Briefcase} label="Coordinador" defaultOpen={true}>
+                        <SidebarSubItem label="Prácticas" to="/coordinator/practicas" onClick={() => setIsSidebarOpen(false)} />
+                        <SidebarSubItem label="Programa" to="/coordinator/programa" onClick={() => setIsSidebarOpen(false)} />
+                        <SidebarSubItem label="Investigación" to="/coordinator/investigacion" onClick={() => setIsSidebarOpen(false)} />
+                        <SidebarSubItem label="Extensión" to="/coordinator/extension" onClick={() => setIsSidebarOpen(false)} />
+                    </SidebarSection>
                 )}
 
                 {user?.role === 'STUDENT' && (
@@ -297,7 +357,7 @@ export default function DashboardLayout() {
                                         {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
                                     </p>
                                     <p className="text-xs text-slate-500">
-                                        {isAdmin ? 'Administrador' : isTeacher ? 'Docente' : 'Estudiante'}
+                                        {getRoleLabel()}
                                     </p>
                                 </div>
                                 <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
