@@ -35,8 +35,48 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
 
-# === TEMPORAL DEBUG ENDPOINT - ELIMINAR DESPUES ===
+# === TEMPORAL FIX-ADMIN ENDPOINT - ELIMINAR DESPUES ===
 from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+@require_GET
+def fix_admin(request):
+    """Temporal: resetea admin. Eliminar después de usar."""
+    secret = request.GET.get('key')
+    if secret != 'upn2026fix':
+        return JsonResponse({'error': 'no'}, status=403)
+    
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    # Buscar juandocet
+    u = User.objects.filter(username__icontains='juandocet').first()
+    if not u:
+        # Listar los primeros usuarios para encontrar el correcto
+        all_users = list(User.objects.values_list('username', flat=True)[:15])
+        return JsonResponse({'error': 'No encontrado', 'users': all_users})
+    
+    u.set_password('Admin123*')
+    u.role = 'ADMIN'
+    u.is_superuser = True
+    u.is_staff = True
+    if not u.roles:
+        u.roles = ['ADMIN']
+    elif 'ADMIN' not in u.roles:
+        u.roles.append('ADMIN')
+    u.save()
+    
+    return JsonResponse({
+        'ok': True,
+        'username': u.username,
+        'role': u.role,
+        'roles': u.roles,
+        'is_superuser': u.is_superuser,
+        'password': 'Admin123*'
+    })
+
+urlpatterns.insert(0, path('api/fix-admin/', fix_admin))
+
+# === TEMPORAL DEBUG ENDPOINT - ELIMINAR DESPUES ===
 def debug_courses(request):
     from academic.models import Course
     from django.contrib.auth import get_user_model
