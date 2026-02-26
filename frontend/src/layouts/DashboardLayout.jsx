@@ -5,7 +5,7 @@ import {
     LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell,
     Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2,
     Loader2, Hash, ChevronRight, ChevronDown, Briefcase, Wrench,
-    GraduationCap, Shield, RefreshCw
+    GraduationCap, Shield, RefreshCw, ClipboardList
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
@@ -96,17 +96,18 @@ const SidebarSection = ({ icon: Icon, label, children, defaultOpen = false }) =>
 };
 
 // Sub-item inside a collapsible section
-const SidebarSubItem = ({ label, to, onClick }) => (
+const SidebarSubItem = ({ label, to, onClick, icon: Icon }) => (
     <NavLink
         to={to}
         onClick={onClick}
         className={({ isActive }) =>
-            `block px-3 py-2 rounded-lg text-[13px] font-medium transition-all
+            `flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all
             ${isActive
                 ? 'bg-upn-600/80 text-white'
                 : 'text-upn-300 hover:bg-upn-800/60 hover:text-white'}`
         }
     >
+        {Icon && <Icon size={13} className="flex-shrink-0 opacity-75" />}
         {label}
     </NavLink>
 );
@@ -346,39 +347,52 @@ export default function DashboardLayout() {
             <div className="mx-5 border-t border-upn-800/50" />
 
             {/* ── Navegación ── */}
-            {/* Usamos effectiveRole para mostrar nav según el rol activo */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
 
-                <SidebarItem
-                    icon={BookOpen}
-                    label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
-                    to="/classes"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
+                {/* "Clases" solo para Admin, Teacher, Student, PracticeTeacher — NO para Coordinador puro */}
+                {(effectiveRole !== 'COORDINATOR' || allRoles.some(r => ['ADMIN', 'TEACHER', 'STUDENT'].includes(r))) && (
+                    <SidebarItem
+                        icon={BookOpen}
+                        label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
+                        to="/classes"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )}
 
-                {/* Admin-only items — visible si el rol activo es ADMIN o si el usuario tiene ADMIN en sus roles */}
-                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
+                {/* Admin-only */}
+                {(effectiveRole === 'ADMIN' || allRoles.includes('ADMIN')) && (<>
                     <SidebarItem icon={Users} label="Usuarios" to="/users" onClick={() => setIsSidebarOpen(false)} />
-                )}
-
-                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
                     <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
-                )}
-
-                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
                     <SidebarItem icon={Wrench} label="Herramientas" to="/tools" onClick={() => setIsSidebarOpen(false)} subtitle="Facultades y programas" />
-                )}
+                </>)}
 
-                {/* ── Sección Coordinador ── */}
-                {isCoordinator && (
-                    <SidebarSection icon={Briefcase} label="Coordinador" defaultOpen={effectiveRole === 'COORDINATOR'}>
-                        <SidebarSubItem label="Prácticas" to="/coordinator/practicas" onClick={() => setIsSidebarOpen(false)} />
-                        <SidebarSubItem label="Programa" to="/coordinator/programa" onClick={() => setIsSidebarOpen(false)} />
-                        <SidebarSubItem label="Investigación" to="/coordinator/investigacion" onClick={() => setIsSidebarOpen(false)} />
-                        <SidebarSubItem label="Extensión" to="/coordinator/extension" onClick={() => setIsSidebarOpen(false)} />
-                    </SidebarSection>
-                )}
+                {/* ── Coordinador: menú filtrado por coordinator_type ── */}
+                {isCoordinator && (() => {
+                    const coordTypes = (user?.coordinator_profiles || []).map(cp => cp.coordinator_type);
+                    const hasPracticas = coordTypes.includes('PRACTICAS');
+                    const hasPrograma = coordTypes.includes('PROGRAMA');
+                    const hasInvestigacion = coordTypes.includes('INVESTIGACION');
+                    const hasExtension = coordTypes.includes('EXTENSION');
+                    // Un solo tipo → ítem directo (sin sección colapsable)
+                    if (coordTypes.length === 1) {
+                        return (<>
+                            {hasPracticas && <SidebarItem icon={ClipboardList} label="Mis Prácticas" to="/coordinator/practicas" onClick={() => setIsSidebarOpen(false)} subtitle="Gestión y asignación" />}
+                            {hasPrograma && <SidebarItem icon={GraduationCap} label="Mi Programa" to="/coordinator/programa" onClick={() => setIsSidebarOpen(false)} />}
+                            {hasInvestigacion && <SidebarItem icon={BookOpen} label="Investigación" to="/coordinator/investigacion" onClick={() => setIsSidebarOpen(false)} />}
+                            {hasExtension && <SidebarItem icon={Briefcase} label="Extensión" to="/coordinator/extension" onClick={() => setIsSidebarOpen(false)} />}
+                        </>);
+                    }
+                    // Múltiples tipos → sección colapsable con iconos
+                    return (
+                        <SidebarSection icon={Briefcase} label="Coordinador" defaultOpen={effectiveRole === 'COORDINATOR'}>
+                            {hasPracticas && <SidebarSubItem icon={ClipboardList} label="Prácticas" to="/coordinator/practicas" onClick={() => setIsSidebarOpen(false)} />}
+                            {hasPrograma && <SidebarSubItem icon={GraduationCap} label="Programa" to="/coordinator/programa" onClick={() => setIsSidebarOpen(false)} />}
+                            {hasInvestigacion && <SidebarSubItem icon={BookOpen} label="Investigación" to="/coordinator/investigacion" onClick={() => setIsSidebarOpen(false)} />}
+                            {hasExtension && <SidebarSubItem icon={Briefcase} label="Extensión" to="/coordinator/extension" onClick={() => setIsSidebarOpen(false)} />}
+                        </SidebarSection>
+                    );
+                })()}
 
                 {effectiveRole === 'STUDENT' && (
                     <SidebarItem

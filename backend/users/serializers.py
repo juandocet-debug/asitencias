@@ -152,8 +152,10 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate_password(self, value):
-        if value:
-            validate_password(value)
+        # El ADMIN puede asignar contraseñas sin restricciones de políticas Django
+        # (ej: evitar error "contraseña demasiado común" al resetear credenciales)
+        if value and len(value) < 6:
+            raise serializers.ValidationError("La contraseña debe tener al menos 6 caracteres.")
         return value
 
     def update(self, instance, validated_data):

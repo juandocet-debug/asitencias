@@ -54,10 +54,11 @@ class User(AbstractUser):
         ('COORDINATOR', 'Coordinador'),
         ('TEACHER', 'Docente'),
         ('STUDENT', 'Estudiante'),
+        ('PRACTICE_TEACHER', 'Profesor de Práctica'),  # Docente asignado a una práctica
     )
 
     # Rol principal — usado por ILINYX y como rol "activo" por defecto
-    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='STUDENT')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STUDENT')
 
     # Multi-rol: un usuario puede ser TEACHER + COORDINATOR a la vez
     # Almacena la lista de TODOS sus roles, ej: ["TEACHER", "COORDINATOR"]

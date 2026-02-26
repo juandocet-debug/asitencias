@@ -21,6 +21,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const MyAbsences = lazy(() => import('./pages/MyAbsences'));
 const TeacherReviews = lazy(() => import('./pages/TeacherReviews'));
 const ToolsPage = lazy(() => import('./pages/Tools'));
+const PracticasPage = lazy(() => import('./pages/Practicas'));
 
 // ──────────────────────────────────────────────
 // Spinner de carga global — se muestra mientras
@@ -104,7 +105,7 @@ function App() {
               <Route path="/my-absences" element={<MyAbsences />} />
               <Route path="/reviews" element={<TeacherReviews />} />
               {/* Rutas de Coordinador */}
-              <Route path="/coordinator/practicas" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Prácticas</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
+              <Route path="/coordinator/practicas" element={<PracticasPage />} />
               <Route path="/coordinator/programa" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Programa</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
               <Route path="/coordinator/investigacion" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Investigación</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
               <Route path="/coordinator/extension" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Extensión</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
