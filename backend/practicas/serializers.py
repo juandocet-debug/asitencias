@@ -1,11 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import SitioPractica, ObjetivoPractica, Practica
+from .models import SitioPractica, ObjetivoPractica, Practica, SeguimientoPractica, AsistenciaPractica
 
 User = get_user_model()
 
 
-# ─── Serializer compacto de usuario (para listas de docentes / coordinadores) ─
 class UserCompactSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
 
@@ -19,21 +18,26 @@ class UserCompactSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         if instance.photo:
-            rep['photo'] = instance.photo.url
+            try:
+                rep['photo'] = instance.photo.url
+            except Exception:
+                pass
         return rep
 
 
-# ─── Sitio de Práctica ────────────────────────────────────────────────────────
 class SitioPracticaSerializer(serializers.ModelSerializer):
     program_name = serializers.CharField(source='program.name', read_only=True)
 
     class Meta:
         model = SitioPractica
-        fields = ('id', 'name', 'address', 'description', 'program', 'program_name', 'is_active', 'created_at')
+        fields = (
+            'id', 'name', 'address', 'description',
+            'contact_name', 'phone_fixed', 'phone_mobile',
+            'program', 'program_name', 'is_active', 'created_at'
+        )
         read_only_fields = ('id', 'created_at', 'program_name')
 
 
-# ─── Objetivo de Práctica ─────────────────────────────────────────────────────
 class ObjetivoPracticaSerializer(serializers.ModelSerializer):
     program_name = serializers.CharField(source='program.name', read_only=True)
 
@@ -43,16 +47,14 @@ class ObjetivoPracticaSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at', 'program_name')
 
 
-# ─── Práctica ─────────────────────────────────────────────────────────────────
 class PracticaSerializer(serializers.ModelSerializer):
-    program_name          = serializers.CharField(source='program.name', read_only=True)
-    coordinator_name      = serializers.SerializerMethodField(read_only=True)
-    profesor_name         = serializers.SerializerMethodField(read_only=True)
-    sitios_detail         = SitioPracticaSerializer(source='sitios', many=True, read_only=True)
-    objetivos_detail      = ObjetivoPracticaSerializer(source='objetivos', many=True, read_only=True)
-    student_count         = serializers.SerializerMethodField(read_only=True)
+    program_name     = serializers.CharField(source='program.name', read_only=True)
+    coordinator_info = UserCompactSerializer(source='coordinator', read_only=True)
+    profesor_info    = UserCompactSerializer(source='profesor_practica', read_only=True)
+    sitios_detail    = SitioPracticaSerializer(source='sitios', many=True, read_only=True)
+    objetivos_detail = ObjetivoPracticaSerializer(source='objetivos', many=True, read_only=True)
+    student_count    = serializers.SerializerMethodField(read_only=True)
 
-    # Write: IDs de sitios y objetivos
     sitios    = serializers.PrimaryKeyRelatedField(queryset=SitioPractica.objects.all(), many=True, required=False)
     objetivos = serializers.PrimaryKeyRelatedField(queryset=ObjetivoPractica.objects.all(), many=True, required=False)
 
@@ -60,25 +62,53 @@ class PracticaSerializer(serializers.ModelSerializer):
         model = Practica
         fields = (
             'id', 'name', 'program', 'program_name',
-            'coordinator', 'coordinator_name',
-            'profesor_practica', 'profesor_name',
+            'coordinator', 'coordinator_info',
+            'profesor_practica', 'profesor_info',
             'sitios', 'sitios_detail',
             'objetivos', 'objetivos_detail',
             'year', 'period', 'code',
             'student_count', 'is_active', 'created_at',
         )
-        read_only_fields = ('id', 'code', 'created_at', 'program_name', 'coordinator_name',
-                            'profesor_name', 'sitios_detail', 'objetivos_detail', 'student_count')
-
-    def get_coordinator_name(self, obj):
-        if obj.coordinator:
-            return f'{obj.coordinator.first_name} {obj.coordinator.last_name}'.strip()
-        return None
-
-    def get_profesor_name(self, obj):
-        if obj.profesor_practica:
-            return f'{obj.profesor_practica.first_name} {obj.profesor_practica.last_name}'.strip()
-        return None
+        read_only_fields = ('id', 'code', 'created_at')
 
     def get_student_count(self, obj):
         return obj.students.count()
+
+
+class PracticaStudentsSerializer(serializers.ModelSerializer):
+    """Serializer de detalle con lista de estudiantes."""
+    students = UserCompactSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Practica
+        fields = ('id', 'name', 'code', 'students')
+
+
+class AsistenciaPracticaSerializer(serializers.ModelSerializer):
+    student_info = UserCompactSerializer(source='student', read_only=True)
+
+    class Meta:
+        model = AsistenciaPractica
+        fields = ('id', 'seguimiento', 'student', 'student_info', 'status', 'comment')
+        read_only_fields = ('id',)
+
+
+class SeguimientoPracticaSerializer(serializers.ModelSerializer):
+    sitio_name      = serializers.CharField(source='sitio.name', read_only=True, default=None)
+    created_by_name = serializers.SerializerMethodField(read_only=True)
+    asistencias     = AsistenciaPracticaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SeguimientoPractica
+        fields = (
+            'id', 'practica', 'sitio', 'sitio_name',
+            'date', 'topic', 'novedades',
+            'created_by', 'created_by_name',
+            'asistencias', 'created_at',
+        )
+        read_only_fields = ('id', 'created_at', 'created_by', 'sitio_name', 'created_by_name')
+
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return f'{obj.created_by.first_name} {obj.created_by.last_name}'.strip()
+        return None

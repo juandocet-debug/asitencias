@@ -19,33 +19,31 @@ const ROLE_META = {
         label: 'Administrador',
         short: 'Admin',
         icon: Shield,
-        color: 'from-upn-500 to-upn-700',
-        badge: 'bg-upn-100 text-upn-800 border-upn-300',
         activeBg: 'bg-upn-600',
     },
     TEACHER: {
         label: 'Docente',
         short: 'Docente',
         icon: BookOpen,
-        color: 'from-purple-500 to-purple-700',
-        badge: 'bg-purple-100 text-purple-800 border-purple-300',
-        activeBg: 'bg-purple-600',
+        activeBg: 'bg-upn-600',
     },
     COORDINATOR: {
         label: 'Coordinador',
         short: 'Coord.',
         icon: Briefcase,
-        color: 'from-amber-500 to-amber-700',
-        badge: 'bg-amber-100 text-amber-800 border-amber-300',
-        activeBg: 'bg-amber-600',
+        activeBg: 'bg-upn-600',
     },
     STUDENT: {
         label: 'Estudiante',
         short: 'Est.',
         icon: GraduationCap,
-        color: 'from-blue-500 to-blue-700',
-        badge: 'bg-blue-100 text-blue-800 border-blue-300',
-        activeBg: 'bg-blue-600',
+        activeBg: 'bg-upn-600',
+    },
+    PRACTICE_TEACHER: {
+        label: 'Prof. Práctica',
+        short: 'P.Práct.',
+        icon: ClipboardList,
+        activeBg: 'bg-upn-600',
     },
 };
 
@@ -117,39 +115,32 @@ const SidebarSubItem = ({ label, to, onClick, icon: Icon }) => (
 // ─────────────────────────────────────────────────────
 const RoleSwitcher = ({ user, activeRole, setActiveRole, onAfterSwitch }) => {
     const allRoles = (user?.roles?.length > 0 ? user.roles : [user?.role]).filter(Boolean);
-
-    // Solo mostrar si tiene más de un rol
     if (allRoles.length <= 1) return null;
 
     return (
         <div className="px-4 pb-3">
-            {/* Header */}
             <div className="flex items-center gap-2 mb-2 px-1">
                 <RefreshCw size={11} className="text-upn-400" />
-                <span className="text-[10px] font-bold text-upn-400 uppercase tracking-wider">Cambiar rol</span>
+                <span className="text-[10px] font-bold text-upn-400 uppercase tracking-wider">Vista activa</span>
             </div>
 
-            {/* Role Pills */}
             <div className="flex flex-wrap gap-1.5">
                 {allRoles.map(role => {
-                    const meta = ROLE_META[role] || { label: role, short: role, icon: User, activeBg: 'bg-upn-600' };
+                    const meta = ROLE_META[role] || { label: role, short: role, icon: User };
                     const IconComp = meta.icon;
                     const isActive = activeRole === role;
 
                     return (
                         <button
                             key={role}
-                            onClick={() => {
-                                setActiveRole(role);
-                                if (onAfterSwitch) onAfterSwitch();
-                            }}
+                            onClick={() => { setActiveRole(role); if (onAfterSwitch) onAfterSwitch(); }}
                             title={meta.label}
                             className={`
                                 relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold
                                 border transition-all duration-200 select-none
                                 ${isActive
-                                    ? 'bg-white text-upn-900 border-white shadow-md scale-105'
-                                    : 'bg-upn-800/60 text-upn-300 border-upn-700/50 hover:bg-upn-700/70 hover:text-white hover:border-upn-600'
+                                    ? 'bg-white text-upn-900 border-white/80 shadow-md'
+                                    : 'bg-upn-800/50 text-upn-300 border-upn-700/40 hover:bg-upn-700/60 hover:text-white'
                                 }
                             `}
                         >
@@ -163,12 +154,9 @@ const RoleSwitcher = ({ user, activeRole, setActiveRole, onAfterSwitch }) => {
                 })}
             </div>
 
-            {/* Rol activo label */}
             <p className="text-[10px] text-upn-500 mt-1.5 px-1">
                 Viendo como: <span className="text-upn-300 font-semibold">{ROLE_META[activeRole]?.label || activeRole}</span>
             </p>
-
-            {/* Separador */}
             <div className="mt-3 border-t border-upn-800/50" />
         </div>
     );
@@ -350,8 +338,9 @@ export default function DashboardLayout() {
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
 
-                {/* "Clases" solo para Admin, Teacher, Student, PracticeTeacher — NO para Coordinador puro */}
-                {(effectiveRole !== 'COORDINATOR' || allRoles.some(r => ['ADMIN', 'TEACHER', 'STUDENT'].includes(r))) && (
+                {/* "Clases" solo si el ROL ACTIVO no es COORDINATOR
+                    (un coordinador con también rol STUDENT no debe ver esto cuando está en modo coordinador) */}
+                {effectiveRole !== 'COORDINATOR' && (
                     <SidebarItem
                         icon={BookOpen}
                         label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
