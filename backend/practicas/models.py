@@ -159,8 +159,8 @@ class AsistenciaPractica(models.Model):
     """Registro de asistencia de un estudiante en una sesión de seguimiento."""
     STATUS_CHOICES = (
         ('PRESENT', 'Presente'),
-        ('ABSENT', 'Ausente'),
-        ('LATE', 'Tardanza'),
+        ('ABSENT',  'Ausente'),
+        ('LATE',    'Tardanza'),
         ('EXCUSED', 'Excusado'),
     )
 
@@ -173,12 +173,48 @@ class AsistenciaPractica(models.Model):
         verbose_name='Estudiante'
     )
     status      = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PRESENT')
-    comment     = models.TextField(blank=True, verbose_name='Comentario')
+    comment     = models.TextField(blank=True, verbose_name='Comentario del coordinador')
 
     class Meta:
-        verbose_name = 'Asistencia Práctica'
+        verbose_name        = 'Asistencia Práctica'
         verbose_name_plural = 'Asistencias Práctica'
-        unique_together = ('seguimiento', 'student')
+        unique_together     = ('seguimiento', 'student')
 
     def __str__(self):
         return f'{self.student} — {self.seguimiento} — {self.status}'
+
+
+class ReflexionEstudiante(models.Model):
+    """
+    Diario de campo del estudiante.
+
+    En cada sesión de seguimiento, el estudiante registra:
+      - actividades  : qué hizo en la práctica
+      - reflexion    : reflexión pedagógica sobre su actuar
+      - aprendizajes : qué aprendió / qué mejoraría
+
+    Solo el estudiante propietario puede crear o editar su reflexión.
+    El coordinador y el profesor de práctica pueden leerlas.
+    """
+    seguimiento          = models.ForeignKey(
+        SeguimientoPractica, on_delete=models.CASCADE,
+        related_name='reflexiones', verbose_name='Sesión de práctica'
+    )
+    student              = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='reflexiones_practica', verbose_name='Estudiante'
+    )
+    actividades          = models.TextField(verbose_name='Actividades realizadas')
+    reflexion_pedagogica = models.TextField(blank=True, verbose_name='Reflexión pedagógica')
+    aprendizajes         = models.TextField(blank=True, verbose_name='Aprendizajes y mejoras')
+    created_at           = models.DateTimeField(auto_now_add=True)
+    updated_at           = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name        = 'Reflexión de Estudiante'
+        verbose_name_plural = 'Reflexiones de Estudiantes'
+        unique_together     = ('seguimiento', 'student')
+        ordering            = ['-seguimiento__date']
+
+    def __str__(self):
+        return f'Reflexión: {self.student} — {self.seguimiento.date}'

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import SitioPractica, ObjetivoPractica, Practica, SeguimientoPractica, AsistenciaPractica
+from .models import SitioPractica, ObjetivoPractica, Practica, SeguimientoPractica, AsistenciaPractica, ReflexionEstudiante
 
 User = get_user_model()
 
@@ -76,7 +76,6 @@ class PracticaSerializer(serializers.ModelSerializer):
 
 
 class PracticaStudentsSerializer(serializers.ModelSerializer):
-    """Serializer de detalle con lista de estudiantes."""
     students = UserCompactSerializer(many=True, read_only=True)
 
     class Meta:
@@ -84,19 +83,47 @@ class PracticaStudentsSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'code', 'students')
 
 
+# ─── Reflexión del estudiante ──────────────────────────────────────────────────
+class ReflexionEstudianteSerializer(serializers.ModelSerializer):
+    student_name    = serializers.SerializerMethodField(read_only=True)
+    seguimiento_date= serializers.DateField(source='seguimiento.date', read_only=True)
+
+    class Meta:
+        model = ReflexionEstudiante
+        fields = (
+            'id', 'seguimiento', 'student', 'student_name', 'seguimiento_date',
+            'actividades', 'reflexion_pedagogica', 'aprendizajes',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at', 'student_name', 'seguimiento_date')
+
+    def get_student_name(self, obj):
+        return f'{obj.student.first_name} {obj.student.last_name}'.strip()
+
+
+# ─── Asistencia with reflexion flag ────────────────────────────────────────────
 class AsistenciaPracticaSerializer(serializers.ModelSerializer):
-    student_info = UserCompactSerializer(source='student', read_only=True)
+    student_info   = UserCompactSerializer(source='student', read_only=True)
+    has_reflexion  = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = AsistenciaPractica
-        fields = ('id', 'seguimiento', 'student', 'student_info', 'status', 'comment')
-        read_only_fields = ('id',)
+        fields = ('id', 'seguimiento', 'student', 'student_info', 'status', 'comment', 'has_reflexion')
+        read_only_fields = ('id', 'has_reflexion')
+
+    def get_has_reflexion(self, obj):
+        return ReflexionEstudiante.objects.filter(
+            seguimiento=obj.seguimiento, student=obj.student
+        ).exists()
 
 
+# ─── Seguimiento con asistencias ───────────────────────────────────────────────
 class SeguimientoPracticaSerializer(serializers.ModelSerializer):
     sitio_name      = serializers.CharField(source='sitio.name', read_only=True, default=None)
     created_by_name = serializers.SerializerMethodField(read_only=True)
     asistencias     = AsistenciaPracticaSerializer(many=True, read_only=True)
+    total_present   = serializers.SerializerMethodField(read_only=True)
+    total_absent    = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = SeguimientoPractica
@@ -104,7 +131,7 @@ class SeguimientoPracticaSerializer(serializers.ModelSerializer):
             'id', 'practica', 'sitio', 'sitio_name',
             'date', 'topic', 'novedades',
             'created_by', 'created_by_name',
-            'asistencias', 'created_at',
+            'asistencias', 'total_present', 'total_absent', 'created_at',
         )
         read_only_fields = ('id', 'created_at', 'created_by', 'sitio_name', 'created_by_name')
 
@@ -112,3 +139,28 @@ class SeguimientoPracticaSerializer(serializers.ModelSerializer):
         if obj.created_by:
             return f'{obj.created_by.first_name} {obj.created_by.last_name}'.strip()
         return None
+
+    def get_total_present(self, obj):
+        return obj.asistencias.filter(status='PRESENT').count()
+
+    def get_total_absent(self, obj):
+        return obj.asistencias.filter(status='ABSENT').count()
+
+
+# ─── Resumen de asistencia por estudiante ──────────────────────────────────────
+class EstudianteResumenSerializer(serializers.Serializer):
+    """
+    Para cada estudiante inscrito en una práctica, calcula:
+    total de sesiones, presencias, ausencias, tardanzas, excusas y % asistencia.
+    """
+    id             = serializers.IntegerField()
+    full_name      = serializers.CharField()
+    document_number= serializers.CharField()
+    email          = serializers.CharField()
+    photo          = serializers.CharField(allow_null=True)
+    total_sessions = serializers.IntegerField()
+    present        = serializers.IntegerField()
+    absent         = serializers.IntegerField()
+    late           = serializers.IntegerField()
+    excused        = serializers.IntegerField()
+    attendance_pct = serializers.FloatField()

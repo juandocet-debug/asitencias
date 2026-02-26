@@ -5,7 +5,7 @@ import {
     LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell,
     Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2,
     Loader2, Hash, ChevronRight, ChevronDown, Briefcase, Wrench,
-    GraduationCap, Shield, RefreshCw, ClipboardList
+    GraduationCap, Shield, RefreshCw, ClipboardList, Check
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
@@ -111,52 +111,73 @@ const SidebarSubItem = ({ label, to, onClick, icon: Icon }) => (
 );
 
 // ─────────────────────────────────────────────────────
-// Role Switcher — componente principal
+// Role Switcher — dropdown con icono por rol
 // ─────────────────────────────────────────────────────
 const RoleSwitcher = ({ user, activeRole, setActiveRole, onAfterSwitch }) => {
+    const [open, setOpen] = useState(false);
     const allRoles = (user?.roles?.length > 0 ? user.roles : [user?.role]).filter(Boolean);
     if (allRoles.length <= 1) return null;
 
+    const activeMeta = ROLE_META[activeRole] || { label: activeRole, icon: User };
+    const ActiveIcon = activeMeta.icon;
+
+    const select = (role) => {
+        setActiveRole(role);
+        setOpen(false);
+        if (onAfterSwitch) onAfterSwitch();
+    };
+
     return (
-        <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 mb-2 px-1">
-                <RefreshCw size={11} className="text-upn-400" />
-                <span className="text-[10px] font-bold text-upn-400 uppercase tracking-wider">Vista activa</span>
-            </div>
+        <div className="px-4 pb-3 relative">
+            <p className="text-[10px] font-bold text-upn-400 uppercase tracking-wider mb-2">Vista activa</p>
 
-            <div className="flex flex-wrap gap-1.5">
-                {allRoles.map(role => {
-                    const meta = ROLE_META[role] || { label: role, short: role, icon: User };
-                    const IconComp = meta.icon;
-                    const isActive = activeRole === role;
+            {/* Trigger */}
+            <button
+                onClick={() => setOpen(o => !o)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5
+                    bg-upn-800/70 border border-upn-700/60 rounded-xl
+                    hover:border-upn-500 transition-all"
+            >
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-6 h-6 rounded-lg bg-upn-700 flex items-center justify-center flex-shrink-0">
+                        <ActiveIcon size={13} className="text-white" />
+                    </div>
+                    <span className="text-[13px] font-bold text-white truncate">{activeMeta.label}</span>
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0" />
+                </div>
+                <ChevronDown size={14}
+                    className={`text-upn-400 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+            </button>
 
-                    return (
-                        <button
-                            key={role}
-                            onClick={() => { setActiveRole(role); if (onAfterSwitch) onAfterSwitch(); }}
-                            title={meta.label}
-                            className={`
-                                relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold
-                                border transition-all duration-200 select-none
-                                ${isActive
-                                    ? 'bg-white text-upn-900 border-white/80 shadow-md'
-                                    : 'bg-upn-800/50 text-upn-300 border-upn-700/40 hover:bg-upn-700/60 hover:text-white'
-                                }
-                            `}
-                        >
-                            <IconComp size={12} />
-                            {meta.short}
-                            {isActive && (
-                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full border border-upn-900" />
-                            )}
-                        </button>
-                    );
-                })}
-            </div>
+            {/* Dropdown */}
+            {open && (
+                <div className="absolute left-4 right-4 mt-1 bg-[#0d1829] border border-upn-700 rounded-xl overflow-hidden shadow-2xl z-50">
+                    {allRoles.map((role) => {
+                        const meta = ROLE_META[role] || { label: role, icon: User };
+                        const IconComp = meta.icon;
+                        const isActive = role === activeRole;
+                        return (
+                            <button
+                                key={role}
+                                onClick={() => select(role)}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors
+                                    ${isActive
+                                        ? 'bg-upn-600 text-white'
+                                        : 'text-upn-200 hover:bg-upn-800 hover:text-white'
+                                    }`}
+                            >
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
+                                    ${isActive ? 'bg-white/20' : 'bg-upn-700/50'}`}>
+                                    <IconComp size={14} />
+                                </div>
+                                <span className="text-sm font-semibold flex-1">{meta.label}</span>
+                                {isActive && <Check size={14} className="text-emerald-300 flex-shrink-0" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
-            <p className="text-[10px] text-upn-500 mt-1.5 px-1">
-                Viendo como: <span className="text-upn-300 font-semibold">{ROLE_META[activeRole]?.label || activeRole}</span>
-            </p>
             <div className="mt-3 border-t border-upn-800/50" />
         </div>
     );
@@ -390,6 +411,16 @@ export default function DashboardLayout() {
                         to="/my-absences"
                         onClick={() => setIsSidebarOpen(false)}
                         subtitle="Justificar inasistencias"
+                    />
+                )}
+
+                {effectiveRole === 'STUDENT' && (
+                    <SidebarItem
+                        icon={ClipboardList}
+                        label="Mis Prácticas"
+                        to="/mis-practicas"
+                        onClick={() => setIsSidebarOpen(false)}
+                        subtitle="Reflexiones y asistencia"
                     />
                 )}
 
