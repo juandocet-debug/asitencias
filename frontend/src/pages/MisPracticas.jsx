@@ -4,11 +4,11 @@
  * Vista del estudiante: ver sus prácticas, sesiones de práctica
  * y registrar sus actividades + reflexiones pedagógicas.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     ClipboardList, Calendar, MapPin, Check, X, Loader2, AlertTriangle,
     PenLine, BookOpen, Save, ChevronDown, ChevronUp, Plus, ArrowLeft,
-    MessageSquare, CheckCircle2, Pencil
+    MessageSquare, CheckCircle2, Pencil, Image as ImageIcon, Upload
 } from 'lucide-react';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
@@ -43,6 +43,11 @@ export default function MisPracticas() {
     const [toast, setToast] = useState(null);
     const [selected, setSelected] = useState(null); // práctica activa
 
+    // Modal state for joining via code
+    const [showJoinModal, setShowJoinModal] = useState(false);
+    const [joinCode, setJoinCode] = useState('');
+    const [joining, setJoining] = useState(false);
+
     const showToast = useCallback((msg, type = 'success') => {
         setToast({ message: msg, type });
         setTimeout(() => setToast(null), 4500);
@@ -57,6 +62,26 @@ export default function MisPracticas() {
         } catch { showToast('Error al cargar tus prácticas', 'error'); }
         finally { setLoading(false); }
     }, []);
+
+    const handleJoin = async (e) => {
+        e.preventDefault();
+        if (!joinCode || joinCode.length !== 6) {
+            showToast('El código debe tener 6 caracteres', 'error');
+            return;
+        }
+        setJoining(true);
+        try {
+            await api.post('/practicas/join/', { code: joinCode });
+            showToast('¡Te has unido a la práctica exitosamente!');
+            setShowJoinModal(false);
+            setJoinCode('');
+            load();
+        } catch (e) {
+            showToast(e.response?.data?.error || 'Error al unirse a la práctica', 'error');
+        } finally {
+            setJoining(false);
+        }
+    };
 
     useEffect(() => { load(); }, [load]);
 
@@ -76,7 +101,15 @@ export default function MisPracticas() {
                     <ClipboardList size={40} className="text-slate-300" />
                 </div>
                 <h2 className="text-xl font-black text-slate-700 mb-2">Sin prácticas inscritas</h2>
-                <p className="text-slate-400 text-sm">Pide a tu coordinador el código de práctica para unirte.</p>
+                <p className="text-slate-400 text-sm mb-6">Pide a tu coordinador el código de práctica para unirte.</p>
+                <button
+                    onClick={() => setShowJoinModal(true)}
+                    className="inline-flex items-center gap-2 bg-upn-600 hover:bg-upn-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-upn-600/20"
+                >
+                    <Plus size={18} /> Unirme con código
+                </button>
+                {showJoinModal && <JoinModal joinCode={joinCode} setJoinCode={setJoinCode} joining={joining} handleJoin={handleJoin} close={() => setShowJoinModal(false)} />}
+                <Toast toast={toast} onClose={() => setToast(null)} />
             </div>
         );
     }
@@ -85,9 +118,17 @@ export default function MisPracticas() {
         // Selector de práctica
         return (
             <div className="max-w-2xl mx-auto space-y-6">
-                <div>
-                    <p className="text-xs font-bold text-upn-500 uppercase tracking-wider mb-1">Mi módulo</p>
-                    <h1 className="text-3xl font-black text-slate-900">Mis Prácticas</h1>
+                <div className="flex justify-between items-end">
+                    <div>
+                        <p className="text-xs font-bold text-upn-500 uppercase tracking-wider mb-1">Mi módulo</p>
+                        <h1 className="text-3xl font-black text-slate-900">Mis Prácticas</h1>
+                    </div>
+                    <button
+                        onClick={() => setShowJoinModal(true)}
+                        className="flex items-center gap-1.5 bg-upn-50 hover:bg-upn-100 text-upn-600 font-bold py-2 px-4 rounded-xl border border-upn-200 transition-colors text-sm"
+                    >
+                        <Plus size={16} /> Código
+                    </button>
                 </div>
                 <div className="space-y-3">
                     {practicas.map(p => (
@@ -106,6 +147,7 @@ export default function MisPracticas() {
                         </button>
                     ))}
                 </div>
+                {showJoinModal && <JoinModal joinCode={joinCode} setJoinCode={setJoinCode} joining={joining} handleJoin={handleJoin} close={() => setShowJoinModal(false)} />}
                 <Toast toast={toast} onClose={() => setToast(null)} />
             </div>
         );
@@ -114,6 +156,49 @@ export default function MisPracticas() {
     return (
         <PracticaView practica={selected} user={user} showToast={showToast}
             onBack={practicas.length > 1 ? () => setSelected(null) : null} />
+    );
+}
+
+/* ══════════════════════════════════════════════════════════
+   MODAL PARA UNIRSE CON CÓDIGO
+══════════════════════════════════════════════════════════ */
+function JoinModal({ joinCode, setJoinCode, joining, handleJoin, close }) {
+    return (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-6 sm:p-8 space-y-6">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h2 className="text-xl font-black text-slate-800">Unirme a una Práctica</h2>
+                            <p className="text-sm text-slate-500 mt-1">Ingresa el código que te dio tu coordinador.</p>
+                        </div>
+                        <button onClick={close} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <form onSubmit={handleJoin} className="space-y-5">
+                        <div>
+                            <input
+                                type="text"
+                                value={joinCode}
+                                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                                placeholder="Ej: A1B2C3"
+                                maxLength={6}
+                                className="w-full text-center text-3xl font-bold tracking-widest px-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-upn-500 focus:ring-4 focus:ring-upn-500/10 outline-none transition-all"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={joining || joinCode.length !== 6}
+                            className="w-full flex justify-center items-center gap-2 bg-upn-600 hover:bg-upn-700 disabled:bg-upn-300 text-white font-bold py-3.5 rounded-xl transition-colors"
+                        >
+                            {joining ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle2 size={20} />}
+                            Confirmar código
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -204,6 +289,11 @@ function SesionCard({ seg, userId, onUpdated, showToast }) {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    // Evidencia fotográfica
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const fileInputRef = useRef(null);
+
     // Asistencia del alumno en esta sesión
     const miAsist = seg.asistencias?.find(a => a.student === userId);
     const statusCfg = STATUS_CFG[miAsist?.status];
@@ -225,8 +315,24 @@ function SesionCard({ seg, userId, onUpdated, showToast }) {
                 reflexion_pedagogica: miReflexion.reflexion_pedagogica || '',
                 aprendizajes: miReflexion.aprendizajes || '',
             });
+            setImagePreview(miReflexion.imagen_url || null);
+            setImageFile(null);
         }
     }, [seg]);
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                showToast('La imagen es muy pesada (máx 5MB).', 'error');
+                return;
+            }
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setImagePreview(reader.result);
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSave = async () => {
         if (!form.actividades.trim()) {
@@ -235,11 +341,23 @@ function SesionCard({ seg, userId, onUpdated, showToast }) {
         }
         setSaving(true);
         try {
-            if (miReflexion) {
-                await api.patch(`/practicas/reflexiones/${miReflexion.id}/`, form);
-            } else {
-                await api.post('/practicas/reflexiones/', { seguimiento: seg.id, student: userId, ...form });
+            const formData = new FormData();
+            formData.append('actividades', form.actividades);
+            formData.append('reflexion_pedagogica', form.reflexion_pedagogica);
+            formData.append('aprendizajes', form.aprendizajes);
+
+            if (imageFile) {
+                formData.append('imagen', imageFile);
             }
+
+            if (miReflexion) {
+                await api.patch(`/practicas/reflexiones/${miReflexion.id}/`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            } else {
+                formData.append('seguimiento', seg.id);
+                formData.append('student', userId);
+                await api.post('/practicas/reflexiones/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            }
+
             showToast('Reflexión guardada ✓');
             setEditing(false);
             onUpdated();
@@ -336,6 +454,17 @@ function SesionCard({ seg, userId, onUpdated, showToast }) {
                                         <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{text}</p>
                                     </div>
                                 ))}
+
+                                {miReflexion.imagen_url && (
+                                    <div className="bg-slate-50 rounded-xl p-4">
+                                        <p className="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-1.5">
+                                            <ImageIcon size={11} /> Evidencia
+                                        </p>
+                                        <div className="rounded-lg overflow-hidden border border-slate-200">
+                                            <img src={miReflexion.imagen_url} alt="Evidencia práctica" className="w-full h-auto object-cover max-h-64" />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             /* Formulario edición */
@@ -367,6 +496,32 @@ function SesionCard({ seg, userId, onUpdated, showToast }) {
                                     <textarea value={form.aprendizajes} onChange={e => setForm({ ...form, aprendizajes: e.target.value })}
                                         rows={3} placeholder="¿Qué aprendiste? ¿Qué harías diferente la próxima vez?"
                                         className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400 transition-all" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 flex items-center gap-1">
+                                        <ImageIcon size={11} /> Evidencia visual (Opcional)
+                                    </label>
+
+                                    <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageChange} />
+
+                                    {!imagePreview ? (
+                                        <button type="button" onClick={() => fileInputRef.current?.click()}
+                                            className="w-full border-2 border-dashed border-slate-200 hover:border-violet-300 bg-slate-50 hover:bg-violet-50/50 rounded-xl p-4 text-center transition-all group flex flex-col items-center gap-2">
+                                            <Upload size={20} className="text-slate-400 group-hover:text-violet-500" />
+                                            <span className="text-sm font-semibold text-slate-500 group-hover:text-violet-600">Subir foto o documento... (Máx 5MB)</span>
+                                        </button>
+                                    ) : (
+                                        <div className="relative inline-block border border-slate-200 rounded-xl overflow-hidden group">
+                                            <img src={imagePreview} alt="Preview" className="h-32 w-auto object-cover" />
+                                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button type="button" onClick={() => { setImageFile(null); setImagePreview(miReflexion?.imagen_url || null); fileInputRef.current.value = ''; }}
+                                                    className="bg-white/90 hover:bg-white text-red-600 font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
+                                                    <X size={12} /> Quitar imagen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-3 pt-1">

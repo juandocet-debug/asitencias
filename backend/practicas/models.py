@@ -7,6 +7,7 @@ import random
 import string
 from django.db import models
 from django.conf import settings
+from cloudinary.models import CloudinaryField
 
 
 def generate_practica_code():
@@ -207,6 +208,13 @@ class ReflexionEstudiante(models.Model):
     actividades          = models.TextField(verbose_name='Actividades realizadas')
     reflexion_pedagogica = models.TextField(blank=True, verbose_name='Reflexión pedagógica')
     aprendizajes         = models.TextField(blank=True, verbose_name='Aprendizajes y mejoras')
+    imagen               = CloudinaryField(
+        'imagen_evidencia',
+        folder='practicas/evidencias',
+        blank=True,
+        null=True,
+        help_text='Foto o evidencia de la sesión de práctica (va a Cloudinary)'
+    )
     created_at           = models.DateTimeField(auto_now_add=True)
     updated_at           = models.DateTimeField(auto_now=True)
 

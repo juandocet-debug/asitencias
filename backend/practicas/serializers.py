@@ -87,18 +87,28 @@ class PracticaStudentsSerializer(serializers.ModelSerializer):
 class ReflexionEstudianteSerializer(serializers.ModelSerializer):
     student_name    = serializers.SerializerMethodField(read_only=True)
     seguimiento_date= serializers.DateField(source='seguimiento.date', read_only=True)
+    imagen_url      = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ReflexionEstudiante
         fields = (
             'id', 'seguimiento', 'student', 'student_name', 'seguimiento_date',
             'actividades', 'reflexion_pedagogica', 'aprendizajes',
+            'imagen', 'imagen_url',
             'created_at', 'updated_at',
         )
-        read_only_fields = ('id', 'created_at', 'updated_at', 'student_name', 'seguimiento_date')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'student_name', 'seguimiento_date', 'imagen_url')
 
     def get_student_name(self, obj):
         return f'{obj.student.first_name} {obj.student.last_name}'.strip()
+        
+    def get_imagen_url(self, obj):
+        if not obj.imagen:
+            return None
+        try:
+            return obj.imagen.url
+        except Exception:
+            return None
 
 
 # ─── Asistencia with reflexion flag ────────────────────────────────────────────

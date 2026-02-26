@@ -363,6 +363,10 @@ def docentes_del_programa(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def join_practica_by_code(request):
+    user_roles = request.user.roles or [request.user.role]
+    if 'STUDENT' not in user_roles:
+        return Response({'error': 'Solo los estudiantes pueden unirse a prácticas mediante código'}, status=403)
+        
     code = request.data.get('code', '').strip().upper()
     if not code:
         return Response({'error': 'El código es requerido'}, status=400)
