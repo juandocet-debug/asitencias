@@ -1,12 +1,57 @@
 /* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash, ChevronRight, ChevronDown, Briefcase, Wrench } from 'lucide-react';
+import {
+    LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell,
+    Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2,
+    Loader2, Hash, ChevronRight, ChevronDown, Briefcase, Wrench,
+    GraduationCap, Shield, RefreshCw
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 
-// Sidebar Item Component — estilo ILINYX (fondo oscuro, texto claro)
+// ─────────────────────────────────────────────────────
+// Metadatos de roles
+// ─────────────────────────────────────────────────────
+const ROLE_META = {
+    ADMIN: {
+        label: 'Administrador',
+        short: 'Admin',
+        icon: Shield,
+        color: 'from-upn-500 to-upn-700',
+        badge: 'bg-upn-100 text-upn-800 border-upn-300',
+        activeBg: 'bg-upn-600',
+    },
+    TEACHER: {
+        label: 'Docente',
+        short: 'Docente',
+        icon: BookOpen,
+        color: 'from-purple-500 to-purple-700',
+        badge: 'bg-purple-100 text-purple-800 border-purple-300',
+        activeBg: 'bg-purple-600',
+    },
+    COORDINATOR: {
+        label: 'Coordinador',
+        short: 'Coord.',
+        icon: Briefcase,
+        color: 'from-amber-500 to-amber-700',
+        badge: 'bg-amber-100 text-amber-800 border-amber-300',
+        activeBg: 'bg-amber-600',
+    },
+    STUDENT: {
+        label: 'Estudiante',
+        short: 'Est.',
+        icon: GraduationCap,
+        color: 'from-blue-500 to-blue-700',
+        badge: 'bg-blue-100 text-blue-800 border-blue-300',
+        activeBg: 'bg-blue-600',
+    },
+};
+
+// ─────────────────────────────────────────────────────
+// Sidebar Item Component — estilo AGON (fondo oscuro, texto claro)
+// ─────────────────────────────────────────────────────
 const SidebarItem = ({ icon: Icon, label, to, onClick, subtitle }) => (
     <NavLink
         to={to}
@@ -66,15 +111,88 @@ const SidebarSubItem = ({ label, to, onClick }) => (
     </NavLink>
 );
 
+// ─────────────────────────────────────────────────────
+// Role Switcher — componente principal
+// ─────────────────────────────────────────────────────
+const RoleSwitcher = ({ user, activeRole, setActiveRole, onAfterSwitch }) => {
+    const allRoles = (user?.roles?.length > 0 ? user.roles : [user?.role]).filter(Boolean);
+
+    // Solo mostrar si tiene más de un rol
+    if (allRoles.length <= 1) return null;
+
+    return (
+        <div className="px-4 pb-3">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-2 px-1">
+                <RefreshCw size={11} className="text-upn-400" />
+                <span className="text-[10px] font-bold text-upn-400 uppercase tracking-wider">Cambiar rol</span>
+            </div>
+
+            {/* Role Pills */}
+            <div className="flex flex-wrap gap-1.5">
+                {allRoles.map(role => {
+                    const meta = ROLE_META[role] || { label: role, short: role, icon: User, activeBg: 'bg-upn-600' };
+                    const IconComp = meta.icon;
+                    const isActive = activeRole === role;
+
+                    return (
+                        <button
+                            key={role}
+                            onClick={() => {
+                                setActiveRole(role);
+                                if (onAfterSwitch) onAfterSwitch();
+                            }}
+                            title={meta.label}
+                            className={`
+                                relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold
+                                border transition-all duration-200 select-none
+                                ${isActive
+                                    ? 'bg-white text-upn-900 border-white shadow-md scale-105'
+                                    : 'bg-upn-800/60 text-upn-300 border-upn-700/50 hover:bg-upn-700/70 hover:text-white hover:border-upn-600'
+                                }
+                            `}
+                        >
+                            <IconComp size={12} />
+                            {meta.short}
+                            {isActive && (
+                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full border border-upn-900" />
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Rol activo label */}
+            <p className="text-[10px] text-upn-500 mt-1.5 px-1">
+                Viendo como: <span className="text-upn-300 font-semibold">{ROLE_META[activeRole]?.label || activeRole}</span>
+            </p>
+
+            {/* Separador */}
+            <div className="mt-3 border-t border-upn-800/50" />
+        </div>
+    );
+};
+
+
+// ─────────────────────────────────────────────────────
+// DashboardLayout principal
+// ─────────────────────────────────────────────────────
 export default function DashboardLayout() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    const { user, setUser, loading } = useUser();
-    const isAdmin = user?.role === 'ADMIN';
-    const isTeacher = user?.role === 'TEACHER';
-    const isStudent = user?.role === 'STUDENT';
-    const isCoordinator = (user?.roles || []).includes('COORDINATOR');
+    const { user, setUser, loading, activeRole, setActiveRole } = useUser();
+
+    // ── Derivar roles usando el array `roles` (multi-rol correcto) ──
+    // Nunca confiar solo en user.role (es el principal), usar activeRole para navegación
+    const allRoles = (user?.roles?.length > 0 ? user.roles : [user?.role]).filter(Boolean);
+    const isAdmin = activeRole === 'ADMIN' || allRoles.includes('ADMIN');
+    const isTeacher = activeRole === 'TEACHER' || (!isAdmin && allRoles.includes('TEACHER'));
+    const isStudent = activeRole === 'STUDENT' || (!isAdmin && !isTeacher && allRoles.includes('STUDENT'));
+    const isCoordinator = allRoles.includes('COORDINATOR');
+
+    // Cuando el usuario hace switch de rol, actualizar la vista
+    const effectiveRole = activeRole || user?.role;
 
     // Estado modal "Unirse a clase"
     const [joinModalOpen, setJoinModalOpen] = useState(false);
@@ -144,20 +262,24 @@ export default function DashboardLayout() {
         );
     }
 
-    // Rol display
+    // Rol display — prioridad al rol activo elegido
     const getRoleLabel = () => {
-        const roles = user?.roles || [user?.role];
-        if (roles.includes('ADMIN')) return 'Administrador';
-        if (roles.includes('COORDINATOR') && roles.includes('TEACHER')) return 'Docente · Coordinador';
-        if (roles.includes('COORDINATOR')) return 'Coordinador';
-        if (roles.includes('TEACHER')) return 'Docente';
-        return 'Estudiante';
+        if (!effectiveRole) return 'Sin rol';
+        return ROLE_META[effectiveRole]?.label || effectiveRole;
+    };
+
+    // Para el topbar: mostrar todos los roles del usuario
+    const getAllRolesLabel = () => {
+        if (allRoles.length === 0) return 'Sin rol';
+        if (allRoles.length === 1) return ROLE_META[allRoles[0]]?.label || allRoles[0];
+        return allRoles.map(r => ROLE_META[r]?.short || r).join(' · ');
     };
 
     const handleLogout = () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('username');
+        if (user?.id) localStorage.removeItem(`active_role_${user.id}`);
         if (setUser) setUser(null);
         navigate('/login');
     };
@@ -187,24 +309,44 @@ export default function DashboardLayout() {
                         <h3 className="text-sm font-bold text-white truncate">
                             {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
                         </h3>
-                        <p className="text-[11px] text-upn-300 font-medium">
+                        <p className="text-[11px] text-upn-300 font-medium flex items-center gap-1">
+                            {/* Mostrar rol activo con indicador */}
+                            {effectiveRole && ROLE_META[effectiveRole] && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                            )}
                             {getRoleLabel()}
+                            {allRoles.length > 1 && (
+                                <span className="text-upn-500 font-normal">· {allRoles.length} roles</span>
+                            )}
                         </p>
                     </div>
                 </div>
-                {/* Editar perfil */}
+            </div>
+
+            {/* ── Role Switcher (solo si multi-rol) ── */}
+            <RoleSwitcher
+                user={user}
+                activeRole={effectiveRole}
+                setActiveRole={setActiveRole}
+                onAfterSwitch={() => setIsSidebarOpen(false)}
+            />
+
+            {/* ── Editar perfil ── */}
+            <div className="px-4 pb-3">
                 <button
                     onClick={() => { setIsSidebarOpen(false); navigate('/profile'); }}
-                    className="flex items-center gap-2 mt-3 px-3 py-2 w-full rounded-xl text-xs font-semibold text-upn-200 bg-upn-800/50 hover:bg-upn-800 border border-upn-700/50 transition-all"
+                    className="flex items-center gap-2 px-3 py-2 w-full rounded-xl text-xs font-semibold text-upn-200 bg-upn-800/50 hover:bg-upn-800 border border-upn-700/50 transition-all"
                 >
                     <User size={14} />
                     Editar perfil
                 </button>
             </div>
+
             {/* Línea sutil */}
-            <div className="mx-5 border-t border-upn-800/50"></div>
+            <div className="mx-5 border-t border-upn-800/50" />
 
             {/* ── Navegación ── */}
+            {/* Usamos effectiveRole para mostrar nav según el rol activo */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
 
@@ -215,21 +357,22 @@ export default function DashboardLayout() {
                     onClick={() => setIsSidebarOpen(false)}
                 />
 
-                {isAdmin && (
+                {/* Admin-only items — visible si el rol activo es ADMIN o si el usuario tiene ADMIN en sus roles */}
+                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
                     <SidebarItem icon={Users} label="Usuarios" to="/users" onClick={() => setIsSidebarOpen(false)} />
                 )}
 
-                {isAdmin && (
+                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
                     <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
                 )}
 
-                {isAdmin && (
+                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
                     <SidebarItem icon={Wrench} label="Herramientas" to="/tools" onClick={() => setIsSidebarOpen(false)} subtitle="Facultades y programas" />
                 )}
 
                 {/* ── Sección Coordinador ── */}
                 {isCoordinator && (
-                    <SidebarSection icon={Briefcase} label="Coordinador" defaultOpen={true}>
+                    <SidebarSection icon={Briefcase} label="Coordinador" defaultOpen={effectiveRole === 'COORDINATOR'}>
                         <SidebarSubItem label="Prácticas" to="/coordinator/practicas" onClick={() => setIsSidebarOpen(false)} />
                         <SidebarSubItem label="Programa" to="/coordinator/programa" onClick={() => setIsSidebarOpen(false)} />
                         <SidebarSubItem label="Investigación" to="/coordinator/investigacion" onClick={() => setIsSidebarOpen(false)} />
@@ -237,7 +380,7 @@ export default function DashboardLayout() {
                     </SidebarSection>
                 )}
 
-                {user?.role === 'STUDENT' && (
+                {effectiveRole === 'STUDENT' && (
                     <SidebarItem
                         icon={AlertCircle}
                         label="Mis Faltas"
@@ -247,7 +390,7 @@ export default function DashboardLayout() {
                     />
                 )}
 
-                {user?.role === 'TEACHER' && (
+                {effectiveRole === 'TEACHER' && (
                     <SidebarItem
                         icon={ClipboardCheck}
                         label="Revisiones"
@@ -257,7 +400,7 @@ export default function DashboardLayout() {
                     />
                 )}
 
-                {isStudent && (
+                {effectiveRole === 'STUDENT' && (
                     <button
                         onClick={openJoinModal}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-upn-200 hover:bg-upn-800/60 hover:text-white transition-all duration-200 group mt-1"
@@ -272,7 +415,7 @@ export default function DashboardLayout() {
                     </button>
                 )}
 
-                {isAdmin && (
+                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
                     <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
                 )}
             </nav>
@@ -285,7 +428,7 @@ export default function DashboardLayout() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-white text-xs font-semibold truncate">AGON</p>
-                        <p className="text-upn-300 text-[10px] truncate">Gestión Académica</p>
+                        <p className="text-upn-300 text-[10px] truncate">Gestión Académica · UPN</p>
                     </div>
                     <button onClick={handleLogout}
                         className="text-upn-300 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-400/10"
@@ -346,6 +489,14 @@ export default function DashboardLayout() {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {/* Badge del rol activo en el topbar — útil para multi-rol */}
+                        {allRoles.length > 1 && effectiveRole && ROLE_META[effectiveRole] && (
+                            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold bg-upn-50 text-upn-700 border-upn-200">
+                                {React.createElement(ROLE_META[effectiveRole].icon, { size: 12 })}
+                                {ROLE_META[effectiveRole].short}
+                            </div>
+                        )}
+
                         <button className="p-2.5 rounded-full bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-upn-600 relative transition-colors shadow-sm">
                             <Bell size={20} />
                             <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
@@ -361,7 +512,7 @@ export default function DashboardLayout() {
                                         {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
                                     </p>
                                     <p className="text-xs text-slate-500">
-                                        {getRoleLabel()}
+                                        {getAllRolesLabel()}
                                     </p>
                                 </div>
                                 <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
@@ -384,10 +535,42 @@ export default function DashboardLayout() {
                                         className="fixed inset-0 z-10"
                                         onClick={() => setIsProfileMenuOpen(false)}
                                     ></div>
-                                    <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in slide-in-from-top-2">
+                                    <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in slide-in-from-top-2">
                                         <div className="px-4 py-3 border-b border-slate-100 mb-1">
                                             <p className="text-sm font-bold text-slate-800">Mi Cuenta</p>
+                                            {allRoles.length > 1 && (
+                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                    Activo como: <span className="text-upn-600 font-semibold">{ROLE_META[effectiveRole]?.label}</span>
+                                                </p>
+                                            )}
                                         </div>
+
+                                        {/* Quick role switch in dropdown */}
+                                        {allRoles.length > 1 && (
+                                            <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Cambiar vista</p>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {allRoles.map(role => {
+                                                        const meta = ROLE_META[role] || { label: role, short: role, icon: User };
+                                                        const IconComp = meta.icon;
+                                                        const isActive = effectiveRole === role;
+                                                        return (
+                                                            <button
+                                                                key={role}
+                                                                onClick={() => { setActiveRole(role); setIsProfileMenuOpen(false); }}
+                                                                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${isActive
+                                                                    ? 'bg-upn-600 text-white border-upn-600'
+                                                                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-upn-50 hover:text-upn-700 hover:border-upn-300'
+                                                                    }`}
+                                                            >
+                                                                <IconComp size={11} />
+                                                                {meta.short}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <button
                                             onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }}
@@ -443,7 +626,6 @@ export default function DashboardLayout() {
                             </button>
                         </div>
 
-                        {/* Feedback de éxito */}
                         {joinSuccess && (
                             <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                                 <CheckCircle2 size={22} className="text-emerald-600 flex-shrink-0" />
@@ -451,7 +633,6 @@ export default function DashboardLayout() {
                             </div>
                         )}
 
-                        {/* Feedback de error */}
                         {joinError && (
                             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                                 <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
@@ -459,7 +640,6 @@ export default function DashboardLayout() {
                             </div>
                         )}
 
-                        {/* Formulario */}
                         {!joinSuccess && (
                             <form onSubmit={handleJoinClass} className="space-y-5">
                                 <div>

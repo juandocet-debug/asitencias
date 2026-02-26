@@ -42,15 +42,39 @@ const fetchUserWithRetry = async (retries = 3, delay = 1500) => {
     }
 };
 
+/**
+ * Devuelve el rol activo guardado en localStorage para un usuario dado.
+ * Si no hay ninguno guardado, devuelve el rol principal del usuario.
+ */
+const getSavedActiveRole = (userData) => {
+    if (!userData) return null;
+    const saved = localStorage.getItem(`active_role_${userData.id}`);
+    const allRoles = userData.roles?.length > 0 ? userData.roles : [userData.role];
+    // Validar que el rol guardado siga siendo válido para este usuario
+    if (saved && allRoles.includes(saved)) return saved;
+    return userData.role || allRoles[0];
+};
+
 export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    // activeRole: el rol "activo" que el usuario eligió mostrar en la sesión actual
+    const [activeRole, setActiveRoleState] = useState(null);
+
+    /** Cambia el rol activo y lo persiste en localStorage */
+    const setActiveRole = (role) => {
+        if (!user) return;
+        localStorage.setItem(`active_role_${user.id}`, role);
+        setActiveRoleState(role);
+    };
 
     const fetchUser = useCallback(async () => {
         setLoading(true);
         try {
             const userData = await fetchUserWithRetry(3, 1500);
             setUser(userData);
+            // Restaurar el rol activo guardado (o usar el rol principal)
+            setActiveRoleState(getSavedActiveRole(userData));
         } catch (error) {
             const status = error?.response?.status;
             console.error('[UserContext] Error al cargar usuario después de reintentos:', error);
@@ -81,7 +105,7 @@ export const UserProvider = ({ children }) => {
     }, [fetchUser]);
 
     return (
-        <UserContext.Provider value={{ user, setUser, updateUser, fetchUser, loading }}>
+        <UserContext.Provider value={{ user, setUser, updateUser, fetchUser, loading, activeRole, setActiveRole }}>
             {children}
         </UserContext.Provider>
     );
