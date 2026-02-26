@@ -178,6 +178,7 @@ export default function UsersPage() {
     /**
      * Convierte los errores del backend (campo: [mensajes]) a un objeto plano
      * y muestra el primer error global como toast si no hay errores de campo.
+     * Captura correctamente los errores de validación de contraseña de Django.
      */
     const handleApiErrors = (error) => {
         const data = error.response?.data;
@@ -188,20 +189,26 @@ export default function UsersPage() {
 
         const fieldErrors = {};
         let hasFieldErrors = false;
+        // 'password' incluido explícitamente para capturar errores de Django validators
         const knownFields = ['username', 'password', 'first_name', 'last_name', 'email', 'document_number', 'role', 'faculty', 'program'];
 
         for (const key of knownFields) {
             if (data[key]) {
-                fieldErrors[key] = Array.isArray(data[key]) ? data[key].join(' ') : data[key];
+                fieldErrors[key] = Array.isArray(data[key]) ? data[key].join(' ') : String(data[key]);
                 hasFieldErrors = true;
             }
         }
 
         if (hasFieldErrors) {
             setFormErrors(fieldErrors);
-            showToast('Revisa los errores en el formulario.', 'error');
+            // Si el único error es la contraseña, mensaje específico
+            if (fieldErrors.password && Object.keys(fieldErrors).length === 1) {
+                showToast(`Contraseña rechazada: ${fieldErrors.password}`, 'error');
+            } else {
+                showToast('Revisa los errores en el formulario.', 'error');
+            }
         } else {
-            const msg = data.error || data.detail || data.non_field_errors?.[0] || 'Error al guardar usuario.';
+            const msg = data.error || data.detail || data.non_field_errors?.[0] || JSON.stringify(data).slice(0, 120);
             showToast(msg, 'error');
         }
     };
@@ -263,22 +270,40 @@ export default function UsersPage() {
             return;
         }
 
+        // Validación local al editar: si pone contraseña, mínimo 8 chars
+        if (editingUser && formData.password && formData.password.length < 8) {
+            setFormErrors({ password: 'La contraseña debe tener al menos 8 caracteres.' });
+            return;
+        }
+
         setSaving(true);
         try {
             const payload = {
                 ...formData,
-                username: formData.username || formData.document_number || formData.email,
                 faculty: formData.faculty || null,
                 program: formData.program || null,
             };
 
-            // Si el rol incluye COORDINATOR, enviar coordinator_profiles
+            // CRÍTICO: al editar NUNCA enviar username para no sobreescribirlo
+            // El username es el identificador de login y no debe cambiar desde este form
+            if (editingUser) {
+                delete payload.username;
+            } else {
+                // Solo al crear: construir username desde document_number o email
+                payload.username = formData.document_number || formData.email || formData.username;
+            }
+
+            // Contraseña vacía al editar = no cambiar
+            if (editingUser && !payload.password) {
+                delete payload.password;
+            }
+
+            // Si el rol no incluye COORDINATOR, limpiar coordinator_profiles
             if (!(payload.roles || []).includes('COORDINATOR')) {
                 payload.coordinator_profiles = [];
             }
 
             if (editingUser) {
-                if (!payload.password) delete payload.password;
                 await api.patch(`/users/${editingUser.id}/`, payload);
                 showToast('Usuario actualizado correctamente', 'success');
             } else {
@@ -290,7 +315,7 @@ export default function UsersPage() {
             resetForm();
             fetchUsers();
         } catch (error) {
-            console.error('Error al guardar usuario:', error);
+            console.error('Error al guardar usuario:', error.response?.data || error);
             handleApiErrors(error);
         } finally {
             setSaving(false);
