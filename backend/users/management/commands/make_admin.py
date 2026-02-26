@@ -18,6 +18,11 @@ class Command(BaseCommand):
             user.role = 'ADMIN'
             user.is_staff = True
             user.is_superuser = True
+            # Sincronizar roles[] para multi-rol
+            if not user.roles:
+                user.roles = ['ADMIN']
+            elif 'ADMIN' not in user.roles:
+                user.roles.append('ADMIN')
             user.save()
             
             self.stdout.write(self.style.SUCCESS(
