@@ -8,7 +8,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     ClipboardList, Calendar, MapPin, Check, X, Loader2, AlertTriangle,
     PenLine, BookOpen, Save, ChevronDown, ChevronUp, Plus, ArrowLeft,
-    MessageSquare, CheckCircle2, Pencil, Image as ImageIcon, Upload
+    MessageSquare, CheckCircle2, Pencil, Image as ImageIcon, Upload,
+    User as UserIcon, Target, Building2, Phone, Mail, Info
 } from 'lucide-react';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
@@ -101,7 +102,7 @@ export default function MisPracticas() {
                     <ClipboardList size={40} className="text-slate-300" />
                 </div>
                 <h2 className="text-xl font-black text-slate-700 mb-2">Sin prácticas inscritas</h2>
-                <p className="text-slate-400 text-sm mb-6">Pide a tu coordinador el código de práctica para unirte.</p>
+                <p className="text-slate-400 text-sm mb-6">Pide a tu profesor de prácticas el código para unirte.</p>
                 <button
                     onClick={() => setShowJoinModal(true)}
                     className="inline-flex items-center gap-2 bg-upn-600 hover:bg-upn-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-upn-600/20"
@@ -170,7 +171,7 @@ function JoinModal({ joinCode, setJoinCode, joining, handleJoin, close }) {
                     <div className="flex justify-between items-start">
                         <div>
                             <h2 className="text-xl font-black text-slate-800">Unirme a una Práctica</h2>
-                            <p className="text-sm text-slate-500 mt-1">Ingresa el código que te dio tu coordinador.</p>
+                            <p className="text-sm text-slate-500 mt-1">Ingresa el código de 6 caracteres de tu práctica.</p>
                         </div>
                         <button onClick={close} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
                             <X size={18} />
@@ -227,8 +228,11 @@ function PracticaView({ practica, user, showToast, onBack }) {
     const ausente = misAsist.filter(a => a.status === 'ABSENT').length;
     const conRefl = seguimientos.filter(s => s.reflexiones?.some(r => r.student === user.id)).length;
 
+    // Sección desplegable de información
+    const [showInfo, setShowInfo] = useState(false);
+
     return (
-        <div className="space-y-8 max-w-3xl mx-auto">
+        <div className="space-y-6 max-w-3xl mx-auto">
             {/* Header */}
             <div>
                 {onBack && (
@@ -239,9 +243,93 @@ function PracticaView({ practica, user, showToast, onBack }) {
                 )}
                 <p className="text-xs font-bold text-upn-500 uppercase tracking-wider mb-1">Mi Práctica</p>
                 <h1 className="text-3xl font-black text-slate-900">{practica.name}</h1>
-                <p className="text-slate-500 text-sm mt-1">{practica.year} · {practica.period === 1 ? '1er' : '2do'} semestre
-                    {practica.profesor_info && <> · 👤 {practica.profesor_info.full_name}</>}
-                </p>
+                <p className="text-slate-500 text-sm mt-1">{practica.year} · {practica.period === 1 ? '1er' : '2do'} semestre</p>
+            </div>
+
+            {/* ── Ficha de la Práctica (desplegable) ── */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <button onClick={() => setShowInfo(i => !i)}
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-upn-50 flex items-center justify-center">
+                            <Info size={20} className="text-upn-500" />
+                        </div>
+                        <div className="text-left">
+                            <p className="font-bold text-slate-800">Información de la práctica</p>
+                            <p className="text-xs text-slate-400">Profesor, sitios y objetivos</p>
+                        </div>
+                    </div>
+                    {showInfo ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                </button>
+
+                {showInfo && (
+                    <div className="border-t border-slate-100 px-5 py-4 space-y-5">
+                        {/* Profesor de prácticas */}
+                        {practica.profesor_info && (
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                    <UserIcon size={18} className="text-blue-500" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-0.5">Profesor de Prácticas</p>
+                                    <p className="font-bold text-slate-800">{practica.profesor_info.full_name}</p>
+                                    {practica.profesor_info.email && (
+                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                            <Mail size={10} /> {practica.profesor_info.email}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Sitios de práctica */}
+                        {practica.sitios_detail && practica.sitios_detail.length > 0 && (
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-1.5">
+                                    <Building2 size={11} /> Sitios de práctica
+                                </p>
+                                <div className="space-y-2">
+                                    {practica.sitios_detail.map(s => (
+                                        <div key={s.id} className="bg-slate-50 rounded-xl p-3">
+                                            <p className="font-semibold text-slate-700 text-sm">{s.name}</p>
+                                            {s.address && <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><MapPin size={10} />{s.address}</p>}
+                                            {s.contact_name && <p className="text-xs text-slate-400 mt-0.5">Contacto: {s.contact_name}</p>}
+                                            {s.phone_mobile && <p className="text-xs text-slate-400 flex items-center gap-1"><Phone size={9} />{s.phone_mobile}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Objetivos */}
+                        {practica.objetivos_detail && practica.objetivos_detail.length > 0 && (
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-1.5">
+                                    <Target size={11} /> Objetivos pedagógicos
+                                </p>
+                                <div className="space-y-1.5">
+                                    {practica.objetivos_detail.map(o => (
+                                        <div key={o.id} className="flex items-start gap-2 bg-slate-50 rounded-xl p-3">
+                                            <CheckCircle2 size={14} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-700">{o.name}</p>
+                                                {o.description && <p className="text-xs text-slate-400 mt-0.5">{o.description}</p>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Programa */}
+                        {practica.program_name && (
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <BookOpen size={12} />
+                                <span>Programa: <span className="font-semibold text-slate-600">{practica.program_name}</span></span>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Stats */}
@@ -268,7 +356,7 @@ function PracticaView({ practica, user, showToast, onBack }) {
                 : seguimientos.length === 0
                     ? <div className="bg-white rounded-2xl border border-dashed border-slate-300 py-16 text-center">
                         <Calendar size={36} className="text-slate-200 mx-auto mb-3" />
-                        <p className="text-slate-400 font-semibold">Tu coordinador aún no ha registrado sesiones</p>
+                        <p className="text-slate-400 font-semibold">Tu profesor de prácticas aún no ha registrado sesiones</p>
                     </div>
                     : <div className="space-y-3">
                         <h2 className="text-base font-bold text-slate-700">Mis sesiones de práctica</h2>
@@ -406,11 +494,11 @@ function SesionCard({ seg, userId, onUpdated, showToast }) {
             {/* Contenido expandido */}
             {open && (
                 <div className="border-t border-slate-100">
-                    {/* Novedades del coordinador */}
+                    {/* Novedades del profesor */}
                     {seg.novedades && (
                         <div className="px-5 py-3 bg-amber-50 border-b border-amber-100">
                             <p className="text-xs font-bold text-amber-600 uppercase mb-1 flex items-center gap-1">
-                                <MessageSquare size={12} /> Novedades del coordinador
+                                <MessageSquare size={12} /> Novedades del profesor
                             </p>
                             <p className="text-sm text-amber-900">{seg.novedades}</p>
                         </div>
