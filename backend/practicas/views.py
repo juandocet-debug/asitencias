@@ -3,13 +3,18 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.db.models import Q, Count, Case, When, IntegerField
-from .models import SitioPractica, ObjetivoPractica, Practica, SeguimientoPractica, AsistenciaPractica, ReflexionEstudiante
+from .models import (
+    SitioPractica, ObjetivoPractica, Practica, SeguimientoPractica,
+    AsistenciaPractica, ReflexionEstudiante, TareaPractica,
+    EntregaTarea, EvidenciaEntrega
+)
 from .serializers import (
     SitioPracticaSerializer, ObjetivoPracticaSerializer,
     PracticaSerializer, PracticaStudentsSerializer,
     SeguimientoPracticaSerializer, AsistenciaPracticaSerializer,
     ReflexionEstudianteSerializer, EstudianteResumenSerializer,
-    UserCompactSerializer
+    UserCompactSerializer, TareaPracticaSerializer,
+    EntregaTareaSerializer, EvidenciaEntregaSerializer
 )
 from users.models import CoordinatorProfile
 
@@ -392,3 +397,109 @@ def mis_practicas(request):
         'program', 'coordinator', 'profesor_practica'
     )
     return Response(PracticaSerializer(practicas, many=True).data)
+
+
+# ═════════════════════════════════════════════════════════
+# TAREAS + ENTREGAS + EVIDENCIAS
+# ═════════════════════════════════════════════════════════
+
+class TareaPracticaViewSet(viewsets.ModelViewSet):
+    serializer_class   = TareaPracticaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user  = self.request.user
+        roles = user.roles or [user.role]
+        practica_id = self.request.query_params.get('practica')
+
+        qs = TareaPractica.objects.select_related(
+            'practica', 'created_by'
+        ).prefetch_related('entregas__student', 'entregas__evidencias').all()
+
+        if practica_id:
+            qs = qs.filter(practica_id=practica_id)
+
+        if 'ADMIN' in roles or user.is_superuser:
+            return qs
+        if 'COORDINATOR' in roles:
+            return qs.filter(practica__program_id__in=get_coordinator_programs(user))
+        if 'PRACTICE_TEACHER' in roles:
+            return qs.filter(practica__profesor_practica=user)
+        # Estudiante: solo ve tareas de prácticas donde está inscrito
+        return qs.filter(practica__students=user)
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class EntregaTareaViewSet(viewsets.ModelViewSet):
+    serializer_class   = EntregaTareaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user  = self.request.user
+        roles = user.roles or [user.role]
+        tarea_id = self.request.query_params.get('tarea')
+
+        qs = EntregaTarea.objects.select_related(
+            'student', 'tarea__practica'
+        ).prefetch_related('evidencias').all()
+
+        if tarea_id:
+            qs = qs.filter(tarea_id=tarea_id)
+
+        if 'ADMIN' in roles or user.is_superuser:
+            return qs
+        if 'COORDINATOR' in roles:
+            return qs.filter(tarea__practica__program_id__in=get_coordinator_programs(user))
+        if 'PRACTICE_TEACHER' in roles:
+            return qs.filter(tarea__practica__profesor_practica=user)
+        return qs.filter(student=user)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        roles = user.roles or [user.role]
+        if 'ADMIN' not in roles and not user.is_superuser and 'COORDINATOR' not in roles and 'PRACTICE_TEACHER' not in roles:
+            serializer.save(student=user)
+        else:
+            serializer.save()
+
+
+class EvidenciaEntregaViewSet(viewsets.ModelViewSet):
+    serializer_class   = EvidenciaEntregaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        entrega_id = self.request.query_params.get('entrega')
+        qs = EvidenciaEntrega.objects.select_related('entrega__student').all()
+        if entrega_id:
+            qs = qs.filter(entrega_id=entrega_id)
+        return qs
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def horas_acumuladas(request, practica_id):
+    """Horas acumuladas por cada estudiante en una práctica (Diario de Campo)."""
+    try:
+        practica = Practica.objects.get(pk=practica_id)
+    except Practica.DoesNotExist:
+        return Response({'error': 'Práctica no encontrada'}, status=404)
+
+    from django.db.models import Sum
+    students = practica.students.all()
+    result = []
+    for student in students:
+        total_horas = ReflexionEstudiante.objects.filter(
+            seguimiento__practica=practica, student=student
+        ).aggregate(total=Sum('horas'))['total'] or 0
+
+        result.append({
+            'id': student.id,
+            'full_name': f'{student.first_name} {student.last_name}'.strip(),
+            'document_number': student.document_number,
+            'total_horas': float(total_horas),
+        })
+
+    return Response(result)
+

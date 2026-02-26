@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import SitioPractica, ObjetivoPractica, Practica, SeguimientoPractica, AsistenciaPractica, ReflexionEstudiante
+from .models import (
+    SitioPractica, ObjetivoPractica, Practica, SeguimientoPractica,
+    AsistenciaPractica, ReflexionEstudiante, TareaPractica,
+    EntregaTarea, EvidenciaEntrega
+)
 
 User = get_user_model()
 
@@ -83,17 +87,17 @@ class PracticaStudentsSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'code', 'students')
 
 
-# ─── Reflexión del estudiante ──────────────────────────────────────────────────
+# ─── Diario de Campo del estudiante ────────────────────────────────────────────
 class ReflexionEstudianteSerializer(serializers.ModelSerializer):
-    student_name    = serializers.SerializerMethodField(read_only=True)
-    seguimiento_date= serializers.DateField(source='seguimiento.date', read_only=True)
-    imagen_url      = serializers.SerializerMethodField(read_only=True)
+    student_name     = serializers.SerializerMethodField(read_only=True)
+    seguimiento_date = serializers.DateField(source='seguimiento.date', read_only=True)
+    imagen_url       = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ReflexionEstudiante
         fields = (
             'id', 'seguimiento', 'student', 'student_name', 'seguimiento_date',
-            'actividades', 'reflexion_pedagogica', 'aprendizajes',
+            'actividades', 'reflexion_pedagogica', 'aprendizajes', 'horas',
             'imagen', 'imagen_url',
             'created_at', 'updated_at',
         )
@@ -174,3 +178,66 @@ class EstudianteResumenSerializer(serializers.Serializer):
     late           = serializers.IntegerField()
     excused        = serializers.IntegerField()
     attendance_pct = serializers.FloatField()
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# TAREAS + ENTREGAS + EVIDENCIAS
+# ══════════════════════════════════════════════════════════════════════════
+
+class EvidenciaEntregaSerializer(serializers.ModelSerializer):
+    archivo_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = EvidenciaEntrega
+        fields = ('id', 'entrega', 'archivo', 'archivo_url', 'descripcion', 'created_at')
+        read_only_fields = ('id', 'created_at', 'archivo_url')
+
+    def get_archivo_url(self, obj):
+        if not obj.archivo:
+            return None
+        try:
+            return obj.archivo.url
+        except Exception:
+            return None
+
+
+class EntregaTareaSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField(read_only=True)
+    evidencias   = EvidenciaEntregaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = EntregaTarea
+        fields = (
+            'id', 'tarea', 'student', 'student_name',
+            'propuesta', 'evidencias',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at', 'student_name')
+
+    def get_student_name(self, obj):
+        return f'{obj.student.first_name} {obj.student.last_name}'.strip()
+
+
+class TareaPracticaSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.SerializerMethodField(read_only=True)
+    entregas        = EntregaTareaSerializer(many=True, read_only=True)
+    total_entregas  = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = TareaPractica
+        fields = (
+            'id', 'practica', 'titulo', 'descripcion',
+            'created_by', 'created_by_name',
+            'entregas', 'total_entregas',
+            'created_at',
+        )
+        read_only_fields = ('id', 'created_at', 'created_by', 'created_by_name')
+
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return f'{obj.created_by.first_name} {obj.created_by.last_name}'.strip()
+        return None
+
+    def get_total_entregas(self, obj):
+        return obj.entregas.count()
+

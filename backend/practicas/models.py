@@ -193,9 +193,10 @@ class ReflexionEstudiante(models.Model):
       - actividades  : qué hizo en la práctica
       - reflexion    : reflexión pedagógica sobre su actuar
       - aprendizajes : qué aprendió / qué mejoraría
+      - horas        : horas dedicadas en esta sesión (se acumulan)
 
-    Solo el estudiante propietario puede crear o editar su reflexión.
-    El coordinador y el profesor de práctica pueden leerlas.
+    Solo el estudiante propietario puede crear o editar su diario.
+    El coordinador y el profesor de práctica pueden leerlos.
     """
     seguimiento          = models.ForeignKey(
         SeguimientoPractica, on_delete=models.CASCADE,
@@ -208,6 +209,11 @@ class ReflexionEstudiante(models.Model):
     actividades          = models.TextField(verbose_name='Actividades realizadas')
     reflexion_pedagogica = models.TextField(blank=True, verbose_name='Reflexión pedagógica')
     aprendizajes         = models.TextField(blank=True, verbose_name='Aprendizajes y mejoras')
+    horas                = models.DecimalField(
+        max_digits=5, decimal_places=1, default=0,
+        verbose_name='Horas dedicadas',
+        help_text='Horas que el estudiante dedicó en esta sesión'
+    )
     imagen               = CloudinaryField(
         'imagen_evidencia',
         folder='practicas/evidencias',
@@ -219,10 +225,96 @@ class ReflexionEstudiante(models.Model):
     updated_at           = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name        = 'Reflexión de Estudiante'
-        verbose_name_plural = 'Reflexiones de Estudiantes'
+        verbose_name        = 'Diario de Campo'
+        verbose_name_plural = 'Diarios de Campo'
         unique_together     = ('seguimiento', 'student')
         ordering            = ['-seguimiento__date']
 
     def __str__(self):
-        return f'Reflexión: {self.student} — {self.seguimiento.date}'
+        return f'Diario: {self.student} — {self.seguimiento.date}'
+
+
+# ════════════════════════════════════════════════════════════════
+# TAREAS DE PRÁCTICA (asignadas por el profesor)
+# ════════════════════════════════════════════════════════════════
+
+class TareaPractica(models.Model):
+    """
+    Tarea / acción asignada por el profesor de prácticas.
+    Se crea a nivel de la práctica (no por sesión).
+    """
+    practica    = models.ForeignKey(
+        Practica, on_delete=models.CASCADE,
+        related_name='tareas', verbose_name='Práctica'
+    )
+    titulo      = models.CharField(max_length=300, verbose_name='Título')
+    descripcion = models.TextField(blank=True, verbose_name='Descripción / instrucciones')
+    created_by  = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name='tareas_creadas', verbose_name='Creado por'
+    )
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Tarea de Práctica'
+        verbose_name_plural = 'Tareas de Práctica'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.titulo} — {self.practica.name}'
+
+
+class EntregaTarea(models.Model):
+    """
+    Entrega del estudiante para una tarea asignada.
+    Puede contener múltiples evidencias (archivos en Cloudinary).
+    """
+    tarea       = models.ForeignKey(
+        TareaPractica, on_delete=models.CASCADE,
+        related_name='entregas', verbose_name='Tarea'
+    )
+    student     = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='entregas_practica', verbose_name='Estudiante'
+    )
+    propuesta   = models.TextField(verbose_name='Propuesta / descripción del trabajo')
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Entrega de Tarea'
+        verbose_name_plural = 'Entregas de Tareas'
+        unique_together = ('tarea', 'student')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student} → {self.tarea.titulo}'
+
+
+class EvidenciaEntrega(models.Model):
+    """
+    Archivo de evidencia adjunto a una entrega.
+    Fotos, listados, documentos — todo va a Cloudinary.
+    """
+    entrega     = models.ForeignKey(
+        EntregaTarea, on_delete=models.CASCADE,
+        related_name='evidencias', verbose_name='Entrega'
+    )
+    archivo     = CloudinaryField(
+        'evidencia_archivo',
+        folder='practicas/entregas',
+        help_text='Foto, PDF o documento de evidencia (va a Cloudinary)'
+    )
+    descripcion = models.CharField(
+        max_length=300, blank=True,
+        verbose_name='Descripción del archivo'
+    )
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Evidencia de Entrega'
+        verbose_name_plural = 'Evidencias de Entrega'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Evidencia: {self.entrega} — {self.descripcion or "sin desc"}'
