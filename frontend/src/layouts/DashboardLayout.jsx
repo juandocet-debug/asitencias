@@ -370,9 +370,9 @@ export default function DashboardLayout() {
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsSidebarOpen(false)} />
 
-                {/* "Clases" solo si el ROL ACTIVO no es COORDINATOR
-                    (un coordinador con también rol STUDENT no debe ver esto cuando está en modo coordinador) */}
-                {effectiveRole !== 'COORDINATOR' && (
+                {/* "Clases" solo si el ROL ACTIVO no es COORDINATOR ni PRACTICE_TEACHER
+                    (prof. de prácticas no gestiona clases académicas) */}
+                {effectiveRole !== 'COORDINATOR' && effectiveRole !== 'PRACTICE_TEACHER' && (
                     <SidebarItem
                         icon={BookOpen}
                         label={isAdmin ? 'Gestión de Clases' : isTeacher ? 'Mis Cursos' : 'Mis Clases'}
@@ -381,8 +381,8 @@ export default function DashboardLayout() {
                     />
                 )}
 
-                {/* Admin-only */}
-                {(effectiveRole === 'ADMIN' || allRoles.includes('ADMIN')) && (<>
+                {/* Admin-only — solo cuando vista es ADMIN */}
+                {isAdmin && (<>
                     <SidebarItem icon={Users} label="Usuarios" to="/users" onClick={() => setIsSidebarOpen(false)} />
                     <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
                     <SidebarItem icon={Wrench} label="Herramientas" to="/tools" onClick={() => setIsSidebarOpen(false)} subtitle="Facultades y programas" />
@@ -435,13 +435,24 @@ export default function DashboardLayout() {
                     />
                 )}
 
-                {effectiveRole === 'TEACHER' && (
+                {(effectiveRole === 'TEACHER' || effectiveRole === 'PRACTICE_TEACHER') && (
                     <SidebarItem
                         icon={ClipboardCheck}
                         label="Revisiones"
                         to="/reviews"
                         onClick={() => setIsSidebarOpen(false)}
                         subtitle="Excusas pendientes"
+                    />
+                )}
+
+                {/* Mis Prácticas — para PRACTICE_TEACHER */}
+                {isPracticeTeacher && (
+                    <SidebarItem
+                        icon={ClipboardList}
+                        label="Mis Prácticas"
+                        to="/coordinator/practicas"
+                        onClick={() => setIsSidebarOpen(false)}
+                        subtitle="Seguimiento y tareas"
                     />
                 )}
 

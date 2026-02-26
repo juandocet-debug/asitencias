@@ -80,11 +80,12 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         search = self.request.query_params.get('search', '').strip()
+        user_roles = user.roles or [user.role]
 
         # Base queryset según rol
-        if user.role == 'ADMIN' or user.is_superuser:
+        if 'ADMIN' in user_roles or user.is_superuser:
             qs = User.objects.all()
-        elif user.role == 'TEACHER':
+        elif 'TEACHER' in user_roles or 'PRACTICE_TEACHER' in user_roles:
             from academic.models import Course
             student_ids = Course.objects.filter(teacher=user).values_list('students__id', flat=True).distinct()
             qs = User.objects.filter(id__in=student_ids)
@@ -105,7 +106,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Crear usuario — solo ADMIN."""
-        if request.user.role != 'ADMIN' and not request.user.is_superuser:
+        user_roles = request.user.roles or [request.user.role]
+        if 'ADMIN' not in user_roles and not request.user.is_superuser:
             return Response(
                 {'error': 'Solo los administradores pueden crear usuarios.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -119,7 +121,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """Actualizar usuario — solo ADMIN."""
-        if request.user.role != 'ADMIN' and not request.user.is_superuser:
+        user_roles = request.user.roles or [request.user.role]
+        if 'ADMIN' not in user_roles and not request.user.is_superuser:
             return Response(
                 {'error': 'Solo los administradores pueden editar usuarios.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -381,7 +384,8 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return request.user and request.user.is_authenticated
-        return request.user and (request.user.role == 'ADMIN' or request.user.is_superuser)
+        user_roles = request.user.roles or [request.user.role]
+        return request.user and ('ADMIN' in user_roles or request.user.is_superuser)
 
 
 class FacultyViewSet(viewsets.ModelViewSet):

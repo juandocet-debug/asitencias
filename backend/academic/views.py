@@ -15,35 +15,41 @@ class CourseViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if not user.is_authenticated:
             return Course.objects.none()
-            
-        if user.role == 'ADMIN' or user.is_superuser:
+        user_roles = user.roles or [user.role]
+
+        if 'ADMIN' in user_roles or user.is_superuser:
             return Course.objects.all().prefetch_related('students')
-        elif user.role == 'TEACHER':
+        elif 'TEACHER' in user_roles or 'PRACTICE_TEACHER' in user_roles:
             return Course.objects.filter(teacher=user).prefetch_related('students')
-        elif user.role == 'STUDENT':
+        elif 'STUDENT' in user_roles:
             return Course.objects.filter(students=user).prefetch_related('students')
         return Course.objects.none()
 
     def perform_create(self, serializer):
-        if self.request.user.role not in ['ADMIN', 'TEACHER']:
+        user_roles = self.request.user.roles or [self.request.user.role]
+        # PRACTICE_TEACHER NO puede crear clases — solo ADMIN y TEACHER regular
+        allowed = {'ADMIN', 'TEACHER'}
+        if not (allowed & set(user_roles)) and not self.request.user.is_superuser:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Solo docentes o administradores pueden crear clases")
         serializer.save(teacher=self.request.user)
     
     def perform_update(self, serializer):
         instance = self.get_object()
-        if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
+        user_roles = self.request.user.roles or [self.request.user.role]
+        if 'ADMIN' in user_roles or self.request.user.is_superuser:
             serializer.save()
-        elif self.request.user.role == 'TEACHER' and instance.teacher == self.request.user:
+        elif ('TEACHER' in user_roles or 'PRACTICE_TEACHER' in user_roles) and instance.teacher == self.request.user:
             serializer.save()
         else:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("No tienes permiso para editar esta clase")
     
     def perform_destroy(self, instance):
-        if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
+        user_roles = self.request.user.roles or [self.request.user.role]
+        if 'ADMIN' in user_roles or self.request.user.is_superuser:
             instance.delete()
-        elif self.request.user.role == 'TEACHER' and instance.teacher == self.request.user:
+        elif ('TEACHER' in user_roles or 'PRACTICE_TEACHER' in user_roles) and instance.teacher == self.request.user:
             instance.delete()
         else:
             from rest_framework.exceptions import PermissionDenied
@@ -532,8 +538,22 @@ class DashboardViewSet(viewsets.ViewSet):
         # Filtros opcionales
         year = request.query_params.get('year')
         period = request.query_params.get('period') # e.g., '1' or '2'
+        
+        # Determinar el "rol efectivo" del dashboard usando roles[]
+        user_roles = user.roles or [user.role]
+        # Prioridad: ADMIN > COORDINATOR > TEACHER > PRACTICE_TEACHER > STUDENT
+        if 'ADMIN' in user_roles or user.is_superuser:
+            effective = 'ADMIN'
+        elif 'COORDINATOR' in user_roles:
+            effective = 'ADMIN'  # coordinadores ven dashboard admin
+        elif 'TEACHER' in user_roles:
+            effective = 'TEACHER'
+        elif 'PRACTICE_TEACHER' in user_roles:
+            effective = 'TEACHER'  # prof. prácticas ve dashboard tipo teacher
+        else:
+            effective = 'STUDENT'
 
-        if user.role == 'STUDENT':
+        if effective == 'STUDENT':
             # --- ESTADÍSTICAS ESTUDIANTE ---
             
             # Cursos inscritos
@@ -616,7 +636,7 @@ class DashboardViewSet(viewsets.ViewSet):
                 'today_classes': today_classes
             })
 
-        elif user.role == 'ADMIN':
+        elif effective == 'ADMIN':
             # --- ESTADÍSTICAS ADMINISTRADOR ---
             courses = Course.objects.all()
             if year:
@@ -669,7 +689,7 @@ class DashboardViewSet(viewsets.ViewSet):
                 'today_classes': today_classes
             })
 
-        elif user.role == 'TEACHER':
+        elif effective == 'TEACHER':
             # --- ESTADÍSTICAS PROFESOR ---
             my_courses = Course.objects.filter(teacher=user)
             if year:
@@ -740,7 +760,8 @@ class DashboardViewSet(viewsets.ViewSet):
         from django.utils import timezone
 
         user = request.user
-        if user.role != 'ADMIN' and not user.is_superuser:
+        user_roles = user.roles or [user.role]
+        if 'ADMIN' not in user_roles and not user.is_superuser:
             return Response({'error': 'Acceso restringido a administradores'}, status=403)
 
         User = get_user_model()

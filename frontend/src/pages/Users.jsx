@@ -8,6 +8,7 @@ import api from '../services/api';
 const ROLE_LABELS = {
     'STUDENT': 'Estudiante',
     'TEACHER': 'Docente',
+    'PRACTICE_TEACHER': 'Prof. Prácticas',
     'COORDINATOR': 'Coordinador',
     'ADMIN': 'Administrador'
 };
@@ -15,6 +16,7 @@ const ROLE_LABELS = {
 const ROLE_STYLES = {
     'STUDENT': 'bg-blue-100 text-blue-800 border-blue-200',
     'TEACHER': 'bg-purple-100 text-purple-800 border-purple-200',
+    'PRACTICE_TEACHER': 'bg-teal-100 text-teal-800 border-teal-200',
     'COORDINATOR': 'bg-amber-100 text-amber-800 border-amber-200',
     'ADMIN': 'bg-upn-100 text-upn-800 border-upn-200'
 };
@@ -22,6 +24,7 @@ const ROLE_STYLES = {
 const ROLE_ICONS = {
     'STUDENT': <GraduationCap size={14} />,
     'TEACHER': <BookOpen size={14} />,
+    'PRACTICE_TEACHER': <Briefcase size={14} />,
     'COORDINATOR': <Briefcase size={14} />,
     'ADMIN': <Shield size={14} />
 };
@@ -668,6 +671,7 @@ export default function UsersPage() {
                                     >
                                         <option value="STUDENT">Estudiante</option>
                                         <option value="TEACHER">Docente</option>
+                                        <option value="PRACTICE_TEACHER">Profesor de Prácticas</option>
                                         <option value="COORDINATOR">Coordinador</option>
                                         <option value="ADMIN">Administrador</option>
                                     </select>
@@ -678,7 +682,7 @@ export default function UsersPage() {
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase">Roles activos</label>
                                 <div className="flex flex-wrap gap-2">
-                                    {['STUDENT', 'TEACHER', 'COORDINATOR', 'ADMIN'].map(r => {
+                                    {['STUDENT', 'TEACHER', 'PRACTICE_TEACHER', 'COORDINATOR', 'ADMIN'].map(r => {
                                         const active = (formData.roles || []).includes(r);
                                         return (
                                             <button
