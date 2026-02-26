@@ -128,30 +128,39 @@ const RoleSwitcher = ({ user, activeRole, setActiveRole, onAfterSwitch }) => {
     };
 
     return (
-        <div className="px-4 pb-3 relative">
-            <p className="text-[10px] font-bold text-upn-400 uppercase tracking-wider mb-2">Vista activa</p>
+        <div className="px-3 pb-4 relative">
+            {/* Etiqueta */}
+            <p className="text-[10px] font-bold text-upn-400 uppercase tracking-widest mb-2 px-1">Vista activa</p>
 
-            {/* Trigger */}
+            {/* Trigger — card prominente */}
             <button
                 onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2.5
-                    bg-upn-800/70 border border-upn-700/60 rounded-xl
-                    hover:border-upn-500 transition-all"
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all
+                    bg-gradient-to-r from-upn-700/80 to-upn-800/60
+                    border-upn-600/50 hover:border-upn-400
+                    hover:shadow-lg hover:shadow-upn-900/40 group`}
             >
-                <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-upn-700 flex items-center justify-center flex-shrink-0">
-                        <ActiveIcon size={13} className="text-white" />
-                    </div>
-                    <span className="text-[13px] font-bold text-white truncate">{activeMeta.label}</span>
-                    <span className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0" />
+                {/* Icono rol activo */}
+                <div className="w-9 h-9 rounded-xl bg-upn-600 flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                    <ActiveIcon size={17} className="text-white" />
                 </div>
-                <ChevronDown size={14}
-                    className={`text-upn-400 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[13px] font-black text-white truncate leading-tight">{activeMeta.label}</p>
+                    <p className="text-[10px] text-upn-300 font-medium flex items-center gap-1 mt-0.5">
+                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                        Activo ahora
+                    </p>
+                </div>
+                <ChevronDown size={15}
+                    className={`text-upn-300 flex-shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown */}
             {open && (
-                <div className="absolute left-4 right-4 mt-1 bg-[#0d1829] border border-upn-700 rounded-xl overflow-hidden shadow-2xl z-50">
+                <div className="absolute left-3 right-3 mt-2 bg-[#0a1220] border border-upn-700/80 rounded-2xl overflow-hidden shadow-2xl z-50">
+                    <div className="px-3 py-2 border-b border-upn-800/60">
+                        <p className="text-[10px] font-bold text-upn-500 uppercase tracking-wider">Cambiar vista</p>
+                    </div>
                     {allRoles.map((role) => {
                         const meta = ROLE_META[role] || { label: role, icon: User };
                         const IconComp = meta.icon;
@@ -160,25 +169,27 @@ const RoleSwitcher = ({ user, activeRole, setActiveRole, onAfterSwitch }) => {
                             <button
                                 key={role}
                                 onClick={() => select(role)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors
+                                className={`w-full flex items-center gap-3 px-3 py-3 text-left transition-all
                                     ${isActive
-                                        ? 'bg-upn-600 text-white'
-                                        : 'text-upn-200 hover:bg-upn-800 hover:text-white'
-                                    }`}
+                                        ? 'bg-upn-600/90 text-white'
+                                        : 'text-upn-200 hover:bg-upn-800/80 hover:text-white'}`}
                             >
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
-                                    ${isActive ? 'bg-white/20' : 'bg-upn-700/50'}`}>
-                                    <IconComp size={14} />
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors
+                                    ${isActive ? 'bg-white/20 shadow-sm' : 'bg-upn-700/50'}`}>
+                                    <IconComp size={15} />
                                 </div>
-                                <span className="text-sm font-semibold flex-1">{meta.label}</span>
-                                {isActive && <Check size={14} className="text-emerald-300 flex-shrink-0" />}
+                                <span className="text-sm font-bold flex-1">{meta.label}</span>
+                                {isActive
+                                    ? <Check size={14} className="text-emerald-300 flex-shrink-0" />
+                                    : <ChevronDown size={12} className="text-upn-500 flex-shrink-0 -rotate-90" />
+                                }
                             </button>
                         );
                     })}
                 </div>
             )}
 
-            <div className="mt-3 border-t border-upn-800/50" />
+            <div className="mt-4 border-t border-upn-800/40" />
         </div>
     );
 };
@@ -194,15 +205,15 @@ export default function DashboardLayout() {
     const { user, setUser, loading, activeRole, setActiveRole } = useUser();
 
     // ── Derivar roles usando el array `roles` (multi-rol correcto) ──
-    // Nunca confiar solo en user.role (es el principal), usar activeRole para navegación
     const allRoles = (user?.roles?.length > 0 ? user.roles : [user?.role]).filter(Boolean);
-    const isAdmin = activeRole === 'ADMIN' || allRoles.includes('ADMIN');
-    const isTeacher = activeRole === 'TEACHER' || (!isAdmin && allRoles.includes('TEACHER'));
-    const isStudent = activeRole === 'STUDENT' || (!isAdmin && !isTeacher && allRoles.includes('STUDENT'));
-    const isCoordinator = allRoles.includes('COORDINATOR');
-
-    // Cuando el usuario hace switch de rol, actualizar la vista
+    // effectiveRole es el rol activo elegido — TODA la visibilidad depende de éste
     const effectiveRole = activeRole || user?.role;
+    // isAdmin SOLO cuando la vista activa es ADMIN (no basta con tenerlo en allRoles)
+    const isAdmin = effectiveRole === 'ADMIN';
+    const isTeacher = effectiveRole === 'TEACHER';
+    const isStudent = effectiveRole === 'STUDENT';
+    const isCoordinator = effectiveRole === 'COORDINATOR';
+    const isPracticeTeacher = effectiveRole === 'PRACTICE_TEACHER';
 
     // Estado modal "Unirse a clase"
     const [joinModalOpen, setJoinModalOpen] = useState(false);
@@ -449,7 +460,7 @@ export default function DashboardLayout() {
                     </button>
                 )}
 
-                {(effectiveRole === 'ADMIN' || (isAdmin && allRoles.includes('ADMIN'))) && (
+                {isAdmin && (
                     <SidebarItem icon={Settings} label="Configuración" to="/settings" onClick={() => setIsSidebarOpen(false)} />
                 )}
             </nav>
