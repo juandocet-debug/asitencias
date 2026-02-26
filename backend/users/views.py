@@ -3,7 +3,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Q
 from rest_framework.filters import SearchFilter
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from .serializers import (
     StudentRegisterSerializer, UserSerializer, UserProfileSerializer,
     AdminUserCreateSerializer, AdminUserUpdateSerializer,
@@ -15,6 +18,45 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 User = get_user_model()
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+    Reemplaza el TokenObtainPairView por defecto para usar nuestro
+    DocumentNumberBackend. Acepta cédula, email o username como identificador.
+    """
+    def post(self, request, *args, **kwargs):
+        identifier = request.data.get('username', '').strip()
+        password   = request.data.get('password', '')
+
+        if not identifier or not password:
+            return Response(
+                {'detail': 'Ingresa tu usuario y contraseña.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # django.contrib.auth.authenticate recorre AUTHENTICATION_BACKENDS en orden
+        # → primero DocumentNumberBackend (por cédula), luego ModelBackend (por username/email)
+        user = authenticate(request, username=identifier, password=password)
+
+        if user is None:
+            return Response(
+                {'detail': 'Credenciales inválidas. Verifique su usuario y contraseña.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if not user.is_active:
+            return Response(
+                {'detail': 'Esta cuenta está desactivada.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access':  str(refresh.access_token),
+            'refresh': str(refresh),
+        })
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
