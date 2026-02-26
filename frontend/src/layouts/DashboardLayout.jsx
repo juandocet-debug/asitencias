@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash, ChevronRight, ChevronDown, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Award, Settings, LogOut, Bell, Search, Menu, User, AlertCircle, ClipboardCheck, Plus, X, CheckCircle2, Loader2, Hash, ChevronRight, ChevronDown, Briefcase, Wrench } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
@@ -221,6 +221,10 @@ export default function DashboardLayout() {
 
                 {isAdmin && (
                     <SidebarItem icon={Award} label="Insignias" to="/badges" onClick={() => setIsSidebarOpen(false)} />
+                )}
+
+                {isAdmin && (
+                    <SidebarItem icon={Wrench} label="Herramientas" to="/tools" onClick={() => setIsSidebarOpen(false)} subtitle="Facultades y programas" />
                 )}
 
                 {/* ── Sección Coordinador ── */}

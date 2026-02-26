@@ -20,6 +20,7 @@ const UsersPage = lazy(() => import('./pages/Users'));
 const Profile = lazy(() => import('./pages/Profile'));
 const MyAbsences = lazy(() => import('./pages/MyAbsences'));
 const TeacherReviews = lazy(() => import('./pages/TeacherReviews'));
+const ToolsPage = lazy(() => import('./pages/Tools'));
 
 // ──────────────────────────────────────────────
 // Spinner de carga global — se muestra mientras
@@ -99,6 +100,7 @@ function App() {
               <Route path="/classes/:id" element={<ClassDetails />} />
               <Route path="/classes/:id/reports" element={<ClassReports />} />
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/tools" element={<ToolsPage />} />
               <Route path="/my-absences" element={<MyAbsences />} />
               <Route path="/reviews" element={<TeacherReviews />} />
               {/* Rutas de Coordinador */}

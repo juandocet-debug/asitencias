@@ -331,22 +331,31 @@ def join_class(request):
 
 # ════════════════════════════════════════════════════════════════
 # CATÁLOGOS — Facultades, Programas, Tipos de Coordinador
+# (lectura para cualquier autenticado, escritura solo ADMIN)
 # ════════════════════════════════════════════════════════════════
 
-class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
-    """Lista de facultades (solo lectura para el frontend)."""
-    queryset = Faculty.objects.all()
+class IsAdminOrReadOnly(permissions.BasePermission):
+    """Permite lectura a cualquier autenticado, escritura solo a ADMIN."""
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user and request.user.is_authenticated
+        return request.user and (request.user.role == 'ADMIN' or request.user.is_superuser)
+
+
+class FacultyViewSet(viewsets.ModelViewSet):
+    """CRUD de facultades. Lectura: todos. Escritura: solo ADMIN."""
+    queryset = Faculty.objects.all().order_by('name')
     serializer_class = FacultySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
 
-class ProgramViewSet(viewsets.ReadOnlyModelViewSet):
-    """Lista de programas (solo lectura para el frontend). Soporta ?faculty=id."""
+class ProgramViewSet(viewsets.ModelViewSet):
+    """CRUD de programas. Lectura: todos. Escritura: solo ADMIN. Soporta ?faculty=id."""
     serializer_class = ProgramSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
-        qs = Program.objects.select_related('faculty').all()
+        qs = Program.objects.select_related('faculty').all().order_by('name')
         faculty_id = self.request.query_params.get('faculty')
         if faculty_id:
             qs = qs.filter(faculty_id=faculty_id)
