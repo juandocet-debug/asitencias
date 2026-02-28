@@ -1,7 +1,22 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { useUser } from './context/UserContext';
+import api from './services/api';
+
+// ── Keep-alive: llama /api/ping/ cada 10 minutos para que Render no duerma ──
+// Render (plan gratuito) apaga el servidor tras 15 min sin tráfico.
+// Este intervalo lo mantiene despierto mientras haya alguien en el navegador.
+const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
+function useServerKeepAlive() {
+  useEffect(() => {
+    const doPing = () => api.get('/ping/').catch(() => { }); // silencioso si falla
+    doPing(); // ping inmediato al cargar la app
+    const interval = setInterval(doPing, PING_INTERVAL_MS);
+    return () => clearInterval(interval); // limpiar al desmontar
+  }, []);
+}
+
 
 // ──────────────────────────────────────────────
 // Carga diferida (lazy) de todas las páginas
@@ -74,6 +89,7 @@ const RootRedirect = () => {
 // App principal
 // ──────────────────────────────────────────────
 function App() {
+  useServerKeepAlive(); // mantiene activo el servidor de Render
   return (
     <UserProvider>
       <BrowserRouter>
