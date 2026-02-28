@@ -1,5 +1,6 @@
 import os
 from rest_framework import generics, permissions, status, viewsets
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Q
@@ -21,11 +22,20 @@ from django.conf import settings
 User = get_user_model()
 
 
+# ── Throttle para el login — máximo 10 intentos por minuto por IP ─────────────
+# Si alguien supera el límite, recibe HTTP 429 (Too Many Requests)
+# y debe esperar 1 minuto antes de intentar de nuevo
+class LoginRateThrottle(AnonRateThrottle):
+    scope = 'login'  # corresponde a 'login': '10/min' en settings.py
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
     Reemplaza el TokenObtainPairView por defecto para usar nuestro
     DocumentNumberBackend. Acepta cédula, email o username como identificador.
+    Incluye rate limiting: máximo 10 intentos de login por minuto por IP.
     """
+    throttle_classes = [LoginRateThrottle]  # aplicar límite de intentos
     def post(self, request, *args, **kwargs):
         identifier = request.data.get('username', '').strip()
         password   = request.data.get('password', '')

@@ -179,19 +179,9 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Backend por defecto
 ]
 
-# ── CORS — Control de acceso desde el navegador ──────────────────────────────
-# Solo estos dominios pueden llamar a la API desde un navegador.
-# Las llamadas servidor-a-servidor (ILINYX backend → AGON backend) no usan CORS.
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [
-    # Frontend de AGON en producción
-    'https://asitencia-frontend.onrender.com',
-    # Frontend de ILINYX en producción
-    'https://ilinyx-frontend-produccion.onrender.com',
-    # Desarrollo local (React en Vite)
-    'http://localhost:5173',
-    'http://localhost:3000',
-]
+# ── CORS — temporalmente abierto mientras se investigan los dominios exactos ──
+# TODO: restringir a dominios específicos una vez confirmados todos los orígenes
+CORS_ALLOW_ALL_ORIGINS = True
 
 # REST Framework
 REST_FRAMEWORK = {
@@ -201,7 +191,14 @@ REST_FRAMEWORK = {
     # Deshabilitar paginación global para que los cursos devuelvan TODOS los estudiantes
     'DEFAULT_PAGINATION_CLASS': None,
     'PAGE_SIZE': None,
+    # ── Rate limiting — límites de peticiones por IP ──────────────────────────
+    # 'login': se aplica solo al endpoint de login (10 intentos/minuto)
+    # Protege contra ataques de fuerza bruta (adivinar contraseñas)
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '10/min',
+    }
 }
+
 
 from datetime import timedelta
 SIMPLE_JWT = {
