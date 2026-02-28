@@ -23,9 +23,13 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),  # fallback local
-        conn_max_age=600
+        conn_max_age=0,          # no reutilizar conexiones — el servidor free tier
+                                 # se reinicia desde cero y las conexiones cached
+                                 # quedan obsoletas tras 2h+ de inactividad
+        conn_health_checks=True, # verifica la conexión antes de usarla (Django 4.1+)
     )
 }
+
 
 
 # ── Archivos estáticos (WhiteNoise sirve el React build) ─────────────────────
