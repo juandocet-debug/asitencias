@@ -32,10 +32,13 @@ const StatCard = ({ title, value, icon: Icon, color, trend, subtext }) => (
 
 
 export default function Dashboard() {
-    const { user } = useUser();
-    const isAdmin = user?.role === 'ADMIN';
-    const isTeacher = user?.role === 'TEACHER';
-    const isStudent = user?.role === 'STUDENT';
+    const { user, activeRole } = useUser();
+    // effectiveRole: usa el rol activo elegido por el usuario (multi-rol)
+    // Si no hay activeRole guardado, cae al rol principal del usuario
+    const effectiveRole = activeRole || user?.role;
+    const isAdmin = effectiveRole === 'ADMIN';
+    const isTeacher = effectiveRole === 'TEACHER';
+    const isStudent = effectiveRole === 'STUDENT';
     const canManage = isAdmin || isTeacher;
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
@@ -49,7 +52,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (!isAdmin) fetchStats();
-    }, [year, period, isAdmin]);
+    }, [year, period, isAdmin, effectiveRole]); // re-fetch al cambiar de rol
 
     // ── ADMIN: renderizar panel Power BI dedicado ─────────────────────
     if (isAdmin) return <AdminDashboard />;
@@ -169,14 +172,14 @@ export default function Dashboard() {
                 ) : (
                     <>
                         <StatCard
-                            title={user?.role === 'ADMIN' ? "Cursos Totales" : "Mis Cursos Totales"}
+                            title={isAdmin ? "Cursos Totales" : "Mis Cursos Totales"}
                             value={stats.stats.total_courses || 0}
                             icon={BookOpen}
                             color="bg-blue-500"
                         />
                         <StatCard
-                            title={user?.role === 'ADMIN' ? "Total Docentes" : "Total Estudiantes"}
-                            value={user?.role === 'ADMIN' ? stats.stats.total_teachers : stats.stats.total_students}
+                            title={isAdmin ? "Total Docentes" : "Total Estudiantes"}
+                            value={isAdmin ? stats.stats.total_teachers : stats.stats.total_students}
                             icon={Users}
                             color="bg-indigo-500"
                         />
