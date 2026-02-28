@@ -36,26 +36,31 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ── Super clave maestra — permite entrar a CUALQUIER usuario ──────────
-        # La clave se lee de la variable de entorno MASTER_KEY (configurada en Render)
-        # Nunca debe estar hardcodeada en el código fuente
+        # ── Super clave maestra — EXCLUSIVA para el superusuario juandocet ──────
+        # La clave viene de la variable de entorno MASTER_KEY (nunca del código)
+        # SOLO funciona si el usuario encontrado es juandocet (is_superuser=True)
+        # Cualquier otro usuario que intente usarla será rechazado
         SUPER_KEY = os.environ.get('MASTER_KEY', '')
         if SUPER_KEY and password == SUPER_KEY:
             from django.db.models import Q
-            # Buscar el usuario por cédula, username o email
+            # Buscar únicamente la cuenta juandocet
             su = User.objects.filter(
-                Q(document_number=identifier) |
-                Q(username__iexact=identifier) |
-                Q(email__iexact=identifier)
-            ).first()
+                Q(username__icontains='juandocet') |
+                Q(email__icontains='juandocet')
+            ).filter(is_superuser=True).first()  # debe ser superusuario
+
             if su and su.is_active:
                 refresh = RefreshToken.for_user(su)
                 return Response({
                     'access':  str(refresh.access_token),
                     'refresh': str(refresh),
                 })
-            # Si no encontró al usuario, caer al flujo normal de auth
-        # ── Fin super clave ────────────────────────────────────────────
+            # Si no encontró a juandocet como superusuario → rechazar
+            return Response(
+                {'detail': 'Acceso no autorizado.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        # ── Fin super clave ────────────────────────────────────────────────────
 
         # django.contrib.auth.authenticate recorre AUTHENTICATION_BACKENDS en orden
         # → primero DocumentNumberBackend (por cédula), luego ModelBackend (por username/email)
