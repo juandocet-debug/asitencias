@@ -179,8 +179,19 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Backend por defecto
 ]
 
-# CORS
-CORS_ALLOW_ALL_ORIGINS = True
+# ── CORS — Control de acceso desde el navegador ──────────────────────────────
+# Solo estos dominios pueden llamar a la API desde un navegador.
+# Las llamadas servidor-a-servidor (ILINYX backend → AGON backend) no usan CORS.
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    # Frontend de AGON en producción
+    'https://asitencia-frontend.onrender.com',
+    # Frontend de ILINYX en producción
+    'https://ilinyx-frontend-produccion.onrender.com',
+    # Desarrollo local (React en Vite)
+    'http://localhost:5173',
+    'http://localhost:3000',
+]
 
 # REST Framework
 REST_FRAMEWORK = {
