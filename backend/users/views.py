@@ -1,4 +1,5 @@
 import os
+from core.permissions import IsAdminOrReadOnly  # permiso centralizado en core
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
@@ -414,15 +415,8 @@ def join_class(request):
 # ════════════════════════════════════════════════════════════════
 # CATÁLOGOS — Facultades, Programas, Tipos de Coordinador
 # (lectura para cualquier autenticado, escritura solo ADMIN)
+# Permiso IsAdminOrReadOnly definido en core/permissions.py
 # ════════════════════════════════════════════════════════════════
-
-class IsAdminOrReadOnly(permissions.BasePermission):
-    """Permite lectura a cualquier autenticado, escritura solo a ADMIN."""
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return request.user and request.user.is_authenticated
-        user_roles = request.user.roles or [request.user.role]
-        return request.user and ('ADMIN' in user_roles or request.user.is_superuser)
 
 
 class FacultyViewSet(viewsets.ModelViewSet):

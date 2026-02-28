@@ -9,6 +9,8 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
+from core.permissions import PracticasPermission  # permiso centralizado en core
+
 from practicas.models import (
     SitioPractica, ObjetivoPractica, Practica,
     SeguimientoPractica, AsistenciaPractica, ReflexionEstudiante,
@@ -59,13 +61,8 @@ def scoped_program_ids(user):
     return []
 
 
-# ═══════════════════════════════════════════════════════════
-# PERMISOS
-# ═══════════════════════════════════════════════════════════
-
-class PracticasPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and has_practica_access(request.user))
+# La función has_practica_access vive en core/permissions.py como _has_practica_access
+# PracticasPermission importado desde core.permissions (ver importaciones arriba)
 
 
 # ═══════════════════════════════════════════════════════════

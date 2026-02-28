@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # Local apps
+    'core',        # permisos y utilidades compartidas entre apps
     'users',
     'academic',
     'gamification',
