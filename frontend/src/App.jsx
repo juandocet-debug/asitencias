@@ -4,16 +4,44 @@ import { UserProvider } from './context/UserContext';
 import { useUser } from './context/UserContext';
 import api from './services/api';
 
-// ── Keep-alive: llama /api/ping/ cada 10 minutos para que Render no duerma ──
-// Render (plan gratuito) apaga el servidor tras 15 min sin tráfico.
-// Este intervalo lo mantiene despierto mientras haya alguien en el navegador.
+// ── Keep-alive inteligente para Render (plan gratuito) ───────────────────────
+// SOLO pinga si la pestaña está visible y activa.
+// Si el usuario minimiza o cambia de pestaña → NO pinga → Render puede dormir
+// → se ahorran horas gratuitas del plan.
 const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
+
 function useServerKeepAlive() {
   useEffect(() => {
-    const doPing = () => api.get('/ping/').catch(() => { }); // silencioso si falla
-    doPing(); // ping inmediato al cargar la app
-    const interval = setInterval(doPing, PING_INTERVAL_MS);
-    return () => clearInterval(interval); // limpiar al desmontar
+    let interval = null;
+
+    const doPing = () => {
+      if (document.visibilityState === 'visible') {
+        api.get('/ping/').catch(() => { }); // silencioso si falla
+      }
+    };
+
+    const startPing = () => {
+      doPing();
+      interval = setInterval(doPing, PING_INTERVAL_MS);
+    };
+
+    const stopPing = () => {
+      if (interval) { clearInterval(interval); interval = null; }
+    };
+
+    // Arrancar/parar según si la pestaña está visible
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') startPing();
+      else stopPing();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    if (document.visibilityState === 'visible') startPing();
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      stopPing();
+    };
   }, []);
 }
 
