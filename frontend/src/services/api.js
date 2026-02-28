@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
-    timeout: 45000, // 45 segundos — Render free tier tarda ~25s en cold start
+    timeout: 90000, // 90 segundos — Render free tier puede tardar 50s+ en cold start
 });
 
 // ── Request interceptor: adjuntar token JWT ──────────────────────────────────

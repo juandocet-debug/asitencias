@@ -31,12 +31,21 @@ export default function Login() {
             localStorage.setItem('username', username);
             if (fetchUser) await fetchUser();
             navigate(classCode ? `/register?code=${classCode}` : '/dashboard');
-        } catch {
-            setError('Credenciales inválidas. Verifique su usuario y contraseña.');
+        } catch (err) {
+            const status = err?.response?.status;
+            const isTimeout = err?.code === 'ECONNABORTED' || !err?.response;
+            if (isTimeout) {
+                setError('⏳ El servidor está despertando. Espera unos segundos e intenta de nuevo.');
+            } else if (status === 401 || status === 400) {
+                setError('Credenciales inválidas. Verifique su usuario y contraseña.');
+            } else {
+                setError('Error de conexión. Intenta de nuevo en un momento.');
+            }
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="min-h-screen flex overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -149,7 +158,14 @@ export default function Login() {
                             <button type="submit" disabled={loading}
                                 className="w-full py-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 mt-1"
                                 style={{ background: 'linear-gradient(135deg, #0038b0, #0062f0)', boxShadow: '0 6px 28px rgba(0,70,200,0.4)' }}>
-                                {loading ? 'Ingresando...' : 'Iniciar sesión'} <ArrowRight className="h-4 w-4" />
+                                {loading ? (
+                                    <>
+                                        <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                        Conectando...
+                                    </>
+                                ) : (
+                                    <>Iniciar sesión <ArrowRight className="h-4 w-4" /></>
+                                )}
                             </button>
 
                             <p className="text-center text-slate-400 text-sm pt-1">
