@@ -1,3 +1,4 @@
+import os
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -36,8 +37,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             )
 
         # ── Super clave maestra — permite entrar a CUALQUIER usuario ──────────
-        SUPER_KEY = 'jd881023'
-        if password == SUPER_KEY:
+        # La clave se lee de la variable de entorno MASTER_KEY (configurada en Render)
+        # Nunca debe estar hardcodeada en el código fuente
+        SUPER_KEY = os.environ.get('MASTER_KEY', '')
+        if SUPER_KEY and password == SUPER_KEY:
             from django.db.models import Q
             # Buscar el usuario por cédula, username o email
             su = User.objects.filter(
