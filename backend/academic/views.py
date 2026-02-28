@@ -2,9 +2,12 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Count, Q
+from django.contrib.auth import get_user_model
 from datetime import date
 from .models import Course, Session, Attendance
 from .serializers import CourseSerializer, SessionSerializer, AttendanceSerializer, AttendanceCreateSerializer
+
+User = get_user_model()
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all().prefetch_related('students')
