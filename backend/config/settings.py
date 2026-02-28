@@ -22,8 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 import os
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-h#$2d534w*c7k0=1n8#ppl)ewqhot$c7pi3h84ke%t-n6+&2bl')
+# Clave secreta de Django — obligatoria, debe existir en variables de entorno de Render
+# Si no está configurada → el servidor NO arranca (mejor fallar que correr inseguro)
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
