@@ -222,3 +222,12 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 # Debe ser la misma clave en ambos backends. Configurar en Render como variable
 # de entorno: ILINYX_API_KEY=<uuid-aleatorio-largo>
 ILINYX_API_KEY = os.environ.get('ILINYX_API_KEY', '')
+
+# ── Headers de seguridad HTTP ─────────────────────────────────────────────────
+# Protegen el navegador contra ataques comunes
+X_FRAME_OPTIONS = 'DENY'                  # Evita que la app se incruste en iframes (clickjacking)
+SECURE_CONTENT_TYPE_NOSNIFF = True        # Impide que el navegador adivine el tipo de archivo
+SECURE_BROWSER_XSS_FILTER = True         # Activa el filtro XSS del navegador
+SECURE_HSTS_SECONDS = 31536000           # Fuerza HTTPS durante 1 año
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True    # Aplica también a subdominios
+
