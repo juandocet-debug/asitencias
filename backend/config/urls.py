@@ -7,9 +7,7 @@ from rest_framework_simplejwt.views import (
 )
 from users.views import CustomTokenObtainPairView
 
-# ── Ping endpoint — mantiene vivo el servidor en Render (plan gratuito) ──────
-# El frontend llama a este endpoint cada 10 minutos para evitar que Render
-# duerma el servidor tras 15 minutos de inactividad.
+# ── Ping endpoint — keep-alive para Render (plan gratuito) ───────────────────
 def ping(request):
     """Responde con ok — no requiere autenticación — solo para keep-alive."""
     return JsonResponse({'status': 'ok'})
@@ -20,12 +18,12 @@ urlpatterns = [
     path('api/users/', include('users.urls')),
     path('api/practicas/', include('practicas.urls')),
 
-    # Auth JWT — acepta cédula, email o username como identificador
+    # Auth JWT
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
-    # Keep-alive para Render (plan gratuito) — el frontend lo llama cada 10 min
+    # Keep-alive para Render
     path('api/ping/', ping, name='ping'),
 ]
 
@@ -35,10 +33,6 @@ from django.conf.urls.static import static
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-from django.urls import re_path
-from django.views.generic import TemplateView
-
-# Catch-all: sirve la app React para cualquier ruta que no sea API/admin/static
-urlpatterns += [
-    re_path(r'^(?!static|media|assets|api|admin).*$', TemplateView.as_view(template_name='index.html')),
-]
+# NOTA: El catch-all de React se eliminó.
+# El frontend se sirve desde su propio servicio Render (asitencia-frontend.onrender.com).
+# Este backend sirve SOLO la API.

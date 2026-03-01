@@ -32,10 +32,10 @@ DATABASES = {
 
 
 
-# ── Archivos estáticos (WhiteNoise sirve el React build) ─────────────────────
+# ── Archivos estáticos (WhiteNoise sirve solo los estáticos de Django) ───────
 STATIC_URL  = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS    = [BASE_DIR.parent / 'frontend' / 'dist']
+# STATICFILES_DIRS vacío — el frontend se despliega en su propio servicio Render
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
