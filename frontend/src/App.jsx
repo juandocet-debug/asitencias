@@ -7,7 +7,7 @@ import api from './services/api';
 
 // ── Keep-alive inteligente para Render (plan gratuito) ───────────────────────
 // SOLO pinga si la pestaña está visible y activa.
-const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
+const PING_INTERVAL_MS = 12 * 60 * 1000; // 12 minutos — Render duerme a los 15 min de inactividad
 
 function useServerKeepAlive() {
   useEffect(() => {
