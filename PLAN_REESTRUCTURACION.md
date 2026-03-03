@@ -150,17 +150,26 @@ frontend/src/components/users/
 ---
 
 ### Paso 2.4 — Extraer componentes de `ClassReports.jsx` (76KB)
-**Estado:** ⏳ Pendiente  
-**Qué hace:** El archivo más grande del proyecto, dividirlo es urgente  
-**Archivos nuevos:**
+**Estado:** ✅ Completado (2026-03-03)  
+**Resultado:** De 1,358 líneas → 155 líneas  
+**Archivos creados:**
 ```
-frontend/src/components/reports/
-├── ReportHeader.jsx      ← encabezado del reporte
-├── AttendanceChart.jsx   ← gráficos de asistencia
-├── StudentReportCard.jsx ← tarjeta por estudiante
-└── ExcuseList.jsx        ← lista de excusas pendientes
+src/hooks/useAttendanceReport.js     ← fetch + globalStats
+src/utils/dateUtils.js               ← formatDate, getMediaUrl
+src/utils/pdfExport.js               ← generador HTML/PDF
+src/components/ui/
+├── Toast.jsx
+├── EmptyState.jsx
+└── TabButton.jsx
+src/components/reports/
+├── AttendanceSummaryBar.jsx          ← barra de métricas
+├── AttendanceRow.jsx                 ← fila de participante (renombrado de StudentRow)
+├── AlertCard.jsx
+├── AttendanceModal.jsx               ← modal detalle/edición
+├── SessionHistoryTable.jsx           ← tabla historial
+└── DateBadge.jsx
 ```
-**Riesgo:** 🟡 Medio  
+
 
 ---
 

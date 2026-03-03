@@ -59,7 +59,10 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if instance.photo:
-            representation['photo'] = instance.photo.url
+            try:
+                representation['photo'] = instance.photo.url
+            except Exception:
+                representation['photo'] = None
         return representation
 
 
@@ -247,9 +250,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if instance.photo:
-            request = self.context.get('request')
-            if request:
-                representation['photo'] = request.build_absolute_uri(instance.photo.url)
-            else:
-                representation['photo'] = instance.photo.url
+            try:
+                request = self.context.get('request')
+                if request:
+                    representation['photo'] = request.build_absolute_uri(instance.photo.url)
+                else:
+                    representation['photo'] = instance.photo.url
+            except Exception:
+                representation['photo'] = None
         return representation

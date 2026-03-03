@@ -31,3 +31,6 @@ STATICFILES_STORAGE  = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # ── Archivos de media en local — sistema de archivos ─────────────────────────
 MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# En local NO usamos Cloudinary (sin credenciales) → filesystem por defecto
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
