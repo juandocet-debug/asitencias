@@ -42,6 +42,45 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         result = {str(a.student_id): a.status for a in attendances}
         return Response(result)
 
+    @action(detail=False, methods=['delete'], url_path='delete_session')
+    def delete_session(self, request):
+        """
+        Elimina una sesión completa (y toda su asistencia) para un curso en una fecha dada.
+        Solo el profesor dueño del curso puede hacerlo.
+        DELETE /api/academic/attendance/delete_session/?course_id=X&date=YYYY-MM-DD
+        """
+        from academic.models import Session, Course
+
+        course_id = request.query_params.get('course_id')
+        date_str  = request.query_params.get('date')
+
+        if not course_id or not date_str:
+            return Response({'error': 'course_id y date son requeridos'}, status=400)
+
+        # Verificar que el curso le pertenece al usuario que pide
+        user = request.user
+        user_roles = getattr(user, 'roles', None) or [getattr(user, 'role', '')]
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response({'error': 'Curso no encontrado'}, status=404)
+
+        es_admin = 'ADMIN' in user_roles or getattr(user, 'is_superuser', False)
+        es_profesor_del_curso = course.teacher_id == user.id
+
+        if not es_admin and not es_profesor_del_curso:
+            return Response({'error': 'No autorizado'}, status=403)
+
+        # Buscar la sesión
+        session = Session.objects.filter(course_id=course_id, date=date_str).first()
+        if not session:
+            return Response({'error': 'No existe sesión para esa fecha'}, status=404)
+
+        # Borrar — los Attendance se eliminan en cascada (on_delete=CASCADE)
+        session.delete()
+
+        return Response({'status': 'deleted'}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'], url_path='course_sessions')
     def course_sessions(self, request):
         """

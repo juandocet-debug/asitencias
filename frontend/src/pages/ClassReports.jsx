@@ -5,6 +5,7 @@ import { ArrowLeft, Users, BarChart3, AlertTriangle, CheckCircle, FileText, Sear
 import { getMediaUrl } from '../utils/dateUtils';
 import { generateAttendancePDF } from '../utils/pdfExport';
 import { useAttendanceReport } from '../hooks/useAttendanceReport';
+import api from '../services/api';
 import Toast from '../components/ui/Toast';
 import EmptyState from '../components/ui/EmptyState';
 import TabButton from '../components/ui/TabButton';
@@ -31,6 +32,19 @@ export default function ClassReports() {
     const [editDate, setEditDate] = useState(null);
 
     const handleEditSession = (date) => { setEditDate(date); setEditAttendanceOpen(true); };
+
+    const handleDeleteSession = async (date) => {
+        try {
+            await api.delete(
+                `/academic/attendance/delete_session/?course_id=${id}&date=${date}`
+            );
+            showToast('Sesión eliminada correctamente', 'success');
+            refresh();
+        } catch (err) {
+            const msg = err?.response?.data?.error || 'Error al eliminar la sesión';
+            showToast(msg, 'error');
+        }
+    };
 
     const showToast = (msg, type = 'success') => setToast({ message: msg, type });
 
@@ -172,7 +186,7 @@ export default function ClassReports() {
                                     </span>
                                 )}
                             </div>
-                            <SessionHistoryTable history={history} onEdit={handleEditSession} />
+                            <SessionHistoryTable history={history} onEdit={handleEditSession} onDelete={handleDeleteSession} />
                         </div>
                     )}
 
