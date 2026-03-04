@@ -45,6 +45,17 @@ class UserSerializer(serializers.ModelSerializer):
     coordinator_profiles = CoordinatorProfileSerializer(many=True, read_only=True)
     faculty_name = serializers.CharField(source='faculty.name', read_only=True, default=None)
     program_name = serializers.CharField(source='program.name', read_only=True, default=None)
+    # SerializerMethodField evita que DRF serialice el CloudinaryField directamente
+    # (que llamaría .url sin try/except). get_photo maneja todos los casos con seguridad.
+    photo = serializers.SerializerMethodField()
+
+    def get_photo(self, instance):
+        if not instance.photo:
+            return None
+        try:
+            return instance.photo.url
+        except Exception:
+            return None
 
     class Meta:
         model = User
@@ -55,15 +66,6 @@ class UserSerializer(serializers.ModelSerializer):
             'faculty', 'faculty_name', 'program', 'program_name',
             'coordinator_profiles',
         )
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        if instance.photo:
-            try:
-                representation['photo'] = instance.photo.url
-            except Exception:
-                representation['photo'] = None
-        return representation
 
 
 class AdminUserCreateSerializer(serializers.ModelSerializer):
@@ -223,8 +225,12 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        # Proteger la URL de la foto ante posibles fallos del campo Cloudinary
         if instance.photo:
-            representation['photo'] = instance.photo.url
+            try:
+                representation['photo'] = instance.photo.url
+            except Exception:
+                representation['photo'] = None
         return representation
 
 
@@ -233,6 +239,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
     faculty_name = serializers.CharField(source='faculty.name', read_only=True, default=None)
     program_name = serializers.CharField(source='program.name', read_only=True, default=None)
     coordinator_profiles = CoordinatorProfileSerializer(many=True, read_only=True)
+    # SerializerMethodField para leer la foto de forma segura (evita el error de CloudinaryField en local)
+    photo = serializers.SerializerMethodField()
+
+    def get_photo(self, instance):
+        if not instance.photo:
+            return None
+        try:
+            request = self.context.get('request')
+            url = instance.photo.url
+            return request.build_absolute_uri(url) if request else url
+        except Exception:
+            return None
 
     class Meta:
         model = User
@@ -247,15 +265,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'document_number', 'faculty', 'program',
         )
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        if instance.photo:
+    def update(self, instance, validated_data):
+        """
+        Actualiza el perfil del usuario.
+        Si hay una foto nueva, intenta subirla a Cloudinary.
+        Si falla (local sin credenciales), revierte la foto y guarda
+        igualmente los demás campos (phone_number, personal_email).
+        En producción el try siempre pasa — comportamiento idéntico al original.
+        """
+        request = self.context.get('request')
+
+        if request and 'photo' in request.FILES:
+            instance.photo = request.FILES['photo']
             try:
-                request = self.context.get('request')
-                if request:
-                    representation['photo'] = request.build_absolute_uri(instance.photo.url)
-                else:
-                    representation['photo'] = instance.photo.url
+                # Camino feliz: en producción Cloudinary funciona → retorna aquí
+                return super().update(instance, validated_data)
             except Exception:
-                representation['photo'] = None
-        return representation
+                # En local sin Cloudinary: revertir foto a la que hay en DB
+                # y continuar para guardar phone_number / personal_email
+                instance.photo = type(instance).objects.get(pk=instance.pk).photo
+
+        return super().update(instance, validated_data)

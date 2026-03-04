@@ -20,6 +20,54 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'], url_path='session_attendance')
+    def session_attendance(self, request):
+        """
+        Devuelve la asistencia existente para un curso + fecha.
+        GET /api/academic/attendance/session_attendance/?course_id=X&date=YYYY-MM-DD
+        Retorna: { "student_id": "status", ... }  → vacío si no hay sesión aún.
+        """
+        from academic.models import Session
+        course_id = request.query_params.get('course_id')
+        date_str  = request.query_params.get('date')
+
+        if not course_id or not date_str:
+            return Response({'error': 'course_id y date son requeridos'}, status=400)
+
+        session = Session.objects.filter(course_id=course_id, date=date_str).first()
+        if not session:
+            return Response({})   # Fecha sin sesión → modal arranca limpio
+
+        attendances = Attendance.objects.filter(session=session)
+        result = {str(a.student_id): a.status for a in attendances}
+        return Response(result)
+
+    @action(detail=False, methods=['get'], url_path='course_sessions')
+    def course_sessions(self, request):
+        """
+        Lista todas las sesiones de un curso con conteos de asistencia.
+        Permite al profesor ver el historial y elegir cuál editar.
+        GET /api/academic/attendance/course_sessions/?course_id=X
+        """
+        from academic.models import Session
+        course_id = request.query_params.get('course_id')
+        if not course_id:
+            return Response({'error': 'course_id requerido'}, status=400)
+
+        sessions = Session.objects.filter(course_id=course_id).order_by('-date')
+        result = []
+        for session in sessions:
+            atts = Attendance.objects.filter(session=session)
+            result.append({
+                'id':            session.id,
+                'date':          str(session.date),
+                'count_present': atts.filter(status='PRESENT').count(),
+                'count_absent':  atts.filter(status='ABSENT').count(),
+                'count_late':    atts.filter(status='LATE').count(),
+                'total':         atts.count(),
+            })
+        return Response(result)
+
     @action(detail=False, methods=['post'])
     def submit_excuse(self, request):
         """Estudiante sube una excusa para una falta"""

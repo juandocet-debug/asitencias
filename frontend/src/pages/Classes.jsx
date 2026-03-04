@@ -16,7 +16,7 @@ const COLOR_PALETTE = {
 };
 
 export default function Classes() {
-    const { user } = useUser();
+    const { user, activeRole } = useUser();
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,8 +45,8 @@ export default function Classes() {
     const [selectedYear, setSelectedYear] = useState(currentYear);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
 
-    const isAdmin = user?.role === 'ADMIN';
-    const isTeacher = user?.role === 'TEACHER';
+    const isAdmin = activeRole === 'ADMIN';
+    const isTeacher = activeRole === 'TEACHER';
     const canManage = isAdmin || isTeacher;
 
     useEffect(() => {

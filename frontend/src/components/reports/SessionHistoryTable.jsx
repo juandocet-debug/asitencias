@@ -1,8 +1,9 @@
 // components/reports/SessionHistoryTable.jsx
 // Tabla de historial de sesiones de clase con estadísticas de asistencia por fecha.
+// Prop onEdit(date): si se pasa, muestra botón "Editar" por fila.
 
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Edit2 } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 import EmptyState from '../ui/EmptyState';
 
@@ -21,17 +22,20 @@ function AttendanceBar({ rate }) {
 
 const BADGE = 'inline-flex items-center justify-center min-w-[32px] px-2.5 py-1 rounded-full text-xs font-semibold';
 
-export default function SessionHistoryTable({ history }) {
+export default function SessionHistoryTable({ history, onEdit }) {
     if (!history.length) {
         return <EmptyState icon={<Calendar size={48} />} message="No hay sesiones registradas aún" />;
     }
+
+    const headers = ['Fecha', 'Tema', 'Presentes', 'Tardanzas', 'Faltas', 'Asistencia'];
+    if (onEdit) headers.push('');   // columna acción sin título
 
     return (
         <div className="overflow-x-auto">
             <table className="w-full">
                 <thead>
                     <tr className="border-b border-slate-100">
-                        {['Fecha', 'Tema', 'Presentes', 'Tardanzas', 'Faltas', 'Asistencia'].map((h, i) => (
+                        {headers.map((h, i) => (
                             <th key={i} className={`${i <= 1 ? 'text-left' : 'text-center'} px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide`}>
                                 {h}
                             </th>
@@ -47,6 +51,16 @@ export default function SessionHistoryTable({ history }) {
                             <td className="px-4 py-4 text-center"><span className={`${BADGE} bg-amber-50 text-amber-700`}>{session.late}</span></td>
                             <td className="px-4 py-4 text-center"><span className={`${BADGE} bg-red-50 text-red-700`}>{session.absent}</span></td>
                             <td className="px-4 py-4"><AttendanceBar rate={session.attendance_rate} /></td>
+                            {onEdit && (
+                                <td className="px-4 py-4 text-right">
+                                    <button
+                                        onClick={() => onEdit(session.date)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-upn-50 hover:bg-upn-100 text-upn-700 rounded-lg text-xs font-bold transition-colors"
+                                    >
+                                        <Edit2 size={13} /> Editar
+                                    </button>
+                                </td>
+                            )}
                         </tr>
                     ))}
                 </tbody>

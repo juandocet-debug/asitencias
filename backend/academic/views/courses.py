@@ -1,12 +1,15 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q
+from django.contrib.auth import get_user_model
 from datetime import date
 
 from academic.models import Course, Session, Attendance
 from academic.serializers import CourseSerializer
+
+User = get_user_model()
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -269,3 +272,145 @@ class CourseViewSet(viewsets.ModelViewSet):
             'updated_count': updated_count,
             'message': f'Se actualizaron {updated_count} registros'
         })
+
+    # ════════════════════════════════════════════════════════════════
+    # GESTIÓN DE MATRÍCULAS — Solo ADMIN
+    # ════════════════════════════════════════════════════════════════
+
+    @action(detail=True, methods=['post'], url_path='add_student')
+    def add_student(self, request, pk=None):
+        """Admin agrega cualquier usuario a la clase directamente (sin código)."""
+        course = self.get_object()
+        user_roles = request.user.roles or [request.user.role]
+        if 'ADMIN' not in user_roles and not request.user.is_superuser:
+            raise PermissionDenied("Solo administradores pueden agregar usuarios a clases")
+
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({'error': 'Se requiere user_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if course.students.filter(id=user_id).exists():
+            return Response(
+                {'error': f'{user.first_name} {user.last_name} ya está en esta clase'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        course.students.add(user)
+        return Response({
+            'message': f'{user.first_name} {user.last_name} agregado exitosamente',
+            'user_id': user.id
+        })
+
+    @action(detail=True, methods=['delete'], url_path='remove_student')
+    def remove_student(self, request, pk=None):
+        """Admin quita un usuario de la clase."""
+        course = self.get_object()
+        user_roles = request.user.roles or [request.user.role]
+        if 'ADMIN' not in user_roles and not request.user.is_superuser:
+            raise PermissionDenied("Solo administradores pueden quitar usuarios de clases")
+
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({'error': 'Se requiere user_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not course.students.filter(id=user_id).exists():
+            return Response(
+                {'error': f'{user.first_name} {user.last_name} no está en esta clase'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        course.students.remove(user)
+        return Response({
+            'message': f'{user.first_name} {user.last_name} quitado exitosamente',
+            'user_id': user.id
+        })
+
+    # ════════════════════════════════════════════════════════════════
+    # RESUMEN DE ASISTENCIA DE UN ESTUDIANTE EN TODAS SUS CLASES
+    # ════════════════════════════════════════════════════════════════
+
+    @action(detail=False, methods=['get'], url_path='student-overview/(?P<student_id>[^/.]+)')
+    def student_attendance_overview(self, request, student_id=None):
+        """
+        Admin: ver el resumen de asistencia de un estudiante en TODOS sus cursos.
+        GET /api/academic/courses/student-overview/{student_id}/
+        """
+        user_roles = request.user.roles or [request.user.role]
+        if 'ADMIN' not in user_roles and not request.user.is_superuser:
+            raise PermissionDenied("Solo administradores pueden ver este resumen")
+
+        try:
+            student = User.objects.get(id=student_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Estudiante no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Cursos donde está matriculado
+        courses = Course.objects.filter(students=student).prefetch_related('sessions')
+        overview = []
+
+        for course in courses:
+            sessions = Session.objects.filter(course=course)
+            total_sessions = sessions.count()
+
+            attendances = Attendance.objects.filter(
+                session__course=course, student=student
+            ).select_related('session')
+
+            present = attendances.filter(status='PRESENT').count()
+            late    = attendances.filter(status='LATE').count()
+            absent  = attendances.filter(status='ABSENT').count()
+            excused = attendances.filter(status='EXCUSED').count()
+            total   = present + late + absent + excused
+            rate    = round(((present + late + excused) / total * 100) if total > 0 else 0, 1)
+
+            absent_dates = [
+                a.session.date.isoformat()
+                for a in attendances.filter(status='ABSENT').select_related('session')
+            ]
+
+            overview.append({
+                'course_id':      course.id,
+                'course_name':    course.name,
+                'course_code':    course.code,
+                'course_color':   course.color,
+                'teacher_name':   f'{course.teacher.first_name} {course.teacher.last_name}',
+                'year':           course.year,
+                'period':         course.period,
+                'total_sessions': total_sessions,
+                'present':        present,
+                'late':           late,
+                'absent':         absent,
+                'excused':        excused,
+                'attendance_rate': rate,
+                'absent_dates':   absent_dates,
+                'in_alert':       absent >= 3,
+            })
+
+        # Ordenar de peor a mejor asistencia
+        overview.sort(key=lambda x: x['attendance_rate'])
+
+        return Response({
+            'student': {
+                'id':              student.id,
+                'first_name':      student.first_name,
+                'last_name':       student.last_name,
+                'document_number': student.document_number,
+                'email':           student.email,
+                'photo':           student.photo.url if student.photo else None,
+                'roles':           student.roles or [student.role],
+            },
+            'courses':       overview,
+            'total_courses': len(overview),
+            'global_rate':   round(sum(c['attendance_rate'] for c in overview) / len(overview), 1) if overview else 0,
+        })
+

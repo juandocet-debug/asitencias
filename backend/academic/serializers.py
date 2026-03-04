@@ -12,8 +12,10 @@ class SimpleStudentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if instance.photo:
-            # CloudinaryField ya devuelve la URL completa
-            representation['photo'] = instance.photo.url
+            try:
+                representation['photo'] = instance.photo.url
+            except Exception:
+                representation['photo'] = None
         return representation
 
 class CourseSerializer(serializers.ModelSerializer):

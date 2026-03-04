@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Calendar, BarChart3, AlertTriangle, CheckCircle, FileText, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, BarChart3, AlertTriangle, CheckCircle, FileText, Search, Loader2 } from 'lucide-react';
 import { getMediaUrl } from '../utils/dateUtils';
 import { generateAttendancePDF } from '../utils/pdfExport';
 import { useAttendanceReport } from '../hooks/useAttendanceReport';
@@ -10,9 +10,10 @@ import EmptyState from '../components/ui/EmptyState';
 import TabButton from '../components/ui/TabButton';
 import AttendanceRow from '../components/reports/AttendanceRow';
 import AlertCard from '../components/reports/AlertCard';
-import AttendanceModal from '../components/reports/AttendanceModal';
+import ReportsAttendanceModal from '../components/reports/AttendanceModal';
 import AttendanceSummaryBar from '../components/reports/AttendanceSummaryBar';
 import SessionHistoryTable from '../components/reports/SessionHistoryTable';
+import AttendanceModal from '../components/AttendanceModal';
 
 export default function ClassReports() {
     const { id } = useParams();
@@ -24,6 +25,12 @@ export default function ClassReports() {
     const [toast, setToast] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [generatingPdf, setGeneratingPdf] = useState(false);
+
+    // Estado para edición de sesiones
+    const [editAttendanceOpen, setEditAttendanceOpen] = useState(false);
+    const [editDate, setEditDate] = useState(null);
+
+    const handleEditSession = (date) => { setEditDate(date); setEditAttendanceOpen(true); };
 
     const showToast = (msg, type = 'success') => setToast({ message: msg, type });
 
@@ -62,7 +69,7 @@ export default function ClassReports() {
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
             {selectedStudent && (
-                <AttendanceModal
+                <ReportsAttendanceModal
                     student={selectedStudent}
                     onClose={() => setSelectedStudent(null)}
                     getMediaUrl={getMediaUrl}
@@ -71,6 +78,17 @@ export default function ClassReports() {
                     courseId={id}
                 />
             )}
+
+            {/* Modal edición de asistencia por sesión */}
+            <AttendanceModal
+                isOpen={editAttendanceOpen}
+                onClose={() => { setEditAttendanceOpen(false); setEditDate(null); }}
+                courseId={id}
+                students={course?.students || []}
+                getMediaUrl={getMediaUrl}
+                onSaved={(msg, type) => { showToast(msg, type); fetchData(); }}
+                initialDate={editDate}
+            />
 
             {/* Encabezado de página */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -145,9 +163,9 @@ export default function ClassReports() {
                         <div>
                             <div className="mb-6">
                                 <h3 className="text-lg font-bold text-slate-800">Historial por Sesión</h3>
-                                <p className="text-sm text-slate-500">Registro de asistencia de cada clase</p>
+                                <p className="text-sm text-slate-500">Haz clic en "Editar" para modificar la asistencia de una sesión</p>
                             </div>
-                            <SessionHistoryTable history={history} />
+                            <SessionHistoryTable history={history} onEdit={handleEditSession} />
                         </div>
                     )}
 

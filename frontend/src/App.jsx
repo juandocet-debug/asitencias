@@ -64,6 +64,7 @@ const ToolsPage = lazy(() => import('./pages/Tools'));
 const PracticasPage = lazy(() => import('./pages/Practicas'));
 const PracticaDetalle = lazy(() => import('./pages/PracticaDetalle'));
 const MisPracticas = lazy(() => import('./pages/MisPracticas'));
+const StudentOverview = lazy(() => import('./pages/StudentOverview'));
 
 // ── Spinner global de carga lazy ─────────────────────────────────────────────
 const PageLoader = () => (
@@ -106,6 +107,7 @@ const ProtectedRoutes = () => {
       <Route path="/classes/:id" element={<ClassDetails />} />
       <Route path="/classes/:id/reports" element={<ClassReports />} />
       <Route path="/users" element={<UsersPage />} />
+      <Route path="/students/:studentId" element={<StudentOverview />} />
       <Route path="/tools" element={<ToolsPage />} />
       <Route path="/my-absences" element={<MyAbsences />} />
       <Route path="/reviews" element={<TeacherReviews />} />
