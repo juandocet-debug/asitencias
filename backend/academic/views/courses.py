@@ -157,6 +157,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         """Obtener reporte de asistencia por estudiante con fechas detalladas"""
         course = self.get_object()
 
+        # Total real de sesiones del curso (denominador correcto)
+        total_course_sessions = Session.objects.filter(course=course).count()
+
         report = []
         for student in course.students.all():
             attendances = Attendance.objects.filter(
@@ -204,7 +207,12 @@ class CourseViewSet(viewsets.ModelViewSet):
                         'excuse_file': att.excuse_file.url if att.excuse_file else None
                     })
 
-            total = present_count + late_count + absent_count + excused_count
+            # Usar el total de sesiones del CURSO como denominador
+            # (evita que estudiantes sin registro de ausencia muestren 100%)
+            denom = total_course_sessions if total_course_sessions > 0 else 1
+            attendance_rate = round(
+                (present_count + late_count + excused_count) / denom * 100, 1
+            )
 
             report.append({
                 'id': student.id,
@@ -218,8 +226,8 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'late': late_count,
                 'absent': absent_count,
                 'excused': excused_count,
-                'total_sessions': total,
-                'attendance_rate': round(((present_count + late_count + excused_count) / total * 100) if total > 0 else 0, 1),
+                'total_sessions': total_course_sessions,
+                'attendance_rate': attendance_rate,
                 'present_dates': present_dates,
                 'late_dates': late_dates,
                 'absent_dates': absent_dates,
@@ -229,6 +237,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
         report.sort(key=lambda x: x['attendance_rate'])
         return Response(report)
+
 
     @action(detail=True, methods=['post'])
     def update_attendance(self, request, pk=None):
