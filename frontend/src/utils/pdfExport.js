@@ -1,7 +1,7 @@
 // utils/pdfExport.js
 // Generador de PDF de asistencia. Abre impresión en una nueva ventana del navegador.
 // No depende de React — función pura que recibe datos y genera HTML.
-// v2: fotos de estudiantes + fix absent_dates (era objeto, no string) + tasa real.
+// v3: sección "Sesiones Realizadas" en el encabezado + fechas de asistencia por estudiante.
 
 import { formatDate } from './dateUtils';
 
@@ -24,10 +24,47 @@ function avatarColor(name = '') {
     return AVATAR_COLORS[idx];
 }
 
-export function generateAttendancePDF({ course, stats, globalStats, studentReport }) {
+// Color de la barra de asistencia de sesión
+function sessionRateColor(rate) {
+    if (rate >= 80) return '#22c55e';
+    if (rate >= 60) return '#f59e0b';
+    return '#ef4444';
+}
+
+export function generateAttendancePDF({ course, stats, globalStats, studentReport, history = [] }) {
     const printWindow = window.open('', '_blank');
 
     const avgColor = rateColor(globalStats.avgRate);
+
+    // ── Sesiones ordenadas de más antigua a más reciente para mostrar cronológicamente ──
+    const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Construir pills de sesiones para cada estudiante (índice por fecha)
+    const sessionDates = sortedHistory.map(s => s.date);
+
+    // ── Sección "Sesiones Realizadas" ──────────────────────────────────────────────────
+    const sessionsSection = sortedHistory.length > 0 ? `
+        <div class="sessions-section">
+            <div class="sessions-title">
+                <span class="sessions-icon">📅</span>
+                Sesiones Realizadas
+                <span class="sessions-count">${sortedHistory.length} sesiones</span>
+            </div>
+            <div class="sessions-grid">
+                ${sortedHistory.map((s, i) => {
+                    const rc = sessionRateColor(s.attendance_rate);
+                    return `
+                    <div class="session-pill">
+                        <span class="session-num">${i + 1}</span>
+                        <div class="session-info">
+                            <span class="session-date">${formatDate(s.date)}</span>
+                            ${s.topic ? `<span class="session-topic">${s.topic}</span>` : ''}
+                        </div>
+                        <span class="session-rate" style="color:${rc}">${s.attendance_rate}%</span>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>` : '';
 
     const htmlContent = `
     <!DOCTYPE html>
@@ -42,10 +79,11 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
                 padding: 28px 32px; color: #1e293b; font-size: 11px; line-height: 1.5;
                 background: #fff;
             }
+
             /* ── Header ── */
             .header {
                 display: flex; justify-content: space-between; align-items: flex-start;
-                margin-bottom: 22px; padding-bottom: 14px;
+                margin-bottom: 18px; padding-bottom: 14px;
                 border-bottom: 3px solid #0F4C81;
             }
             .header-logo { display: flex; align-items: center; gap: 10px; }
@@ -59,13 +97,60 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
             .header-right   { text-align: right; color: #64748b; font-size: 10px; line-height: 1.8; }
 
             /* ── Summary grid ── */
-            .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+            .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
             .summary-box {
                 background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
                 padding: 12px 10px; text-align: center;
             }
             .summary-box strong { display: block; font-size: 22px; font-weight: 800; color: #0F4C81; }
             .summary-box span   { color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+            /* ── Sessions section ── */
+            .sessions-section {
+                background: #f0f7ff;
+                border: 1px solid #bfdbfe;
+                border-left: 4px solid #0F4C81;
+                border-radius: 10px;
+                padding: 12px 14px 14px;
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+            .sessions-title {
+                display: flex; align-items: center; gap: 6px;
+                font-size: 11px; font-weight: 800; color: #0F4C81;
+                margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+            }
+            .sessions-icon { font-size: 13px; }
+            .sessions-count {
+                margin-left: auto;
+                background: #0F4C81; color: white;
+                font-size: 9px; padding: 1px 8px; border-radius: 99px;
+                font-weight: 700; letter-spacing: 0;
+            }
+            .sessions-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+                gap: 6px;
+            }
+            .session-pill {
+                display: flex; align-items: center; gap: 7px;
+                background: white; border: 1px solid #dbeafe;
+                border-radius: 7px; padding: 5px 8px;
+            }
+            .session-num {
+                min-width: 18px; height: 18px; border-radius: 50%;
+                background: #0F4C81; color: white;
+                font-size: 8px; font-weight: 800;
+                display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0;
+            }
+            .session-info { flex: 1; min-width: 0; }
+            .session-date { display: block; font-size: 9.5px; font-weight: 700; color: #1e293b; }
+            .session-topic {
+                display: block; font-size: 8px; color: #64748b;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .session-rate { font-size: 10px; font-weight: 800; flex-shrink: 0; }
 
             /* ── Student card ── */
             .student-section {
@@ -108,15 +193,24 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
 
             /* ── Progress bar ── */
             .progress-wrap { height: 5px; background: #e2e8f0; border-radius: 99px; margin-bottom: 8px; overflow: hidden; }
-            .progress-bar  { height: 100%; border-radius: 99px; transition: width 0.3s; }
+            .progress-bar  { height: 100%; border-radius: 99px; }
 
-            /* ── Date tags ── */
-            .dates-label { font-size: 9.5px; font-weight: 700; margin-bottom: 3px; margin-top: 6px; }
-            .dates-row   { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 3px; }
-            .date-tag     { font-size: 9px; padding: 2px 7px; border-radius: 4px; }
-            .tag-absent   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+            /* ── Attendance timeline (fechas por estudiante) ── */
+            .att-block { margin-top: 8px; }
+            .att-block-label {
+                font-size: 9px; font-weight: 700; text-transform: uppercase;
+                letter-spacing: 0.5px; margin-bottom: 4px;
+            }
+            .att-dates-row { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+            .att-tag {
+                font-size: 8.5px; padding: 2px 7px; border-radius: 4px;
+                font-weight: 600;
+            }
+            .tag-present  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
             .tag-late     { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+            .tag-absent   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
             .tag-excused  { background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+            .divider { height: 1px; background: #f1f5f9; margin: 6px 0; }
 
             /* ── Footer ── */
             .footer {
@@ -126,6 +220,7 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
             @media print {
                 body { padding: 15px 18px; }
                 .student-section { break-inside: avoid; }
+                .sessions-section { break-inside: avoid; }
             }
         </style>
     </head>
@@ -167,6 +262,9 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
             </div>
         </div>
 
+        <!-- SESIONES REALIZADAS -->
+        ${sessionsSection}
+
         <!-- STUDENTS -->
         ${studentReport.map(student => {
         const rc = rateColor(student.attendance_rate);
@@ -180,28 +278,54 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
             : '';
         const avatarHtml = `<div class="student-avatar" style="background:${ac}; display:${student.photo ? 'none' : 'flex'}">${ini}</div>`;
 
-        // absent_dates viene como lista de objetos {date, has_excuse, ...}
-        const absentDatesHtml = student.absent_dates?.length > 0
-            ? `<div class="dates-label" style="color:#dc2626">Fechas de Faltas:</div>
-                   <div class="dates-row">${student.absent_dates.map(d => {
-                const dateStr = typeof d === 'string' ? d : (d.date || '');
-                const hasExcuse = d.has_excuse || d.excuse_status === 'APPROVED';
-                return `<span class="date-tag ${hasExcuse ? 'tag-excused' : 'tag-absent'}">${formatDate(dateStr)}${hasExcuse ? ' ✓' : ''}</span>`;
-            }).join('')}</div>`
+        // ── Fechas de presencia ──────────────────────────────────────────
+        const presentDatesHtml = student.present_dates?.length > 0
+            ? `<div class="att-block">
+                   <div class="att-block-label" style="color:#166534">✓ Presencias (${student.present_dates.length})</div>
+                   <div class="att-dates-row">
+                       ${student.present_dates.map(d => `<span class="att-tag tag-present">${formatDate(d)}</span>`).join('')}
+                   </div>
+               </div>`
             : '';
 
+        // ── Fechas de tardanza ───────────────────────────────────────────
         const lateDatesHtml = student.late_dates?.length > 0
-            ? `<div class="dates-label" style="color:#d97706">Fechas de Tardanzas:</div>
-                   <div class="dates-row">${student.late_dates.map(d => `<span class="date-tag tag-late">${formatDate(d)}</span>`).join('')}</div>`
+            ? `<div class="att-block">
+                   <div class="att-block-label" style="color:#92400e">⏰ Tardanzas (${student.late_dates.length})</div>
+                   <div class="att-dates-row">
+                       ${student.late_dates.map(d => `<span class="att-tag tag-late">${formatDate(d)}</span>`).join('')}
+                   </div>
+               </div>`
             : '';
 
-        const excusedDatesHtml = student.excused_dates?.length > 0
-            ? `<div class="dates-label" style="color:#7c3aed">Faltas Excusadas:</div>
-                   <div class="dates-row">${student.excused_dates.map(d => {
-                const dateStr = typeof d === 'string' ? d : (d.date || '');
-                return `<span class="date-tag tag-excused">${formatDate(dateStr)}</span>`;
-            }).join('')}</div>`
+        // ── Fechas de falta ──────────────────────────────────────────────
+        const absentDatesHtml = student.absent_dates?.length > 0
+            ? `<div class="att-block">
+                   <div class="att-block-label" style="color:#991b1b">✗ Faltas (${student.absent_dates.length})</div>
+                   <div class="att-dates-row">
+                       ${student.absent_dates.map(d => {
+                           const dateStr = typeof d === 'string' ? d : (d.date || '');
+                           const hasExcuse = d.has_excuse || d.excuse_status === 'APPROVED';
+                           return `<span class="att-tag ${hasExcuse ? 'tag-excused' : 'tag-absent'}">${formatDate(dateStr)}${hasExcuse ? ' ✓' : ''}</span>`;
+                       }).join('')}
+                   </div>
+               </div>`
             : '';
+
+        // ── Fechas excusadas ─────────────────────────────────────────────
+        const excusedDatesHtml = student.excused_dates?.length > 0
+            ? `<div class="att-block">
+                   <div class="att-block-label" style="color:#6d28d9">✓ Excusadas (${student.excused_dates.length})</div>
+                   <div class="att-dates-row">
+                       ${student.excused_dates.map(d => {
+                           const dateStr = typeof d === 'string' ? d : (d.date || '');
+                           return `<span class="att-tag tag-excused">${formatDate(dateStr)}</span>`;
+                       }).join('')}
+                   </div>
+               </div>`
+            : '';
+
+        const hasDates = presentDatesHtml || lateDatesHtml || absentDatesHtml || excusedDatesHtml;
 
         return `
             <div class="student-section">
@@ -229,7 +353,7 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
                         <div class="stat-item"><span class="stat-dot dot-absent"></span> <strong>${student.absent}</strong>&nbsp;Faltas</div>
                         ${student.excused > 0 ? `<div class="stat-item"><span class="stat-dot dot-excused"></span> <strong>${student.excused}</strong>&nbsp;Excusadas</div>` : ''}
                     </div>
-                    ${absentDatesHtml}${lateDatesHtml}${excusedDatesHtml}
+                    ${hasDates ? `<div class="divider"></div>${presentDatesHtml}${lateDatesHtml}${absentDatesHtml}${excusedDatesHtml}` : ''}
                 </div>
             </div>`;
     }).join('')}

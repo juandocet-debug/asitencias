@@ -68,7 +68,7 @@ export default function ClassReports() {
     const handleGeneratePDF = () => {
         setGeneratingPdf(true);
         showToast('Generando PDF...', 'success');
-        generateAttendancePDF({ course, stats, globalStats, studentReport });
+        generateAttendancePDF({ course, stats, globalStats, studentReport, history });
         setGeneratingPdf(false);
     };
 
