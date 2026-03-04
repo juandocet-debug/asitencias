@@ -35,7 +35,7 @@ export default function ClassReports() {
     const showToast = (msg, type = 'success') => setToast({ message: msg, type });
 
     // Datos — hook reutilizable
-    const { course, stats, history, studentReport, loading, error, fetchData, globalStats } = useAttendanceReport(id);
+    const { course, stats, history, studentReport, loading, refreshing, error, fetchData, refresh, globalStats } = useAttendanceReport(id);
 
     // Mostrar errores del hook via toast
     useEffect(() => { if (error) showToast(error, 'error'); }, [error]);
@@ -86,7 +86,7 @@ export default function ClassReports() {
                 courseId={id}
                 students={course?.students || []}
                 getMediaUrl={getMediaUrl}
-                onSaved={(msg, type) => { showToast(msg, type); fetchData(); }}
+                onSaved={(msg, type) => { showToast(msg, type); refresh(); }}
                 initialDate={editDate}
             />
 
@@ -161,9 +161,16 @@ export default function ClassReports() {
                     {/* ── Historial ── */}
                     {activeTab === 'overview' && (
                         <div>
-                            <div className="mb-6">
-                                <h3 className="text-lg font-bold text-slate-800">Historial por Sesión</h3>
-                                <p className="text-sm text-slate-500">Haz clic en "Editar" para modificar la asistencia de una sesión</p>
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800">Historial por Sesión</h3>
+                                    <p className="text-sm text-slate-500">Haz clic en "Editar" para modificar la asistencia de una sesión</p>
+                                </div>
+                                {refreshing && (
+                                    <span className="flex items-center gap-1.5 text-xs text-upn-600 font-semibold animate-pulse">
+                                        <Loader2 size={13} className="animate-spin" /> Actualizando…
+                                    </span>
+                                )}
                             </div>
                             <SessionHistoryTable history={history} onEdit={handleEditSession} />
                         </div>
