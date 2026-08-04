@@ -16,13 +16,36 @@ from .base import *  # noqa — importa toda la config base
 # ── Seguridad ─────────────────────────────────────────────────────────────────
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+def _csv_environment(name):
+    return [
+        value.strip()
+        for value in os.environ.get(name, '').split(',')
+        if value.strip()
+    ]
+
+
+ALLOWED_HOSTS = _csv_environment('ALLOWED_HOSTS')
+railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip()
+if railway_domain and railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(railway_domain)
+
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = _csv_environment('CORS_ALLOWED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = _csv_environment('CSRF_TRUSTED_ORIGINS')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True') == 'True'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 
 # ── Base de datos PostgreSQL (Render) ─────────────────────────────────────────
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),  # fallback local
+        default=os.environ['DATABASE_URL'],
         conn_max_age=0,          # no reutilizar conexiones — el servidor free tier
                                  # se reinicia desde cero y las conexiones cached
                                  # quedan obsoletas tras 2h+ de inactividad

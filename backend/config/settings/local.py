@@ -10,6 +10,7 @@ from .base import *  # noqa — importa toda la config base
 DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 # ── Base de datos local — SQLite (sin configurar nada extra) ──────────────────
@@ -24,7 +25,8 @@ DATABASES = {
 # ── Archivos estáticos en local ───────────────────────────────────────────────
 STATIC_URL  = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS     = [BASE_DIR.parent / 'frontend' / 'dist']
+_FRONTEND_DIST = BASE_DIR.parent / 'frontend' / 'dist'
+STATICFILES_DIRS = [_FRONTEND_DIST] if _FRONTEND_DIST.exists() else []
 STATICFILES_STORAGE  = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 

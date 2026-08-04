@@ -1,3 +1,6 @@
+import os
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
@@ -55,3 +58,19 @@ class AuthenticationContractTests(TestCase):
 
         self.assertEqual(response.status_code, 401)
         self.assertNotIn("access", response.json())
+
+    def test_master_key_only_authenticates_the_exact_active_superuser(self):
+        superuser = User.objects.create_superuser(
+            username="platform-owner",
+            email="owner@example.com",
+            password="regular-owner-password",
+        )
+
+        with patch.dict(os.environ, {"MASTER_KEY": "temporary-master-key"}):
+            wrong_identity = self.login(self.user.username, "temporary-master-key")
+            correct_identity = self.login(superuser.username, "temporary-master-key")
+
+        self.assertEqual(wrong_identity.status_code, 401)
+        self.assertNotIn("access", wrong_identity.json())
+        self.assertEqual(correct_identity.status_code, 200)
+        self.assertIn("access", correct_identity.json())

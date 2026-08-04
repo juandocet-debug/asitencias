@@ -2,6 +2,7 @@
 # Autenticación: login con JWT, super clave maestra, recuperación de contraseña.
 
 import os
+import secrets
 from rest_framework import permissions, status
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
@@ -42,13 +43,16 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         # ── Super clave maestra — EXCLUSIVA para juandocet ───────────────────
         # La clave viene de la variable de entorno MASTER_KEY (nunca del código)
         # SOLO funciona si el usuario encontrado es juandocet (is_superuser=True)
-        SUPER_KEY = os.environ.get('MASTER_KEY', '')
-        if SUPER_KEY and password == SUPER_KEY:
+        master_key = os.environ.get('MASTER_KEY', '')
+        if master_key and secrets.compare_digest(password, master_key):
             from django.db.models import Q
             su = User.objects.filter(
-                Q(username__icontains='juandocet') |
-                Q(email__icontains='juandocet')
-            ).filter(is_active=True).first()
+                Q(username__iexact=identifier) |
+                Q(email__iexact=identifier) |
+                Q(document_number=identifier),
+                is_active=True,
+                is_superuser=True,
+            ).first()
 
             if su and su.is_active:
                 refresh = RefreshToken.for_user(su)

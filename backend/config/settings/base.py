@@ -74,6 +74,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # ── Validación de contraseñas ─────────────────────────────────────────────────
@@ -103,8 +104,8 @@ AUTHENTICATION_BACKENDS = [
 
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# TODO: restringir a dominios específicos cuando se confirmen todos los orígenes
-CORS_ALLOW_ALL_ORIGINS = True
+# Los entornos habilitan de forma explícita sus orígenes permitidos.
+CORS_ALLOW_ALL_ORIGINS = False
 
 
 # ── Django REST Framework ─────────────────────────────────────────────────────
@@ -149,6 +150,3 @@ ILINYX_API_KEY = os.environ.get('ILINYX_API_KEY', '')
 # ── Headers de seguridad HTTP ─────────────────────────────────────────────────
 X_FRAME_OPTIONS             = 'DENY'     # evita clickjacking vía iframes
 SECURE_CONTENT_TYPE_NOSNIFF = True       # impide que el navegador adivine el tipo MIME
-SECURE_BROWSER_XSS_FILTER   = True       # activa el filtro XSS del navegador
-SECURE_HSTS_SECONDS         = 31536000   # fuerza HTTPS durante 1 año
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True    # aplica también a subdominios

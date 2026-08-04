@@ -1,5 +1,6 @@
-# config/settings/__init__.py
-# En producción (Render) se usa DJANGO_SETTINGS_MODULE=config.settings.production
-# Si alguien importa config.settings directamente (sin especificar módulo),
-# este __init__.py importa production como valor por defecto seguro.
-from .production import *  # noqa
+"""Configuraciones separadas por entorno.
+
+Usar explicitamente ``config.settings.local`` o
+``config.settings.production``. Este paquete no carga un entorno por efecto
+secundario.
+"""
