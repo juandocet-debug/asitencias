@@ -5,6 +5,9 @@ from django.utils import timezone
 
 from academic.models import Attendance, Course
 from academic.serializers import AttendanceSerializer, AttendanceCreateSerializer
+from modulos.asistencia.aplicacion import RegistrarAsistenciaUseCase
+from modulos.asistencia.dominio import AsistenciaInvalidaError
+from modulos.asistencia.infraestructura import DjangoAsistenciaRepository
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -16,7 +19,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def bulk_create(self, request):
         serializer = AttendanceCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            data = serializer.validated_data
+            try:
+                RegistrarAsistenciaUseCase(DjangoAsistenciaRepository()).ejecutar(
+                    curso_id=data['course_id'],
+                    fecha=data['date'],
+                    asistencias=data['attendances'],
+                )
+            except (AsistenciaInvalidaError, Course.DoesNotExist) as error:
+                return Response(
+                    {'error': str(error)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

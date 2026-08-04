@@ -5,6 +5,11 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from academic.models import Attendance, Course, Session
+from modulos.asistencia.aplicacion import RegistrarAsistenciaUseCase
+from modulos.asistencia.dominio import (
+    AsistenciaInvalidaError,
+    AsistenciaRepositoryPort,
+)
 
 
 User = get_user_model()
@@ -87,6 +92,30 @@ class AttendanceContractTests(TestCase):
             Attendance.objects.get(student=self.second_student).status,
             "EXCUSED",
         )
+
+    def test_bulk_create_rejects_students_outside_the_course(self):
+        outsider = User.objects.create_user(
+            username="outsider",
+            password="safe-password",
+            role="STUDENT",
+        )
+        self.authenticate(self.teacher)
+
+        response = self.client.post(
+            "/api/academic/attendance/bulk_create/",
+            {
+                "course_id": self.course.id,
+                "date": "2026-08-08",
+                "attendances": [
+                    {"student_id": outsider.id, "status": "PRESENT"},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Session.objects.count(), 0)
+
 
     def test_session_attendance_returns_empty_map_until_session_exists(self):
         self.authenticate(self.teacher)
@@ -260,3 +289,30 @@ class CourseVisibilityContractTests(TestCase):
         student_response = self.client.get("/api/academic/courses/")
         self.assertEqual(student_response.status_code, 200)
         self.assertEqual([row["id"] for row in student_response.json()], [self.visible.id])
+
+
+class FakeAttendanceRepository(AsistenciaRepositoryPort):
+    def __init__(self):
+        self.received = None
+
+    def registrar_lote(self, curso_id, fecha, registros):
+        self.received = (curso_id, fecha, registros)
+        return len(registros)
+
+
+class AttendanceDomainTests(TestCase):
+    def test_use_case_rejects_duplicate_students_before_persistence(self):
+        repository = FakeAttendanceRepository()
+        use_case = RegistrarAsistenciaUseCase(repository)
+
+        with self.assertRaises(AsistenciaInvalidaError):
+            use_case.ejecutar(
+                curso_id=1,
+                fecha=date(2026, 8, 9),
+                asistencias=[
+                    {"student_id": 2, "status": "PRESENT"},
+                    {"student_id": 2, "status": "LATE"},
+                ],
+            )
+
+        self.assertIsNone(repository.received)

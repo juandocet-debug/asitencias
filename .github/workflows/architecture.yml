@@ -15,3 +15,5 @@ jobs:
           python-version: "3.12"
       - name: Enforce 500-line source limit
         run: python scripts/check_file_size.py
+      - name: Enforce clean domain dependencies
+        run: python scripts/check_clean_architecture.py
