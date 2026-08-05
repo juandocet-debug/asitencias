@@ -18,38 +18,38 @@ export default function CourseCard({ course, canManage, onEdit, onDelete, onClic
     return (
         <div
             onClick={onClick}
-            className="group cursor-pointer overflow-hidden rounded-[1.7rem] border border-white/80 bg-white shadow-[0_16px_35px_rgba(82,90,130,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+            className="group cursor-pointer overflow-hidden rounded-[1.45rem] border border-white/80 bg-white shadow-[0_16px_35px_rgba(82,90,130,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-[1.7rem]"
         >
-            <div className="relative min-h-[8.8rem] overflow-hidden px-4 py-4" style={{ background: palette.gradient }}>
-                <div className="absolute -right-8 top-12 h-16 w-16 rounded-full bg-[#eef0f8]" />
+            <div className="relative min-h-[8.4rem] overflow-hidden px-3 py-3 sm:min-h-[8.8rem] sm:px-4 sm:py-4" style={{ background: palette.gradient }}>
+                <div className="absolute -right-9 top-12 h-16 w-16 rounded-full bg-[#eef0f8]" />
                 <div className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-white/10" />
                 <div className="absolute bottom-3 right-3 h-5 w-5 rounded-full border border-white/35 bg-white/10" />
 
                 <div className="relative flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <div className="mb-4 grid h-9 w-9 place-items-center rounded-xl bg-white/25 text-lg font-black text-white shadow-sm backdrop-blur">
+                        <div className="mb-3 grid h-8 w-8 place-items-center rounded-xl bg-white/25 text-base font-black text-white shadow-sm backdrop-blur sm:mb-4 sm:h-9 sm:w-9 sm:text-lg">
                             {course.name.charAt(0).toUpperCase()}
                         </div>
-                        <h3 className="line-clamp-2 text-lg font-black leading-tight text-white drop-shadow-sm">{course.name}</h3>
+                        <h3 className="line-clamp-2 text-[0.95rem] font-black leading-tight text-white drop-shadow-sm sm:text-lg">{course.name}</h3>
                         <span className="text-[11px] font-bold text-white/80">{course.year}-{course.period}</span>
                     </div>
 
                     {canManage && (
                         <div className="flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-                            <button onClick={event => { event.stopPropagation(); onEdit(course); }} className="grid h-8 w-8 place-items-center rounded-xl bg-white/20 text-white" title="Editar">
-                                <Edit2 size={14} />
+                            <button onClick={event => { event.stopPropagation(); onEdit(course); }} className="grid h-7 w-7 place-items-center rounded-xl bg-white/20 text-white sm:h-8 sm:w-8" title="Editar">
+                                <Edit2 size={13} />
                             </button>
-                            <button onClick={event => { event.stopPropagation(); onDelete(course.id); }} className="grid h-8 w-8 place-items-center rounded-xl bg-white/20 text-white hover:bg-red-500/80" title="Eliminar">
-                                <Trash2 size={14} />
+                            <button onClick={event => { event.stopPropagation(); onDelete(course.id); }} className="grid h-7 w-7 place-items-center rounded-xl bg-white/20 text-white hover:bg-red-500/80 sm:h-8 sm:w-8" title="Eliminar">
+                                <Trash2 size={13} />
                             </button>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="space-y-3.5 px-4 py-4">
-                <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black" style={{ background: palette.lightBg, color: palette.color }}>
+            <div className="space-y-3 px-3 py-3 sm:space-y-3.5 sm:px-4 sm:py-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="inline-flex w-fit items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-black sm:px-3 sm:text-xs" style={{ background: palette.lightBg, color: palette.color }}>
                         <span className="opacity-60">#</span> {course.code}
                     </span>
                     <span className="text-[11px] font-bold text-slate-400">
@@ -58,17 +58,17 @@ export default function CourseCard({ course, canManage, onEdit, onDelete, onClic
                 </div>
 
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="grid h-8 w-8 place-items-center rounded-xl" style={{ background: palette.lightBg }}>
-                            <Users size={15} style={{ color: palette.color }} />
+                    <div className="flex items-center gap-1.5">
+                        <div className="grid h-7 w-7 place-items-center rounded-xl sm:h-8 sm:w-8" style={{ background: palette.lightBg }}>
+                            <Users size={14} style={{ color: palette.color }} />
                         </div>
                         <div>
                             <p className="text-sm font-black text-slate-800">{studentCount}</p>
                             <p className="-mt-0.5 text-[10px] font-bold text-slate-400">Estudiantes</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black" style={{ background: palette.lightBg, color: palette.color }}>
-                        <Eye size={13} /> Ver
+                    <div className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-black sm:gap-1.5 sm:px-3 sm:text-xs" style={{ background: palette.lightBg, color: palette.color }}>
+                        <Eye size={12} /> Ver
                     </div>
                 </div>
             </div>
