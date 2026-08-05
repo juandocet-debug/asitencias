@@ -13,7 +13,7 @@ export const statusConfig = {
         text: 'text-red-800',
         badge: 'bg-red-500 text-white',
         label: 'Ausente',
-        icon: '✗',
+        icon: '×',
     },
     LATE: {
         bg: 'bg-gradient-to-br from-amber-50 to-yellow-100',
@@ -21,6 +21,6 @@ export const statusConfig = {
         text: 'text-amber-800',
         badge: 'bg-amber-500 text-white',
         label: 'Tarde',
-        icon: '⏱',
+        icon: '◷',
     },
 };

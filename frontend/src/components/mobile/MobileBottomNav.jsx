@@ -19,8 +19,8 @@ export default function MobileBottomNav() {
             : BASE;
 
     return (
-        <nav className="fixed inset-x-0 bottom-3 z-40 flex justify-center px-5 md:hidden">
-            <div className="relative h-[4.1rem] w-full max-w-[21rem]">
+        <nav className="fixed inset-x-0 bottom-3 z-40 flex justify-center px-[1%] md:hidden">
+            <div className="relative h-[4.1rem] w-[98%] max-w-[25rem]">
                 <div className="absolute inset-x-0 bottom-1 h-14 rounded-[1.35rem] bg-[#7657f6] shadow-[0_18px_35px_rgba(118,87,246,0.35)]" />
                 <div className="absolute inset-x-3 bottom-[0.55rem] flex h-12 items-center justify-around rounded-[1.15rem] bg-[#7657f6]">
                     {items.map(({ to, icon: Icon, label }) => (

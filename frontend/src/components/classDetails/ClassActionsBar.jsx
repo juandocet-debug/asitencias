@@ -1,41 +1,48 @@
-// components/classDetails/ClassActionsBar.jsx
-// Barra de acciones del profesor/admin en la vista de clase.
-// Muestra el código, botón QR, Gestionar (solo admin), Reportes y Llamar Asistencia.
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QrCode, UserPlus, BarChart3, Check } from 'lucide-react';
 
 export default function ClassActionsBar({ course, isAdmin, courseId, onQr, onManage, onAttendance }) {
     const navigate = useNavigate();
+
     return (
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
-            {/* Código */}
-            <div className="flex items-center gap-3 bg-upn-50 px-4 py-2 rounded-xl border border-upn-100 w-full md:w-auto">
-                <div className="text-upn-600 font-bold text-sm">CÓDIGO:</div>
-                <div className="font-mono text-xl font-black text-upn-900 tracking-wider">{course.code}</div>
+        <div className="rounded-[2rem] border border-white/80 bg-white/95 p-4 shadow-[0_18px_50px_rgba(50,58,90,0.10)]">
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-[#eef4ff] px-4 py-3 ring-1 ring-blue-100">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#075df6]">Código</div>
+                <div className="font-mono text-lg font-black tracking-widest text-[#172033]">{course.code}</div>
             </div>
-            {/* Botones */}
-            <div className="flex gap-2 w-full md:w-auto flex-wrap">
-                <button onClick={onQr}
-                    className="flex-1 md:flex-none justify-center bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors">
-                    <QrCode size={18} /> Código QR
-                </button>
+
+            <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
+                <ActionButton onClick={onQr} icon={<QrCode size={18} />} className="border border-slate-200 bg-white text-slate-700 shadow-sm">
+                    Código QR
+                </ActionButton>
+
                 {isAdmin && (
-                    <button onClick={onManage}
-                        className="flex-1 md:flex-none justify-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors">
-                        <UserPlus size={18} /> Gestionar
-                    </button>
+                    <ActionButton onClick={onManage} icon={<UserPlus size={18} />} className="bg-[#0aa36d] text-white shadow-lg shadow-emerald-200">
+                        Gestionar
+                    </ActionButton>
                 )}
-                <button onClick={() => navigate(`/classes/${courseId}/reports`)}
-                    className="flex-1 md:flex-none justify-center bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors">
-                    <BarChart3 size={18} /> Ver Reportes
-                </button>
-                <button onClick={onAttendance}
-                    className="flex-1 md:flex-none justify-center bg-upn-600 hover:bg-upn-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-upn-600/20">
-                    <Check size={18} /> Llamar Asistencia
-                </button>
+
+                <ActionButton onClick={() => navigate(`/classes/${courseId}/reports`)} icon={<BarChart3 size={18} />} className="bg-[#172033] text-white shadow-lg shadow-slate-200">
+                    Ver Reportes
+                </ActionButton>
+
+                <ActionButton onClick={onAttendance} icon={<Check size={18} />} className="bg-gradient-to-br from-[#0b63ff] to-[#7657f6] text-white shadow-xl shadow-violet-200">
+                    Llamar Asistencia
+                </ActionButton>
             </div>
         </div>
+    );
+}
+
+function ActionButton({ children, icon, onClick, className }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-black transition active:scale-[0.98] md:flex-1 ${className}`}
+        >
+            {icon}
+            <span className="leading-tight">{children}</span>
+        </button>
     );
 }
