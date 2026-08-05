@@ -16,13 +16,8 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
         savingAttendance, handleSave, getCurrentTime, getAutoStatus,
     } = useAttendanceModal({ isOpen, courseId, students, initialDate });
 
-    if (!isOpen) return null;
-
-    const autoStatus = mode === 'auto' ? getAutoStatus() : null;
-    const autoConf = autoStatus ? statusConfig[autoStatus] : null;
-
     React.useEffect(() => {
-        if (!checkin?.session_id) return undefined;
+        if (!isOpen || !checkin?.session_id) return undefined;
         const timer = setInterval(async () => {
             const next = Math.max((checkin.code_expires_in || 1) - 1, 0);
             if (next > 0) {
@@ -39,7 +34,12 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
             }
         }, 1000);
         return () => clearInterval(timer);
-    }, [checkin?.session_id, checkin?.code_expires_in]);
+    }, [isOpen, checkin?.session_id, checkin?.code_expires_in]);
+
+    if (!isOpen) return null;
+
+    const autoStatus = mode === 'auto' ? getAutoStatus() : null;
+    const autoConf = autoStatus ? statusConfig[autoStatus] : null;
 
     const handleSaveClick = async () => {
         try {
