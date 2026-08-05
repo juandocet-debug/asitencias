@@ -1,5 +1,7 @@
+providers = ["python"]
+
 [phases.setup]
-nixPkgs = ["python312", "postgresql"]
+nixPkgs = ["python312", "python312Packages.pip", "postgresql"]
 
 [variables]
 PYTHONUNBUFFERED = "1"

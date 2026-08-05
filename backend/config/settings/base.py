@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
 # ── Middlewares ───────────────────────────────────────────────────────────────
 MIDDLEWARE = [
+    'config.health_middleware.HealthCheckMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',   # sirve archivos estáticos en Render
     'django.contrib.sessions.middleware.SessionMiddleware',
