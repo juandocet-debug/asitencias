@@ -67,6 +67,7 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
                     openingCheckin={openingCheckin}
                     onOpenCheckin={openStudentCheckin}
                 />
+                {checkin && <CheckinFeedback checkin={checkin} />}
 
                 {mode === 'auto' && (
                     <AutoTimeBar
@@ -150,8 +151,31 @@ function ModeBar({ mode, setMode, markAll, checkin, openingCheckin, onOpenChecki
                 <button onClick={() => markAll('ABSENT')} className="ml-auto rounded-xl bg-slate-200 px-3 py-2 text-[11px] font-black text-slate-600">Reiniciar</button>
             )}
             <button onClick={onOpenCheckin} disabled={openingCheckin} className="w-full rounded-2xl bg-[#2a2147] px-4 py-3 text-xs font-black text-white shadow-lg shadow-violet-100 disabled:opacity-60 sm:w-auto">
-                {openingCheckin ? 'Abriendo...' : checkin ? `Código: ${checkin.code}` : 'Abrir para estudiantes'}
+                {openingCheckin ? 'Abriendo...' : checkin ? `Abierto · ${checkin.code}` : 'Abrir para estudiantes'}
             </button>
+        </div>
+    );
+}
+
+function CheckinFeedback({ checkin }) {
+    const expiresAt = new Date(checkin.expires_at).toLocaleTimeString('es-CO', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+    return (
+        <div className="flex-shrink-0 border-b border-violet-100 bg-[#f0edff] px-4 py-3 sm:px-6">
+            <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-violet-100">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7657f6]">Ventana abierta</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <div className="rounded-2xl bg-[#2a2147] px-5 py-3 text-2xl font-black tracking-[0.24em] text-white">
+                        {checkin.code}
+                    </div>
+                    <p className="text-sm font-bold text-slate-600">
+                        Muéstralo en clase. Cierra a las <span className="text-[#7657f6]">{expiresAt}</span>.
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }

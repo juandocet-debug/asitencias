@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Users, Edit2, X, User, Mail, Phone, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Edit2, X, User, Mail, Phone, Loader2, CheckCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import { getMediaUrl } from '../utils/dateUtils';
@@ -32,6 +32,7 @@ export default function ClassDetails() {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
     const [myAbsences, setMyAbsences] = useState([]);
+    const [openCheckins, setOpenCheckins] = useState([]);
 
     const [qrOpen, setQrOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -50,7 +51,10 @@ export default function ClassDetails() {
         try {
             const res = await api.get(`/academic/courses/${id}/`);
             setCourse(res.data);
-            if (isStudent) fetchAbsences();
+            if (isStudent) {
+                fetchAbsences();
+                fetchOpenCheckins();
+            }
         } catch { showToast('Error al cargar la clase', 'error'); }
         finally { setLoading(false); }
     };
@@ -60,6 +64,13 @@ export default function ClassDetails() {
             const res = await api.get(`/academic/attendance/my_absences/?course_id=${id}`);
             setMyAbsences(res.data);
         } catch { /* silencioso */ }
+    };
+
+    const fetchOpenCheckins = async () => {
+        try {
+            const res = await api.get('/academic/attendance/my_open_checkins/');
+            setOpenCheckins((res.data || []).filter(item => String(item.course_id) === String(id)));
+        } catch { setOpenCheckins([]); }
     };
 
     const handleSaveSchedule = async (courseId, newSchedule) => {
@@ -111,6 +122,7 @@ export default function ClassDetails() {
             )}
 
             {/* ── Vista estudiante: mis faltas ── */}
+            {isStudent && <StudentClassCheckin checkins={openCheckins} onDone={() => { fetchOpenCheckins(); fetchAbsences(); }} showToast={showToast} />}
             {isStudent && <StudentAbsencesSection myAbsences={myAbsences} onExcuseSubmitted={fetchAbsences} showToast={showToast} />}
 
             {/* Vista profesor: lista de estudiantes */}
@@ -171,5 +183,60 @@ export default function ClassDetails() {
                 />
             )}
         </div>
+    );
+}
+
+function StudentClassCheckin({ checkins, onDone, showToast }) {
+    const [code, setCode] = useState('');
+    const [saving, setSaving] = useState(false);
+    const open = checkins.find(item => !item.already_marked);
+    if (!open) return null;
+
+    const submit = async () => {
+        if (!code.trim()) return;
+        setSaving(true);
+        try {
+            await api.post('/academic/attendance/self_checkin/', {
+                session_id: open.session_id,
+                code: code.trim().toUpperCase(),
+            });
+            setCode('');
+            showToast('Asistencia registrada correctamente', 'success');
+            onDone?.();
+        } catch (error) {
+            showToast(error.response?.data?.error || 'No se pudo registrar la asistencia', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <section className="rounded-[2rem] bg-[#f0edff] p-4 shadow-sm ring-1 ring-violet-100">
+            <div className="flex items-start gap-3">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#7657f6] text-white">
+                    <CheckCircle size={22} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7657f6]">Asistencia abierta</p>
+                    <h3 className="mt-1 text-xl font-black text-slate-900">Estoy en clase</h3>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">Ingresa el código que está mostrando el profesor.</p>
+                </div>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+                <input
+                    value={code}
+                    onChange={event => setCode(event.target.value.toUpperCase())}
+                    placeholder="CÓDIGO"
+                    className="rounded-2xl border border-white bg-white px-4 py-3 text-center font-black uppercase tracking-[0.18em] outline-none focus:ring-4 focus:ring-violet-100"
+                />
+                <button
+                    onClick={submit}
+                    disabled={saving || !code.trim()}
+                    className="rounded-2xl bg-gradient-to-br from-[#8b6dff] to-[#7657f6] px-5 py-3 text-sm font-black text-white shadow-xl shadow-violet-200 disabled:opacity-60"
+                >
+                    {saving ? 'Marcando...' : 'Marcar asistencia'}
+                </button>
+            </div>
+        </section>
     );
 }
