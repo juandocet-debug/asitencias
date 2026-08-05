@@ -1,4 +1,4 @@
-// components/ui/TabButton.jsx
+﻿// components/ui/TabButton.jsx
 // Botón de pestaña genérico con indicador de activo.
 
 import React from 'react';
@@ -7,12 +7,13 @@ export default function TabButton({ active, onClick, icon, label }) {
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 px-5 py-4 font-semibold text-sm transition-all border-b-2 ${active
-                    ? 'text-upn-700 border-upn-600 bg-white'
-                    : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
+            className={`flex shrink-0 items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition-all ${active
+                    ? 'bg-[#f0edff] text-[#7657f6] shadow-sm'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                 }`}
         >
             {icon} {label}
         </button>
     );
 }
+

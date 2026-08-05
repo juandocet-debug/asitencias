@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Check, X, Search, Save, Loader2, Users, User, Clock } from 'lucide-react';
 import { useAttendanceModal } from '../hooks/useAttendanceModal';
 import StudentAttendanceCard from './attendance/StudentAttendanceCard';
@@ -56,7 +56,7 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
                 <div className="flex-1 overflow-y-auto bg-[#f7f8fc] p-3 sm:p-5">
                     {loadingSession ? (
                         <div className="grid h-32 place-items-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-[#0b63ff]" />
+                            <Loader2 className="h-8 w-8 animate-spin text-[#7657f6]" />
                         </div>
                     ) : (
                         <>
@@ -89,7 +89,7 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
 
 function ModalHeader({ isExistingSession, students, mode, attendanceDate, setAttendanceDate, onClose }) {
     return (
-        <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-br from-[#0b63ff] to-[#7657f6] px-4 py-4 text-white sm:px-6">
+        <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-br from-[#8b6dff] to-[#7657f6] px-4 py-4 text-white sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
                 <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-2xl bg-white/20"><Check size={18} /></div>
                 <div className="min-w-0">
@@ -129,7 +129,7 @@ function ModeBar({ mode, setMode, markAll }) {
 
 function ModeButton({ active, onClick, icon, children }) {
     return (
-        <button onClick={onClick} className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-black transition ${active ? 'bg-[#0b63ff] text-white shadow-md shadow-blue-100' : 'text-slate-500'}`}>
+        <button onClick={onClick} className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-black transition ${active ? 'bg-[#7657f6] text-white shadow-md shadow-violet-100' : 'text-slate-500'}`}>
             {icon}{children}
         </button>
     );
@@ -155,7 +155,7 @@ function AutoTimeBar({ timeRanges, setTimeRanges, currentTime, autoConf }) {
                 ))}
             </div>
             <div className="mt-3 flex items-center justify-center gap-2 text-xs font-black text-slate-700">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#0b63ff]" /> {currentTime}
+                <span className="h-2.5 w-2.5 rounded-full bg-[#7657f6]" /> {currentTime}
                 {autoConf && <span className={`rounded-full px-2.5 py-1 ${autoConf.badge}`}>{autoConf.icon} {autoConf.label}</span>}
             </div>
         </div>
@@ -167,7 +167,7 @@ function SearchBar({ searchTerm, setSearchTerm }) {
         <div className="flex-shrink-0 border-b border-slate-100 bg-white px-4 py-3 sm:px-6">
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por nombre o documento..." className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-10 text-sm outline-none focus:ring-4 focus:ring-blue-100" />
+                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por nombre o documento..." className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-10 text-sm outline-none focus:ring-4 focus:ring-violet-100" />
                 {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><X size={16} /></button>}
             </div>
         </div>
@@ -184,7 +184,7 @@ function ModalFooter({ counts, onClose, onSave, saving, loading, isExistingSessi
             </div>
             <div className="flex gap-2">
                 <button onClick={onClose} className="flex-1 rounded-2xl border-2 border-slate-200 px-5 py-3 text-sm font-black text-slate-600 sm:flex-none">Cancelar</button>
-                <button onClick={onSave} disabled={saving || loading} className="flex-[2] rounded-2xl bg-gradient-to-br from-[#0b63ff] to-[#7657f6] px-5 py-3 text-sm font-black text-white shadow-xl shadow-violet-200 disabled:opacity-60 sm:flex-1">
+                <button onClick={onSave} disabled={saving || loading} className="flex-[2] rounded-2xl bg-gradient-to-br from-[#8b6dff] to-[#7657f6] px-5 py-3 text-sm font-black text-white shadow-xl shadow-violet-200 disabled:opacity-60 sm:flex-1">
                     {saving ? 'Guardando...' : isExistingSession ? 'Actualizar' : 'Guardar'}
                     {saving ? null : <Save size={16} className="ml-2 inline" />}
                 </button>
@@ -201,3 +201,9 @@ function Counter({ color, value }) {
         </div>
     );
 }
+
+
+
+
+
+

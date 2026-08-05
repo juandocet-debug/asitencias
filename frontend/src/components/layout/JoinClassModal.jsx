@@ -1,4 +1,4 @@
-
+﻿
 // components/layout/JoinClassModal.jsx
 // Modal para que un estudiante ingrese un código y se una a una clase.
 
@@ -47,8 +47,8 @@ export default function JoinClassModal({ isOpen, onClose }) {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-upn-100 flex items-center justify-center">
-                            <Hash size={24} className="text-upn-600" />
+                        <div className="w-12 h-12 rounded-2xl bg-[#f0edff] flex items-center justify-center">
+                            <Hash size={24} className="text-[#7657f6]" />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-slate-900">Unirse a Clase</h3>
@@ -88,7 +88,7 @@ export default function JoinClassModal({ isOpen, onClose }) {
                                 placeholder="Ej: AB12CD"
                                 maxLength={8}
                                 autoFocus
-                                className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-mono text-2xl font-black tracking-widest text-upn-900 placeholder:text-slate-300 placeholder:font-sans placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-upn-500 focus:ring-4 focus:ring-upn-100 transition-all uppercase"
+                                className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center font-mono text-2xl font-black tracking-widest text-[#2a2147] placeholder:text-slate-300 placeholder:font-sans placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-[#7657f6] focus:ring-4 focus:ring-violet-100 transition-all uppercase"
                             />
                             <p className="text-xs text-slate-400 mt-2 text-center">El código tiene 6 caracteres entre letras y números</p>
                         </div>
@@ -102,7 +102,7 @@ export default function JoinClassModal({ isOpen, onClose }) {
                             <button
                                 type="submit"
                                 disabled={loading || !classCode.trim()}
-                                className="flex-1 py-3.5 bg-upn-600 hover:bg-upn-700 text-white font-bold rounded-2xl shadow-lg shadow-upn-600/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 py-3.5 bg-gradient-to-br from-[#8b6dff] to-[#7657f6] text-white font-bold rounded-2xl shadow-lg shadow-violet-200 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? <><Loader2 size={18} className="animate-spin" /> Uniendo...</> : <><Plus size={18} /> Unirse</>}
                             </button>
@@ -113,3 +113,9 @@ export default function JoinClassModal({ isOpen, onClose }) {
         </div>
     );
 }
+
+
+
+
+
+

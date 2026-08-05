@@ -7,8 +7,8 @@ export default function ClassActionsBar({ course, isAdmin, courseId, onQr, onMan
 
     return (
         <div className="rounded-[2rem] border border-white/80 bg-white/95 p-4 shadow-[0_18px_50px_rgba(50,58,90,0.10)]">
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-[#eef4ff] px-4 py-3 ring-1 ring-blue-100">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#075df6]">Código</div>
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-[#f0edff] px-4 py-3 ring-1 ring-violet-100">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#654ae9]">Código</div>
                 <div className="font-mono text-lg font-black tracking-widest text-[#172033]">{course.code}</div>
             </div>
 
@@ -18,16 +18,16 @@ export default function ClassActionsBar({ course, isAdmin, courseId, onQr, onMan
                 </ActionButton>
 
                 {isAdmin && (
-                    <ActionButton onClick={onManage} icon={<UserPlus size={18} />} className="bg-[#0aa36d] text-white shadow-lg shadow-emerald-200">
+                <ActionButton onClick={onManage} icon={<UserPlus size={18} />} className="bg-gradient-to-br from-[#6bd47f] to-[#4cbe6d] text-white shadow-lg shadow-emerald-200">
                         Gestionar
                     </ActionButton>
                 )}
 
-                <ActionButton onClick={() => navigate(`/classes/${courseId}/reports`)} icon={<BarChart3 size={18} />} className="bg-[#172033] text-white shadow-lg shadow-slate-200">
+                <ActionButton onClick={() => navigate(`/classes/${courseId}/reports`)} icon={<BarChart3 size={18} />} className="bg-[#2a2147] text-white shadow-lg shadow-violet-100">
                     Ver Reportes
                 </ActionButton>
 
-                <ActionButton onClick={onAttendance} icon={<Check size={18} />} className="bg-gradient-to-br from-[#0b63ff] to-[#7657f6] text-white shadow-xl shadow-violet-200">
+                <ActionButton onClick={onAttendance} icon={<Check size={18} />} className="bg-gradient-to-br from-[#8b6dff] to-[#7657f6] text-white shadow-xl shadow-violet-200">
                     Llamar Asistencia
                 </ActionButton>
             </div>

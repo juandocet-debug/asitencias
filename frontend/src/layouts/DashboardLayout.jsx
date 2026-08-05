@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useUser } from '../context/UserContext';
@@ -55,14 +55,14 @@ export default function DashboardLayout() {
         <div className="relative flex h-screen overflow-hidden bg-[#eef0f8]">
             <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(139,109,255,0.22),transparent_28%),radial-gradient(circle_at_90%_0%,rgba(255,198,75,0.22),transparent_24%),radial-gradient(circle_at_80%_85%,rgba(88,200,120,0.16),transparent_25%)]" />
 
-            <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-[#172033] shadow-2xl md:flex">
+            <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-[#1b1635] shadow-2xl md:flex">
                 <SidebarNav {...sidebarProps} />
             </aside>
 
             {isSidebarOpen && (
                 <>
                     <div className="fixed inset-0 z-40 bg-black/45 md:hidden" onClick={() => setIsSidebarOpen(false)} />
-                    <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-[#172033] shadow-2xl md:hidden">
+                    <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-[#1b1635] shadow-2xl md:hidden">
                         <button onClick={() => setIsSidebarOpen(false)} className="absolute right-4 top-4 rounded-full p-2 text-white/70">
                             <X className="h-5 w-5" />
                         </button>
@@ -90,3 +90,4 @@ export default function DashboardLayout() {
         </div>
     );
 }
+

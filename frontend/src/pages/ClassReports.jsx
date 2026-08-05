@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, BarChart3, AlertTriangle, CheckCircle, FileText, Search, Loader2 } from 'lucide-react';
@@ -74,12 +74,12 @@ export default function ClassReports() {
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-upn-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#7657f6]" />
         </div>
     );
 
     return (
-        <div className="space-y-8 pb-20">
+        <div className="space-y-5 pb-24 md:space-y-7">
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
             {selectedStudent && (
@@ -105,42 +105,45 @@ export default function ClassReports() {
             />
 
             {/* Encabezado de página */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-[0_18px_50px_rgba(50,58,90,0.10)]">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(`/classes/${id}`)} className="p-2.5 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 transition-colors text-slate-500">
+                    <button onClick={() => navigate(`/classes/${id}`)} className="grid h-11 w-11 place-items-center rounded-2xl bg-[#f0edff] text-[#7657f6] transition active:scale-95">
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-800">Reportes de Asistencia</h2>
-                        <p className="text-slate-500">{course?.name} • Período {course?.year}-{course?.period}</p>
+                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#7657f6]">Asistencia</p>
+                        <h2 className="text-2xl font-black text-[#172033]">Reportes</h2>
+                        <p className="text-sm font-semibold text-slate-500">{course?.name} • Período {course?.year}-{course?.period}</p>
                     </div>
                 </div>
-                <button onClick={handleGeneratePDF} disabled={generatingPdf} className="flex items-center gap-2 bg-upn-600 hover:bg-upn-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all disabled:opacity-50">
+                <button onClick={handleGeneratePDF} disabled={generatingPdf} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[#8b6dff] to-[#7657f6] px-5 py-3 text-sm font-black text-white shadow-xl shadow-violet-200 transition active:scale-[0.98] disabled:opacity-50 md:w-auto">
                     {generatingPdf ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
                     Descargar PDF
                 </button>
+            </div>
             </div>
 
             {/* Barra de métricas */}
             <AttendanceSummaryBar stats={stats} globalStats={globalStats} studentReport={studentReport} />
 
             {/* Tarjeta principal con pestañas */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                <div className="flex border-b border-slate-100">
+            <div className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 shadow-[0_18px_50px_rgba(50,58,90,0.10)]">
+                <div className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-white/70 p-2">
                     <TabButton active={activeTab === 'students'} onClick={() => setActiveTab('students')} icon={<Users size={16} />} label="Por Estudiante" />
                     <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 size={16} />} label="Historial Sesiones" />
                     <TabButton active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} icon={<AlertTriangle size={16} />} label="Alertas" />
                 </div>
 
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                     {/* ── Estudiantes ── */}
                     {activeTab === 'students' && (
                         <div>
                             {/* Banner excusas pendientes */}
                             {studentReport.some(s => s.pending_excuses?.length > 0) && (
-                                <div className="mb-8 p-5 bg-blue-50 border border-blue-100 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="mb-6 flex flex-col items-center justify-between gap-4 rounded-[1.7rem] border border-violet-100 bg-[#f0edff] p-5 md:flex-row">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-[#8b6dff] to-[#7657f6] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-violet-200">
                                             <FileText size={28} />
                                         </div>
                                         <div>
@@ -148,13 +151,13 @@ export default function ClassReports() {
                                             <p className="text-sm text-slate-600">Hay estudiantes con justificaciones pendientes de aprobación.</p>
                                         </div>
                                     </div>
-                                    <div className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm">
+                                    <div className="px-4 py-2 bg-[#7657f6] text-white rounded-xl font-bold text-sm">
                                         {studentReport.reduce((acc, s) => acc + (s.pending_excuses?.length || 0), 0)} Pendientes
                                     </div>
                                 </div>
                             )}
                             {/* Buscador */}
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                            <div className="mb-5 flex flex-col justify-between gap-4 md:flex-row md:items-center">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-800">Reporte Individual</h3>
                                     <p className="text-sm text-slate-500">Haz clic en un estudiante para ver detalles y editar</p>
@@ -162,7 +165,7 @@ export default function ClassReports() {
                                 <div className="relative w-full md:w-80">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                     <input type="text" placeholder="Buscar por nombre o documento..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                                        className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-400 transition-all placeholder:text-slate-400" />
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm transition-all placeholder:text-slate-400 focus:border-[#7657f6] focus:outline-none focus:ring-4 focus:ring-violet-100" />
                                 </div>
                             </div>
                             {filteredStudents.length > 0
@@ -181,7 +184,7 @@ export default function ClassReports() {
                                     <p className="text-sm text-slate-500">Haz clic en "Editar" para modificar la asistencia de una sesión</p>
                                 </div>
                                 {refreshing && (
-                                    <span className="flex items-center gap-1.5 text-xs text-upn-600 font-semibold animate-pulse">
+                                    <span className="flex items-center gap-1.5 text-xs text-[#7657f6] font-semibold animate-pulse">
                                         <Loader2 size={13} className="animate-spin" /> Actualizando…
                                     </span>
                                 )}
@@ -212,7 +215,7 @@ export default function ClassReports() {
                             {studentReport.some(s => s.pending_excuses?.length > 0) && (
                                 <div className="mt-12">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="p-2.5 bg-blue-50 rounded-xl"><FileText size={20} className="text-blue-600" /></div>
+                                        <div className="p-2.5 bg-[#f0edff] rounded-xl"><FileText size={20} className="text-[#7657f6]" /></div>
                                         <div>
                                             <h3 className="text-lg font-bold text-slate-800">Revisiones Pendientes</h3>
                                             <p className="text-sm text-slate-500">Estudiantes que han solicitado justificar una inasistencia</p>
@@ -232,3 +235,12 @@ export default function ClassReports() {
         </div>
     );
 }
+
+
+
+
+
+
+
+
+
