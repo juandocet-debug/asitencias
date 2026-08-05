@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, CreditCard, Eye, EyeOff, Lock } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Lock, User } from 'lucide-react';
 import api, { setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 
@@ -50,7 +50,7 @@ export default function Login() {
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1, duration: 0.5 }}>
                         <LoginHeader classCode={classCode} />
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <LoginInput icon={CreditCard} label="Número de cédula" value={username} onChange={setUsername} placeholder="1234567890" inputMode="numeric" />
+                            <LoginInput icon={User} label="Correo, usuario o cédula" value={username} onChange={setUsername} placeholder="correo@upn.edu.co o 1234567890" inputMode="email" />
                             <PasswordInput value={password} onChange={setPassword} showPassword={showPassword} setShowPassword={setShowPassword} />
                             <LoginOptions classCode={classCode} />
                             {error && <ErrorMessage message={error} />}
@@ -110,7 +110,7 @@ function LoginHeader({ classCode }) {
                 <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700">
                     Clase: <span className="font-bold">{classCode}</span>
                 </div>
-            ) : <p className="mt-1 text-sm text-slate-400">Ingresa tu cédula y contraseña.</p>}
+            ) : <p className="mt-1 text-sm text-slate-400">Ingresa tu correo, usuario o cédula y contraseña.</p>}
         </div>
     );
 }
