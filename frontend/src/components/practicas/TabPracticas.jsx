@@ -1,6 +1,4 @@
 /* eslint-disable */
-// components/practicas/TabPracticas.jsx
-// Tab de gestión de prácticas (coordinador): tabla filtrable + CRUD + QR modal.
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
@@ -11,7 +9,6 @@ import {
 import api from '../../services/api';
 import { Modal, Field, InputField, Sel, BtnPrimary, BtnSec, EmptyState } from './practicasUi';
 
-// ── Fila de tabla con dropdown de acciones ───────────────
 function PracticaRow({ p, onEdit, onDelete, onQR, onView, last }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const ref = useRef(null);
@@ -71,7 +68,6 @@ function PracticaRow({ p, onEdit, onDelete, onQR, onView, last }) {
     );
 }
 
-// ── Modal QR con imagen escaneable y gestión de estudiantes ─
 function QRModal({ practica, onClose, showToast }) {
     const [students, setStudents] = useState([]);
     const [loadStu, setLoadStu] = useState(true);
@@ -182,7 +178,6 @@ function QRModal({ practica, onClose, showToast }) {
     );
 }
 
-// ── Tab principal de prácticas ───────────────────────────
 export default function TabPracticas({ programId, showToast, navigate }) {
     const [all, setAll] = useState([]);
     const [loading, setLoading] = useState(true);

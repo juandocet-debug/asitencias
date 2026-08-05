@@ -1,132 +1,89 @@
-
-// components/layout/Topbar.jsx
-// Barra superior: búsqueda, notificaciones, perfil del usuario, cambio rápido de rol.
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Menu, Bell, User, LogOut } from 'lucide-react';
+import { Bell, LogOut, Menu, Search, User } from 'lucide-react';
 import { ROLE_META } from './sidebarConfig';
 
 export default function Topbar({ user, effectiveRole, allRoles, setActiveRole, handleLogout, onMenuToggle }) {
     const navigate = useNavigate();
-    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-
-    const getAllRolesLabel = () => {
-        if (!allRoles.length) return 'Sin rol';
-        if (allRoles.length === 1) return ROLE_META[allRoles[0]]?.label || allRoles[0];
-        return allRoles.map(r => ROLE_META[r]?.short || r).join(' · ');
-    };
+    const [open, setOpen] = useState(false);
+    const activeMeta = ROLE_META[effectiveRole] || { label: effectiveRole || 'Sin rol' };
 
     return (
-        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 md:px-8 relative z-20">
-            <div className="flex items-center gap-4">
-                {/* Hamburger móvil */}
-                <button onClick={onMenuToggle} className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg md:hidden">
-                    <Menu size={24} />
-                </button>
-
-                {/* Barra de búsqueda desktop */}
-                <div className="hidden md:flex relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-upn-500 transition-colors" />
-                    <input
-                        type="text"
-                        placeholder="Buscar estudiante, clase..."
-                        className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-upn-100 focus:border-upn-300 w-64 lg:w-96 transition-all"
-                    />
-                </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-                {/* Badge rol activo (solo con multi-rol) */}
-                {allRoles.length > 1 && effectiveRole && ROLE_META[effectiveRole] && (
-                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold bg-upn-50 text-upn-700 border-upn-200">
-                        {React.createElement(ROLE_META[effectiveRole].icon, { size: 12 })}
-                        {ROLE_META[effectiveRole].short}
-                    </div>
-                )}
-
-                {/* Notificaciones */}
-                <button className="p-2.5 rounded-full bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-upn-600 relative transition-colors shadow-sm">
-                    <Bell size={20} />
-                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-                </button>
-
-                {/* Perfil + dropdown */}
-                <div className="relative">
-                    <button
-                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                        className="flex items-center gap-3 pl-4 border-l border-slate-200 focus:outline-none group"
-                    >
-                        <div className="text-right mr-3 hidden sm:block">
-                            <p className="text-sm font-bold text-slate-800 group-hover:text-upn-700 transition-colors">
-                                {user ? `${user.first_name} ${user.last_name}` : 'Cargando...'}
-                            </p>
-                            <p className="text-xs text-slate-500">{getAllRolesLabel()}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
-                            {user?.photo
-                                ? <img src={user.photo} alt="Profile" className="w-full h-full rounded-full object-cover border-2 border-white" />
-                                : <User className="text-slate-400" size={20} />
-                            }
-                        </div>
+        <header className="sticky top-0 z-30 px-4 pt-4 md:px-8 md:pt-6">
+            <div className="app-glass flex h-16 items-center justify-between rounded-[1.7rem] px-4 md:h-18 md:px-5">
+                <div className="flex items-center gap-3">
+                    <button onClick={onMenuToggle} className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-600 md:hidden">
+                        <Menu size={22} />
                     </button>
+                    <div className="hidden items-center gap-3 rounded-full bg-white/80 px-4 py-2 md:flex">
+                        <Search className="h-5 w-5 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar estudiante, clase..."
+                            className="w-72 bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
+                        />
+                    </div>
+                    <div className="md:hidden">
+                        <p className="text-[11px] font-bold text-slate-400">AGON</p>
+                        <p className="text-sm font-black text-[#172033]">{activeMeta.label}</p>
+                    </div>
+                </div>
 
-                    {/* Dropdown menú */}
-                    {isProfileMenuOpen && (<>
-                        <div className="fixed inset-0 z-10" onClick={() => setIsProfileMenuOpen(false)} />
-                        <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in slide-in-from-top-2">
-                            <div className="px-4 py-3 border-b border-slate-100 mb-1">
-                                <p className="text-sm font-bold text-slate-800">Mi Cuenta</p>
-                                {allRoles.length > 1 && (
-                                    <p className="text-xs text-slate-400 mt-0.5">
-                                        Activo como: <span className="text-upn-600 font-semibold">{ROLE_META[effectiveRole]?.label}</span>
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Cambio rápido de rol */}
-                            {allRoles.length > 1 && (
-                                <div className="px-4 py-2 border-b border-slate-100 mb-1">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Cambiar vista</p>
-                                    <div className="flex flex-wrap gap-1">
-                                        {allRoles.map(role => {
-                                            const meta = ROLE_META[role] || { label: role, short: role, icon: User };
-                                            const IconComp = meta.icon;
-                                            const isActive = effectiveRole === role;
-                                            return (
-                                                <button
-                                                    key={role}
-                                                    onClick={() => { setActiveRole(role); setIsProfileMenuOpen(false); }}
-                                                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${isActive
-                                                        ? 'bg-upn-600 text-white border-upn-600'
-                                                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-upn-50 hover:text-upn-700 hover:border-upn-300'
-                                                        }`}
-                                                >
-                                                    <IconComp size={11} />{meta.short}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            <button
-                                onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }}
-                                className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-upn-700 flex items-center gap-3 transition-colors"
-                            >
-                                <User size={18} /> Editar Perfil
-                            </button>
-                            <div className="my-1 border-t border-slate-100" />
-                            <button
-                                onClick={handleLogout}
-                                className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 hover:text-red-700 flex items-center gap-3 transition-colors"
-                            >
-                                <LogOut size={18} /> Cerrar Sesión
-                            </button>
+                <div className="flex items-center gap-2 md:gap-3">
+                    {allRoles.length > 1 && (
+                        <div className="hidden items-center gap-1.5 rounded-full bg-[#7657f6]/10 px-3 py-2 text-xs font-black text-[#7657f6] sm:flex">
+                            {activeMeta.label}
                         </div>
-                    </>)}
+                    )}
+                    <button className="relative grid h-10 w-10 place-items-center rounded-full bg-white text-slate-600 shadow-sm">
+                        <Bell size={18} />
+                        <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#ff6868]" />
+                    </button>
+                    <div className="relative">
+                        <button onClick={() => setOpen(value => !value)} className="flex items-center gap-2 rounded-full bg-white p-1.5 pr-3 shadow-sm">
+                            <Avatar user={user} />
+                            <span className="hidden text-sm font-black text-[#172033] sm:block">{user?.first_name || 'Perfil'}</span>
+                        </button>
+                        {open && (
+                            <>
+                                <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+                                <div className="absolute right-0 z-20 mt-3 w-64 rounded-3xl border border-white bg-white p-3 shadow-2xl">
+                                    <p className="px-2 text-sm font-black text-[#172033]">{user?.first_name} {user?.last_name}</p>
+                                    <p className="px-2 pb-3 text-xs font-semibold text-slate-400">{activeMeta.label}</p>
+                                    {allRoles.length > 1 && (
+                                        <div className="mb-2 grid grid-cols-2 gap-2">
+                                            {allRoles.map(role => (
+                                                <button key={role} onClick={() => { setActiveRole(role); setOpen(false); }} className="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-600">
+                                                    {ROLE_META[role]?.short || role}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <MenuButton icon={User} label="Editar perfil" onClick={() => { setOpen(false); navigate('/profile'); }} />
+                                    <MenuButton icon={LogOut} label="Cerrar sesión" danger onClick={handleLogout} />
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </header>
+    );
+}
+
+function Avatar({ user }) {
+    if (user?.photo) return <img src={user.photo} alt="Perfil" className="h-9 w-9 rounded-full object-cover" />;
+    return (
+        <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#8b6dff] to-[#7657f6] text-sm font-black text-white">
+            {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+        </div>
+    );
+}
+
+function MenuButton({ icon: Icon, label, onClick, danger = false }) {
+    return (
+        <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-bold ${danger ? 'text-red-500 hover:bg-red-50' : 'text-slate-600 hover:bg-slate-50'}`}>
+            <Icon size={17} /> {label}
+        </button>
     );
 }

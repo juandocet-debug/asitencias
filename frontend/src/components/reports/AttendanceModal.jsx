@@ -8,7 +8,8 @@ import {
     FileText, AlertCircle, Calendar, Mail, Phone
 } from 'lucide-react';
 import api from '../../services/api';
-import { formatDate, formatDateShort } from '../../utils/dateUtils';
+import { formatDateShort } from '../../utils/dateUtils';
+import ExcuseDetailModal from './ExcuseDetailModal';
 import DateBadge from './DateBadge';
 
 export default function AttendanceModal({ student, onClose, getMediaUrl, onUpdate, showToast, courseId }) {
@@ -335,76 +336,14 @@ export default function AttendanceModal({ student, onClose, getMediaUrl, onUpdat
                     )}
                 </div>
 
-                {/* Sub-modal: vista detallada de una excusa */}
                 {viewingExcuse && (
-                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-                        <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                                <h4 className="font-bold text-slate-800">Detalle de la Excusa</h4>
-                                <button onClick={() => setViewingExcuse(null)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400">
-                                    <X size={20} />
-                                </button>
-                            </div>
-                            <div className="p-8 space-y-6">
-                                <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Fecha de la Falta</p>
-                                    <p className="font-bold text-slate-800">{formatDate(viewingExcuse.date)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-2">Motivo/Nota</p>
-                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-slate-600 text-sm">
-                                        "{viewingExcuse.excuse_note || 'Sin nota adjunta'}"
-                                    </div>
-                                </div>
-                                {viewingExcuse.excuse_file && (
-                                    <div>
-                                        <p className="text-xs font-bold text-slate-400 uppercase mb-2">Documento de Soporte</p>
-                                        <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-100 flex items-center justify-center min-h-[200px]">
-                                            {viewingExcuse.excuse_file.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/) ? (
-                                                <img
-                                                    src={getMediaUrl(viewingExcuse.excuse_file)}
-                                                    className="w-full h-auto max-h-[400px] object-contain"
-                                                    alt="Soporte"
-                                                />
-                                            ) : (
-                                                <div className="text-center p-8">
-                                                    <FileText size={48} className="mx-auto mb-3 text-slate-400" />
-                                                    <p className="text-sm font-bold text-slate-700 mb-4">El documento es un PDF u otro formato</p>
-                                                    <a
-                                                        href={getMediaUrl(viewingExcuse.excuse_file)}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-2 bg-upn-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-upn-700 transition-colors"
-                                                    >
-                                                        Abrir documento en nueva pestaña
-                                                    </a>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                {/* Botones de aprobación solo si la excusa está pendiente */}
-                                {(viewingExcuse.attendance_id || (viewingExcuse.has_excuse && viewingExcuse.excuse_status === 'PENDING')) && (
-                                    <div className="flex gap-4 pt-4">
-                                        <button
-                                            onClick={() => handleReviewAction(viewingExcuse.attendance_id || viewingExcuse.id, 'REJECTED')}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-xl font-bold hover:bg-red-100 transition-colors border border-red-100"
-                                        >
-                                            <XCircle size={18} /> Rechazar
-                                        </button>
-                                        <button
-                                            onClick={() => handleReviewAction(viewingExcuse.attendance_id || viewingExcuse.id, 'APPROVED')}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20"
-                                        >
-                                            <CheckCircle size={18} /> Aprobar
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
+                    <ExcuseDetailModal
+                        excuse={viewingExcuse}
+                        getMediaUrl={getMediaUrl}
+                        onClose={() => setViewingExcuse(null)}
+                        onReview={handleReviewAction}
+                    />
+                )}            </div>
         </div>
     );
 }

@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, User, Upload, Loader2 } from 'lucide-react';
+import { Plus, Upload, Loader2 } from 'lucide-react';
 
 import { useUsers } from '../hooks/useUsers';
 import Toast from '../components/ui/Toast';
@@ -10,6 +10,9 @@ import UserStatsBar from '../components/users/UserStatsBar';
 import UserFilterBar from '../components/users/UserFilterBar';
 import UserTable from '../components/users/UserTable';
 import UserFormModal from '../components/users/UserFormModal';
+import MobilePageFrame from '../components/mobile/MobilePageFrame';
+import MobileHero from '../components/mobile/MobileHero';
+import SoftCard from '../components/mobile/SoftCard';
 
 export default function UsersPage() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -61,36 +64,37 @@ export default function UsersPage() {
     );
 
     return (
-        <div className="space-y-6">
+        <MobilePageFrame>
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <User className="text-upn-600" /> Gestión de Usuarios
-                    </h2>
-                    <p className="text-slate-500 mt-1">Administra estudiantes, docentes, coordinadores y administrativos.</p>
-                </div>
-                <div className="flex gap-2">
+            <MobileHero
+                eyebrow="Administración"
+                title="Usuarios"
+                subtitle="Gestiona perfiles, roles, fotos y programas con carga optimizada."
+                action={(
+                    <div className="flex flex-wrap gap-2">
                     <button className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors flex items-center gap-2">
                         <Upload size={18} /> Carga Masiva
                     </button>
                     <button onClick={openCreateModal} className="bg-upn-600 hover:bg-upn-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-upn-600/20">
                         <Plus size={18} /> Nuevo Usuario
                     </button>
-                </div>
-            </div>
+                    </div>
+                )}
+            />
 
             <UserStatsBar stats={stats} />
 
-            <UserFilterBar
-                searchTerm={searchTerm}
-                onSearch={handleSearch}
-                activeRole={activeRole}
-                onRoleChange={handleRoleFilter}
-                stats={stats}
-                resultCount={pagination.count}
-            />
+            <SoftCard>
+                <UserFilterBar
+                    searchTerm={searchTerm}
+                    onSearch={handleSearch}
+                    activeRole={activeRole}
+                    onRoleChange={handleRoleFilter}
+                    stats={stats}
+                    resultCount={pagination.count}
+                />
+            </SoftCard>
 
             <UserTable
                 users={users}
@@ -98,7 +102,7 @@ export default function UsersPage() {
                 onDelete={setDeleteConfirm}
             />
 
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+            <div className="app-glass flex items-center justify-between gap-3 rounded-[1.5rem] px-4 py-3 text-sm text-slate-500">
                 <span>Página {page} · {pagination.count} usuario(s)</span>
                 <div className="flex gap-2">
                     <button
@@ -139,6 +143,6 @@ export default function UsersPage() {
                     onCancel={() => setDeleteConfirm(null)}
                 />
             )}
-        </div>
+        </MobilePageFrame>
     );
 }
