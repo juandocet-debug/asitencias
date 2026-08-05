@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/classes/CourseFormModal.jsx
 // Modal para crear / editar un curso con selector visual de color.
 

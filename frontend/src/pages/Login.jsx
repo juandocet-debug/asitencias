@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, ArrowRight, Eye, EyeOff, CreditCard, Zap } from 'lucide-react';
-import api from '../services/api';
+import api, { setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 
 const AGON_LOGO = 'https://i.ibb.co/B2w4Ymcf/Chat-GPT-Image-20-feb-2026-08-22-06-p-m.png';
@@ -57,8 +57,7 @@ export default function Login() {
         setLoading(true);
         try {
             const response = await api.post('/token/', { username, password });
-            localStorage.setItem('access_token', response.data.access);
-            localStorage.setItem('refresh_token', response.data.refresh);
+            setAccessToken(response.data.access);
             localStorage.setItem('username', username);
             if (fetchUser) await fetchUser();
             navigate(classCode ? `/register?code=${classCode}` : '/dashboard');

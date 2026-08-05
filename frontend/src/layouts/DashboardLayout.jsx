@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // layouts/DashboardLayout.jsx
 // Orquestador principal: sidebar + topbar + contenido + modal unirse a clase.
 // Lógica de navegación  → SidebarNav.jsx
@@ -6,13 +6,14 @@
 // Modal unirse a clase  → JoinClassModal.jsx
 // Constantes y ítems    → sidebarConfig.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { X, Loader2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import SidebarNav from '../components/layout/SidebarNav';
 import Topbar from '../components/layout/Topbar';
 import JoinClassModal from '../components/layout/JoinClassModal';
+import { logoutSession } from '../services/api';
 
 export default function DashboardLayout() {
     const navigate = useNavigate();
@@ -25,14 +26,8 @@ export default function DashboardLayout() {
     const allRoles = (user?.roles?.length > 0 ? user.roles : [user?.role]).filter(Boolean);
     const effectiveRole = activeRole || user?.role;
 
-    // Guard: sin token → login
-    useEffect(() => {
-        if (!localStorage.getItem('access_token')) navigate('/login');
-    }, [navigate]);
-
-    const handleLogout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+    const handleLogout = async () => {
+        await logoutSession();
         localStorage.removeItem('username');
         if (user?.id) localStorage.removeItem(`active_role_${user.id}`);
         if (setUser) setUser(null);

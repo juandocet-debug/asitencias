@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/classDetails/StudentListSection.jsx
 // Tabla de estudiantes que ve el PROFESOR. Incluye búsqueda propia.
 // Al hacer clic en el avatar → onSelectStudent(student) para abrir el modal de foto.

@@ -6,6 +6,8 @@
 from .auth import (
     LoginRateThrottle,
     CustomTokenObtainPairView,
+    CookieTokenRefreshView,
+    logout_view,
     password_reset_request,
     password_reset_confirm,
 )

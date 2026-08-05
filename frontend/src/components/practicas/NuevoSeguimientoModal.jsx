@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/practicas/NuevoSeguimientoModal.jsx
 // Modal para registrar una nueva visita de seguimiento con asistencia inicial.
 

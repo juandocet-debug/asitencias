@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import api from '../services/api';
+import api, { refreshAccessToken, setAccessToken } from '../services/api';
 
 const UserContext = createContext();
 
@@ -120,8 +120,7 @@ export const UserProvider = ({ children }) => {
             const status = error?.response?.status;
             console.error('[UserContext] Error al cargar usuario:', error.message);
             if (status === 401) {
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
+                setAccessToken(null);
             }
             setUser(null);
         } finally {
@@ -132,9 +131,9 @@ export const UserProvider = ({ children }) => {
     const updateUser = (updatedData) => setUser(prev => ({ ...prev, ...updatedData }));
 
     useEffect(() => {
-        const token = localStorage.getItem('access_token');
-        if (token) fetchUser();
-        else setLoading(false);
+        refreshAccessToken()
+            .then(fetchUser)
+            .catch(() => setLoading(false));
     }, [fetchUser]);
 
     return (

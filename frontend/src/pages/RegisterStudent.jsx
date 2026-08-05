@@ -72,7 +72,7 @@ export default function RegisterStudent() {
         const code = searchParams.get('code');
         if (!code) return;
         setFormData(p => ({ ...p, class_code: code }));
-        if (!user && !localStorage.getItem('access_token')) {
+        if (!user) {
             showToast('Regístrate para unirte a la clase. Si ya tienes cuenta, inicia sesión primero.', 'info');
         }
         showToast(`Código detectado: ${code}`, 'success');

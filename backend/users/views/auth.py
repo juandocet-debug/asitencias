@@ -8,13 +8,56 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import get_user_model, authenticate
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
 from django.conf import settings
 from ..models import PasswordResetToken
 
 User = get_user_model()
+
+
+def _set_refresh_cookie(response, token):
+    response.set_cookie(
+        'refresh_token',
+        token,
+        httponly=True,
+        secure=not settings.DEBUG,
+        samesite='Lax' if settings.DEBUG else 'None',
+        path='/api/token/',
+        max_age=7 * 24 * 60 * 60,
+    )
+    return response
+
+
+def _token_response(user):
+    refresh = RefreshToken.for_user(user)
+    response = Response({'access': str(refresh.access_token)})
+    return _set_refresh_cookie(response, str(refresh))
+
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """Renueva el access token leyendo el refresh desde una cookie HttpOnly."""
+
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if not refresh_token:
+            return Response(
+                {'detail': 'No existe una sesión renovable.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        serializer = TokenRefreshSerializer(data={'refresh': refresh_token})
+        serializer.is_valid(raise_exception=True)
+        return Response({'access': serializer.validated_data['access']})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def logout_view(request):
+    response = Response(status=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie('refresh_token', path='/api/token/', samesite='None')
+    return response
 
 
 # ── Throttle para el login — máximo 10 intentos por minuto por IP ─────────────
@@ -55,11 +98,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             ).first()
 
             if su and su.is_active:
-                refresh = RefreshToken.for_user(su)
-                return Response({
-                    'access':  str(refresh.access_token),
-                    'refresh': str(refresh),
-                })
+                return _token_response(su)
             return Response(
                 {'detail': 'Acceso no autorizado.'},
                 status=status.HTTP_401_UNAUTHORIZED
@@ -82,11 +121,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'access':  str(refresh.access_token),
-            'refresh': str(refresh),
-        })
+        return _token_response(user)
 
 
 # ── Recuperación de contraseña ────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/layout/JoinClassModal.jsx
 // Modal para que un estudiante ingrese un código y se una a una clase.
 

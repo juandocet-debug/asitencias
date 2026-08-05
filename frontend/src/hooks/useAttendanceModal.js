@@ -22,7 +22,7 @@ export function useAttendanceModal({ isOpen, courseId, students, initialDate }) 
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [clockTick, setClockTick] = useState(0);
+    const [, setClockTick] = useState(0);
 
     // ── Session loading state ────────────────────────────────────────
     const [savingAttendance, setSavingAttendance] = useState(false);
@@ -32,6 +32,7 @@ export function useAttendanceModal({ isOpen, courseId, students, initialDate }) 
     // ── Reset on open (or when initialDate changes) ─────────────────
     useEffect(() => {
         if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCurrentPage(1);
             setSearchTerm('');
             setMode('manual');
@@ -83,7 +84,10 @@ export function useAttendanceModal({ isOpen, courseId, students, initialDate }) 
         return () => clearInterval(interval);
     }, [mode, isOpen]);
 
-    useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+    const updateSearchTerm = useCallback((value) => {
+        setSearchTerm(value);
+        setCurrentPage(1);
+    }, []);
 
     // ── Time helpers ─────────────────────────────────────────────────
     const getCurrentTime = () => {
@@ -181,7 +185,7 @@ export function useAttendanceModal({ isOpen, courseId, students, initialDate }) 
         // Time ranges
         timeRanges, setTimeRanges,
         // Search / Pagination
-        searchTerm, setSearchTerm, currentPage, setCurrentPage,
+        searchTerm, setSearchTerm: updateSearchTerm, currentPage, setCurrentPage,
         filtered, paginated, totalPages,
         // Actions
         toggleStatus, markAll, counts,

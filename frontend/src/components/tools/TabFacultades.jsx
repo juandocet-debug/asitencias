@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/tools/TabFacultades.jsx
 // Listado + CRUD de facultades.
 

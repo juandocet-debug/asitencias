@@ -1,77 +1,71 @@
 import axios from 'axios';
 
+const baseURL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+let accessToken = null;
+let refreshPromise = null;
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
-    timeout: 90000, // 90 segundos — Render free tier puede tardar 50s+ en cold start
+    baseURL,
+    timeout: 90000,
+    withCredentials: true,
 });
 
-// ── Request interceptor: adjuntar token JWT ──────────────────────────────────
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('access_token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+export const setAccessToken = (token) => {
+    accessToken = token || null;
+};
 
-// ── Response interceptor: manejar errores de autenticación ───────────────────
+export const hasAccessToken = () => Boolean(accessToken);
+
+export const refreshAccessToken = async () => {
+    if (!refreshPromise) {
+        refreshPromise = axios.post(
+            `${baseURL}/token/refresh/`,
+            {},
+            { timeout: 15000, withCredentials: true },
+        ).then((response) => {
+            setAccessToken(response.data.access);
+            return response.data.access;
+        }).finally(() => {
+            refreshPromise = null;
+        });
+    }
+    return refreshPromise;
+};
+
+export const logoutSession = async () => {
+    setAccessToken(null);
+    try {
+        await axios.post(`${baseURL}/token/logout/`, {}, { withCredentials: true });
+    } catch {
+        // La sesión local queda cerrada incluso si la red no responde.
+    }
+};
+
+api.interceptors.request.use((config) => {
+    if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+    return config;
+});
+
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const status = error?.response?.status;
+        const request = error?.config;
+        const url = request?.url || '';
+        const isTokenEndpoint = url.includes('/token/');
 
-        // Solo cerrar sesión si el error 401 viene de un endpoint específico de auth.
-        // NO borrar tokens si el servidor simplemente no respondió (cold start / red).
-        if (status === 401) {
-            const url = error?.config?.url || '';
-
-            // Si el error viene del endpoint de token → credenciales inválidas → limpiar
-            // Si viene de cualquier otro endpoint → puede ser token expirado → intentar refresh
-            const isAuthEndpoint = url.includes('/token/') && !url.includes('/token/refresh/');
-
-            if (isAuthEndpoint) {
-                // Error de login: credenciales incorrectas
-                return Promise.reject(error);
-            }
-
-            // Intentar refrescar el token antes de cerrar sesión
-            const refreshToken = localStorage.getItem('refresh_token');
-            if (refreshToken) {
-                try {
-                    const response = await axios.post(
-                        `${api.defaults.baseURL}/token/refresh/`,
-                        { refresh: refreshToken },
-                        { timeout: 10000 }
-                    );
-                    const newAccessToken = response.data.access;
-                    localStorage.setItem('access_token', newAccessToken);
-
-                    // Reintentar la solicitud original con el nuevo token
-                    error.config.headers.Authorization = `Bearer ${newAccessToken}`;
-                    return api.request(error.config);
-                } catch (refreshError) {
-                    // El refresh también falló → limpiar sesión
-                    console.warn('[api.js] Refresh token inválido. Cerrando sesión.');
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    if (window.location.pathname !== '/login') {
-                        window.location.href = '/login';
-                    }
-                }
-            } else {
-                // No hay refresh token → limpiar y redirigir
-                localStorage.removeItem('access_token');
-                if (window.location.pathname !== '/login') {
-                    window.location.href = '/login';
-                }
+        if (error?.response?.status === 401 && request && !request._retry && !isTokenEndpoint) {
+            request._retry = true;
+            try {
+                const token = await refreshAccessToken();
+                request.headers.Authorization = `Bearer ${token}`;
+                return api.request(request);
+            } catch {
+                setAccessToken(null);
+                if (window.location.pathname !== '/login') window.location.assign('/login');
             }
         }
-
         return Promise.reject(error);
-    }
+    },
 );
 
 export default api;

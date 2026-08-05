@@ -41,9 +41,22 @@ class AuthenticationContractTests(TestCase):
 
         self.assertEqual(by_username.status_code, 200)
         self.assertIn("access", by_username.json())
-        self.assertIn("refresh", by_username.json())
+        self.assertNotIn("refresh", by_username.json())
+        self.assertTrue(by_username.cookies["refresh_token"]["httponly"])
         self.assertEqual(by_document.status_code, 200)
         self.assertIn("access", by_document.json())
+
+    def test_refresh_uses_http_only_cookie_and_logout_removes_it(self):
+        login = self.login(self.user.username, self.password)
+        self.assertEqual(login.status_code, 200)
+
+        refreshed = self.client.post("/api/token/refresh/", {}, format="json")
+        self.assertEqual(refreshed.status_code, 200)
+        self.assertIn("access", refreshed.json())
+
+        logout = self.client.post("/api/token/logout/", {}, format="json")
+        self.assertEqual(logout.status_code, 204)
+        self.assertEqual(logout.cookies["refresh_token"].value, "")
 
     def test_login_rejects_missing_and_invalid_credentials(self):
         missing = self.login("", "")
@@ -74,3 +87,12 @@ class AuthenticationContractTests(TestCase):
         self.assertNotIn("access", wrong_identity.json())
         self.assertEqual(correct_identity.status_code, 200)
         self.assertIn("access", correct_identity.json())
+
+    def test_health_endpoint_confirms_database_readiness(self):
+        response = self.client.get("/api/health/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"status": "ok", "database": "available"},
+        )

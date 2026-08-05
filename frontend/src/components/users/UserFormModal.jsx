@@ -2,7 +2,7 @@
 // Modal de creación y edición de usuarios.
 // Maneja su propio estado de formulario, validaciones y envío al backend.
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, Eye, EyeOff, Loader2, Check, Plus, Trash2, Briefcase, Building2, BookOpen } from 'lucide-react';
 import api from '../../services/api';
 import { ROLE_LABELS, ROLE_STYLES, ROLE_ICONS, COORDINATOR_TYPE_LABELS } from '../../constants/userRoles';
@@ -13,46 +13,35 @@ const INITIAL_FORM = {
     faculty: '', program: '', coordinator_profiles: [],
 };
 
+const formForUser = (user) => user ? {
+    username: user.username || user.email,
+    password: '',
+    first_name: user.first_name || '',
+    last_name: user.last_name || '',
+    email: user.email || '',
+    role: user.role || 'STUDENT',
+    roles: user.roles || [user.role || 'STUDENT'],
+    document_number: user.document_number || '',
+    faculty: user.faculty || '',
+    program: user.program || '',
+    coordinator_profiles: (user.coordinator_profiles || []).map(profile => ({
+        coordinator_type: profile.coordinator_type,
+        program: profile.program,
+    })),
+} : INITIAL_FORM;
+
 export default function UserFormModal({ editingUser, onClose, onSuccess, faculties, allPrograms }) {
-    const [formData, setFormData] = useState(INITIAL_FORM);
+    const [formData, setFormData] = useState(() => formForUser(editingUser));
     const [formErrors, setFormErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     // Programas filtrados por la facultad seleccionada en el form
-    const [programs, setPrograms] = useState(allPrograms);
-
-    // Cargar datos del usuario si estamos editando
-    useEffect(() => {
-        if (editingUser) {
-            setFormData({
-                username: editingUser.username || editingUser.email,
-                password: '',
-                first_name: editingUser.first_name || '',
-                last_name: editingUser.last_name || '',
-                email: editingUser.email || '',
-                role: editingUser.role || 'STUDENT',
-                roles: editingUser.roles || [editingUser.role || 'STUDENT'],
-                document_number: editingUser.document_number || '',
-                faculty: editingUser.faculty || '',
-                program: editingUser.program || '',
-                coordinator_profiles: (editingUser.coordinator_profiles || []).map(cp => ({
-                    coordinator_type: cp.coordinator_type,
-                    program: cp.program,
-                })),
-            });
-        } else {
-            setFormData(INITIAL_FORM);
-        }
-    }, [editingUser]);
-
-    // Filtrar programas cuando cambia la facultad seleccionada
-    useEffect(() => {
-        if (formData.faculty) {
-            setPrograms(allPrograms.filter(p => String(p.faculty) === String(formData.faculty)));
-        } else {
-            setPrograms(allPrograms);
-        }
-    }, [formData.faculty, allPrograms]);
+    const programs = useMemo(
+        () => formData.faculty
+            ? allPrograms.filter(program => String(program.faculty) === String(formData.faculty))
+            : allPrograms,
+        [formData.faculty, allPrograms],
+    );
 
     // ── Helpers de multi-rol ──────────────────────────────────────────────
 

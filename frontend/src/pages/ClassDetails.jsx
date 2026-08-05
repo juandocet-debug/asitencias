@@ -2,7 +2,7 @@
 // pages/ClassDetails.jsx  — Orquestador (~110 líneas)
 // La lógica de cada sección vive en sus propios componentes.
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Users, Edit2, X, User, Mail, Phone, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -39,10 +39,12 @@ export default function ClassDetails() {
     const [manageOpen, setManageOpen] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
 
-    const showToast = (message, type = 'success') => setToast({ message, type });
+    const showToast = useCallback((message, type = 'success') => {
+        setToast({ message, type });
+    }, []);
 
     // ── Fetch ─────────────────────────────────────────────────────────
-    useEffect(() => { fetchCourse(); }, [id]);   // eslint-disable-line
+    useEffect(() => { fetchCourse(); }, [id]);
 
     const fetchCourse = async () => {
         try {

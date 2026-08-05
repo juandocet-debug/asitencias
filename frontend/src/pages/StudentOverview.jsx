@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // pages/StudentOverview.jsx
 // Vista de super admin: asistencia de un estudiante en TODOS sus cursos.
 // Accesible desde Users.jsx → botón "Ver asistencia" en cada fila.

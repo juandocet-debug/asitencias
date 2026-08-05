@@ -42,7 +42,7 @@ export default function ManageStudentsModal({ courseId, courseName, onClose, onU
             }
         };
         fetchAll();
-    }, [courseId]);
+    }, [courseId, showToast]);
 
     const filteredUsers = useMemo(() => {
         if (!searchTerm.trim()) return allUsers;

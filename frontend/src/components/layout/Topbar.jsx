@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/layout/Topbar.jsx
 // Barra superior: búsqueda, notificaciones, perfil del usuario, cambio rápido de rol.
 

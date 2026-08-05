@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/layout/SidebarNav.jsx
 // Contenido de navegación del sidebar — lista de ítems según rol activo.
 

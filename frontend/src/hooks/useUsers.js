@@ -2,7 +2,7 @@
 // Encapsula la carga de usuarios y catálogos, el toast, y la eliminación.
 // El form (crear/editar) vive dentro de UserFormModal como estado local.
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
 
 export function useUsers() {
@@ -13,28 +13,23 @@ export function useUsers() {
     const [toast, setToast] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-    const showToast = (message, type = 'success') => {
+    const showToast = useCallback((message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 4000);
-    };
-
-    useEffect(() => {
-        fetchUsers();
-        fetchCatalogs();
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             const res = await api.get('/users/');
             setUsers(res.data);
-        } catch (error) {
+        } catch {
             showToast('Error al cargar usuarios', 'error');
         } finally {
             setLoading(false);
         }
-    };
+    }, [showToast]);
 
-    const fetchCatalogs = async () => {
+    const fetchCatalogs = useCallback(async () => {
         try {
             const [facRes, progRes] = await Promise.all([
                 api.get('/users/faculties/'),
@@ -45,7 +40,14 @@ export function useUsers() {
         } catch (e) {
             console.error('Error cargando catálogos:', e);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        queueMicrotask(() => {
+            fetchUsers();
+            fetchCatalogs();
+        });
+    }, [fetchUsers, fetchCatalogs]);
 
     const handleDelete = async (userId) => {
         try {

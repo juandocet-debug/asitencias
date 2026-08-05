@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
@@ -77,20 +77,16 @@ const PageLoader = () => (
 // ── Ruta protegida ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
-  const token = localStorage.getItem('access_token');
-
   if (loading) return <PageLoader />;
-  if (!user && !token) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   return children;
 };
 
 // ── Ruta raíz ────────────────────────────────────────────────────────────────
 const RootRedirect = () => {
   const { user, loading } = useUser();
-  const token = localStorage.getItem('access_token');
-
   if (loading) return <PageLoader />;
-  if (user || token) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return <Navigate to="/login" replace />;
 };
 

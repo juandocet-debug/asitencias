@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/tools/TabProgramas.jsx
 // Listado + CRUD de programas académicos.
 

@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/AttendanceModal.jsx  —  componente delgado (~130 líneas)
 // Toda la lógica vive en hooks/useAttendanceModal.js
 // Nueva feature: al cambiar fecha, carga asistencia existente del backend.
@@ -6,7 +6,8 @@
 import React from 'react';
 import { Check, X, Search, Save, Loader2, Users, User, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAttendanceModal } from '../hooks/useAttendanceModal';
-import StudentAttendanceCard, { statusConfig } from './attendance/StudentAttendanceCard';
+import StudentAttendanceCard from './attendance/StudentAttendanceCard';
+import { statusConfig } from './attendance/statusConfig';
 
 export default function AttendanceModal({ isOpen, onClose, courseId, students = [], getMediaUrl, onSaved, initialDate }) {
     const {

@@ -40,8 +40,6 @@ export function generateAttendancePDF({ course, stats, globalStats, studentRepor
     const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Construir pills de sesiones para cada estudiante (índice por fecha)
-    const sessionDates = sortedHistory.map(s => s.date);
-
     // ── Sección "Sesiones Realizadas" ──────────────────────────────────────────────────
     const sessionsSection = sortedHistory.length > 0 ? `
         <div class="sessions-section">

@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 // components/classDetails/StudentAbsencesSection.jsx
 // Vista que ve el ESTUDIANTE: lista de sus faltas/retardos + modal para subir excusa.
 // Maneja su propio estado del modal de excusa para no ensuciar ClassDetails.

@@ -1,0 +1,6 @@
+[phases.setup]
+nixPkgs = ["python312", "postgresql"]
+
+[variables]
+PYTHONUNBUFFERED = "1"
+PIP_DISABLE_PIP_VERSION_CHECK = "1"

@@ -30,6 +30,7 @@ if railway_domain and railway_domain not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(railway_domain)
 
 CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = _csv_environment('CORS_ALLOWED_ORIGINS')
 CSRF_TRUSTED_ORIGINS = _csv_environment('CSRF_TRUSTED_ORIGINS')
 
