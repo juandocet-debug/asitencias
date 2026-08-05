@@ -1,8 +1,9 @@
-/* eslint-disable */
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+﻿import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import api, { refreshAccessToken, setAccessToken } from '../services/api';
 
 const UserContext = createContext();
+const MAX_ATTEMPTS = 8;
+const BASE_DELAY = 3000;
 
 export const useUser = () => {
     const context = useContext(UserContext);
@@ -10,35 +11,21 @@ export const useUser = () => {
     return context;
 };
 
-/**
- * Intenta /users/me/ con backoff exponencial.
- * Reintentamos durante ~90s en total antes de rendirse.
- */
-const fetchUserWithRetry = async (onWaking) => {
-    const MAX_ATTEMPTS = 8;
-    const BASE_DELAY = 3000; // 3s entre intentos → hasta ~24s de espera pura
+const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
 
+const fetchUserWithRetry = async (onReconnect) => {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
             const response = await api.get('/users/me/', { timeout: 20000 });
             return response.data;
         } catch (error) {
             const status = error?.response?.status;
-
-            // Error definitivo — no reintentar
-            if (status === 401 || status === 403) throw error;
-
-            // Último intento — rendirse
-            if (attempt === MAX_ATTEMPTS) throw error;
-
-            // A partir del 2° intento mostrar indicador de "reconectando"
-            if (attempt >= 2 && onWaking) onWaking(attempt);
-
-            const delay = BASE_DELAY * Math.min(attempt, 3); // 3s → 6s → 9s → 9s...
-            console.warn(`[UserContext] Intento ${attempt} fallido. Reintentando en ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            if (status === 401 || status === 403 || attempt === MAX_ATTEMPTS) throw error;
+            if (attempt >= 2 && onReconnect) onReconnect();
+            await wait(BASE_DELAY * Math.min(attempt, 3));
         }
     }
+    return null;
 };
 
 const getSavedActiveRole = (userData) => {
@@ -49,53 +36,54 @@ const getSavedActiveRole = (userData) => {
     return userData.role || allRoles[0];
 };
 
-/* ── Pantalla de reconexi�n ─────────────────────────────── */
 export const WakingScreen = () => (
-    <div className="fixed inset-0 bg-gradient-to-br from-upn-900 via-upn-800 to-slate-900 flex flex-col items-center justify-center z-50">
-        <div className="text-center max-w-sm px-6">
-            {/* Spinner animado */}
-            <div className="relative w-20 h-20 mx-auto mb-6">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-upn-900 via-upn-800 to-slate-900">
+        <div className="max-w-sm px-6 text-center">
+            <div className="relative mx-auto mb-6 h-20 w-20">
                 <div className="absolute inset-0 rounded-full border-4 border-upn-700" />
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-upn-400 animate-spin" />
-                <div className="absolute inset-2 rounded-full bg-upn-800 flex items-center justify-center">
+                <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-upn-400" />
+                <div className="absolute inset-2 flex items-center justify-center rounded-full bg-upn-800">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-upn-300">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <path
+                            d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                        />
                     </svg>
                 </div>
             </div>
 
-            <h2 className="text-xl font-black text-white mb-2">Reconectando con el servicio</h2>
-            <p className="text-upn-300 text-sm leading-relaxed">
-                Estamos verificando la conexi�n.<br />
-                Intenta de nuevo en unos segundos�
+            <h2 className="mb-2 text-xl font-black text-white">Reconectando con el servicio</h2>
+            <p className="text-sm leading-relaxed text-upn-300">
+                Estamos verificando la conexión.<br />
+                Intenta de nuevo en unos segundos…
             </p>
 
-            {/* Barra de progreso animada */}
-            <div className="mt-6 h-1 bg-upn-800 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-upn-500 to-upn-300 rounded-full animate-pulse"
-                    style={{ width: '60%', animation: 'wakeProgress 3s ease-in-out infinite' }} />
+            <div className="mt-6 h-1 overflow-hidden rounded-full bg-upn-800">
+                <div
+                    className="h-full rounded-full bg-gradient-to-r from-upn-500 to-upn-300"
+                    style={{ width: '60%', animation: 'wakeProgress 3s ease-in-out infinite' }}
+                />
             </div>
 
-            <p className="text-upn-500 text-xs mt-4 font-medium">AGON · UPN</p>
+            <p className="mt-4 text-xs font-medium text-upn-500">AGON · UPN</p>
         </div>
 
         <style>{`
             @keyframes wakeProgress {
-                0%   { width: 10%; opacity: 0.6; }
-                50%  { width: 80%; opacity: 1;   }
+                0% { width: 10%; opacity: 0.6; }
+                50% { width: 80%; opacity: 1; }
                 100% { width: 10%; opacity: 0.6; }
             }
         `}</style>
     </div>
 );
 
-/* ─────────────────────────────────────────────────────────────────────── */
-
 export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isWaking, setIsWaking] = useState(false); // reconectando
+    const [isWaking, setIsWaking] = useState(false);
     const [activeRole, setActiveRoleState] = useState(null);
 
     const setActiveRole = (role) => {
@@ -107,27 +95,20 @@ export const UserProvider = ({ children }) => {
     const fetchUser = useCallback(async () => {
         setLoading(true);
         try {
-            const userData = await fetchUserWithRetry((attempt) => {
-                // Mostrar pantalla de "reconectando" a partir del 2° intento fallido
-                setIsWaking(true);
-            });
+            const userData = await fetchUserWithRetry(() => setIsWaking(true));
             setIsWaking(false);
             setUser(userData);
             setActiveRoleState(getSavedActiveRole(userData));
         } catch (error) {
             setIsWaking(false);
-            const status = error?.response?.status;
-            console.error('[UserContext] Error al cargar usuario:', error.message);
-            if (status === 401) {
-                setAccessToken(null);
-            }
+            if (error?.response?.status === 401) setAccessToken(null);
             setUser(null);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    const updateUser = (updatedData) => setUser(prev => ({ ...prev, ...updatedData }));
+    const updateUser = updatedData => setUser(prev => ({ ...prev, ...updatedData }));
 
     useEffect(() => {
         refreshAccessToken()
