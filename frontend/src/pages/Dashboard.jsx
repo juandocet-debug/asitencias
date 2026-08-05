@@ -99,11 +99,8 @@ export default function Dashboard() {
 
                 <aside className="space-y-4">
                     {isStudent && <RiskAlerts alerts={stats.stats.alerts || []} />}
-                    <ActionCard
-                        isStudent={isStudent}
-                        onClick={() => navigate(isStudent ? '/my-absences' : '/classes')}
-                    />
                     {isStudent && <JoinCourseCard onClick={() => navigate('/register')} />}
+                    {!isStudent && <ActionCard onClick={() => navigate('/classes')} />}
                 </aside>
             </div>
 
@@ -199,13 +196,13 @@ function RiskAlerts({ alerts }) {
     );
 }
 
-function ActionCard({ isStudent, onClick }) {
+function ActionCard({ onClick }) {
     return (
         <button onClick={onClick} className="w-full overflow-hidden rounded-[2rem] bg-[#7657f6] p-5 text-left text-white shadow-xl shadow-violet-300/50">
-            <p className="text-lg font-black">{isStudent ? 'Cuida tu asistencia' : 'Gestiona tus cursos'}</p>
-            <p className="mt-2 text-sm font-semibold text-white/75">{isStudent ? 'Revisa faltas, excusas y progreso.' : 'Administra clases, estudiantes y horarios.'}</p>
+            <p className="text-lg font-black">Gestiona tus cursos</p>
+            <p className="mt-2 text-sm font-semibold text-white/75">Administra clases, estudiantes y horarios.</p>
             <div className="mt-5 rounded-2xl bg-white px-4 py-3 text-center text-sm font-black text-[#7657f6]">
-                {isStudent ? 'Ver mis faltas' : 'Ir a clases'}
+                Ir a clases
             </div>
         </button>
     );
