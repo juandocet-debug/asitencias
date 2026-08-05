@@ -9,7 +9,6 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.filters import SearchFilter
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from core.permissions import IsAdminOrReadOnly  # permiso centralizado en core
 from ..serializers import (
     StudentRegisterSerializer, UserSerializer, UserProfileSerializer,
     AdminUserCreateSerializer, AdminUserUpdateSerializer,
@@ -220,17 +219,30 @@ def join_class(request):
 # Permiso IsAdminOrReadOnly importado desde core/permissions.py
 # ════════════════════════════════════════════════════════════════
 
+class PublicCatalogReadAdminWrite(permissions.BasePermission):
+    """Permite leer catálogos sin sesión y escribirlos solo al admin."""
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        user_roles = user.roles or [user.role]
+        return 'ADMIN' in user_roles or user.is_superuser
+
+
 class FacultyViewSet(viewsets.ModelViewSet):
-    """CRUD de facultades. Lectura: todos los autenticados. Escritura: solo ADMIN."""
+    """CRUD de facultades. Lectura pública para registro, escritura admin."""
     queryset           = Faculty.objects.all().order_by('name')
     serializer_class   = FacultySerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [PublicCatalogReadAdminWrite]
 
 
 class ProgramViewSet(viewsets.ModelViewSet):
     """CRUD de programas. Soporta ?faculty=id para filtrar por facultad."""
     serializer_class   = ProgramSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [PublicCatalogReadAdminWrite]
 
     def get_queryset(self):
         qs = Program.objects.select_related('faculty').all().order_by('name')

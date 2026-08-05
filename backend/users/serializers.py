@@ -200,7 +200,7 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'password', 'first_name', 'second_name', 'last_name',
             'second_lastname', 'email', 'personal_email', 'document_number',
-            'phone_number', 'photo', 'class_code'
+            'phone_number', 'faculty', 'program', 'photo', 'class_code'
         )
 
     def create(self, validated_data):
@@ -265,7 +265,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             'id', 'first_name', 'last_name', 'email', 'role', 'roles',
-            'document_number', 'second_name', 'second_lastname',
+            'document_number', 'second_lastname',
             'is_directory_imported', 'requires_onboarding',
             'faculty', 'program',
         )

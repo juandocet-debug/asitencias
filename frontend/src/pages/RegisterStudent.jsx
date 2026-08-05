@@ -65,6 +65,7 @@ export default function RegisterStudent() {
         first_name: '', second_name: '', last_name: '', second_lastname: '',
         document_number: '', email: '', institutional_email: '',
         phone_number: '', class_code: '', password: '', password_confirm: '',
+        faculty: '', program: '',
     });
 
     // Leer código desde URL
@@ -113,6 +114,8 @@ export default function RegisterStudent() {
         data.append('email', formData.institutional_email.trim());
         data.append('password', formData.password.trim());
         data.append('phone_number', formData.phone_number.trim());
+        if (formData.faculty) data.append('faculty', formData.faculty);
+        if (formData.program) data.append('program', formData.program);
         if (formData.class_code.trim()) data.append('class_code', formData.class_code.trim());
         if (photo) data.append('photo', photo);
         try {
@@ -149,7 +152,7 @@ export default function RegisterStudent() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row shadow-2xl overflow-hidden">
+        <div className="min-h-screen bg-[#eef0f8] flex flex-col md:flex-row shadow-2xl overflow-hidden">
             {toast && <Toast {...toast} onClose={() => setToast(null)} />}
             {showSuccess && <SuccessModal onClose={() => { setShowSuccess(false); navigate('/login'); }} />}
 
@@ -157,11 +160,11 @@ export default function RegisterStudent() {
             <SidebarInfo step={step} />
 
             {/* Panel derecho — formulario */}
-            <div className="w-full md:w-7/12 flex flex-col justify-center bg-white h-screen overflow-y-auto">
-                <div className="w-full max-w-2xl mx-auto p-0 md:p-12 lg:p-16">
+            <div className="w-full md:w-7/12 flex flex-col bg-white md:h-screen md:overflow-y-auto">
+                <div className="w-full max-w-3xl mx-auto p-0 md:p-10 lg:p-12">
 
                     {/* Mobile header */}
-                    <div className="md:hidden bg-upn-700 p-8 rounded-b-[3rem] shadow-xl relative overflow-hidden text-center text-white mb-8">
+                    <div className="md:hidden bg-upn-700 p-6 rounded-b-[2.2rem] shadow-xl relative overflow-hidden text-center text-white mb-5">
                         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
                             <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl" />
                         </div>
@@ -174,15 +177,15 @@ export default function RegisterStudent() {
                         </div>
                     </div>
 
-                    <div className="px-6 md:px-0">
-                        <Link to="/login" className="inline-flex items-center text-slate-400 hover:text-upn-700 mb-6 transition-colors group text-sm font-medium">
+                    <div className="px-4 pb-8 md:px-0">
+                        <Link to="/login" className="inline-flex items-center text-slate-400 hover:text-upn-700 mb-4 transition-colors group text-sm font-medium">
                             <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Volver al Login
                         </Link>
 
                         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
                             {user ? 'Unirse a una Clase' : 'Crear Cuenta'}
                         </h2>
-                        <p className="text-slate-500 mb-6 md:mb-8 text-sm md:text-base">
+                        <p className="text-slate-500 mb-5 text-sm md:text-base">
                             {user ? 'Ingresa el código que te dio tu profesor para unirse.' : 'Completa el formulario para registrarte en el sistema.'}
                         </p>
 

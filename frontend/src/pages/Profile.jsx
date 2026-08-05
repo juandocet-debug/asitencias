@@ -60,6 +60,7 @@ export default function Profile() {
         setMessage({ type: '', text: '' });
 
         const formData = new FormData();
+        formData.append('second_name', user.second_name || '');
         formData.append('phone_number', user.phone_number || '');
         formData.append('personal_email', user.personal_email || '');
 
@@ -200,6 +201,17 @@ export default function Profile() {
                                         value={user.first_name}
                                         disabled
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700">Segundo nombre</label>
+                                    <input
+                                        type="text"
+                                        name="second_name"
+                                        value={user.second_name || ''}
+                                        onChange={handleChange}
+                                        placeholder="Si tienes"
+                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-upn-100 focus:border-upn-500 transition-all font-medium"
                                     />
                                 </div>
                                 <div className="space-y-2">

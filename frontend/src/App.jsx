@@ -61,7 +61,10 @@ const RootRedirect = () => {
 // Cuando el usuario cambia de rol, activeRole cambia → React re-monta
 // el Dashboard completamente → el contenido se actualiza al nuevo rol.
 const ProtectedRoutes = () => {
-  const { activeRole } = useUser();
+  const { user, activeRole } = useUser();
+  const role = activeRole || user?.role;
+  const isAdmin = role === 'ADMIN';
+  const canSeeStudentReports = ['ADMIN', 'TEACHER', 'COORDINATOR'].includes(role);
   return (
     <Routes>
       {/* key={activeRole} en Dashboard fuerza re-montaje al cambiar rol */}
@@ -69,8 +72,8 @@ const ProtectedRoutes = () => {
       <Route path="/classes" element={<Classes />} />
       <Route path="/classes/:id" element={<ClassDetails />} />
       <Route path="/classes/:id/reports" element={<ClassReports />} />
-      <Route path="/users" element={<UsersPage />} />
-      <Route path="/students/:studentId" element={<StudentOverview />} />
+      <Route path="/users" element={isAdmin ? <UsersPage /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/students/:studentId" element={canSeeStudentReports ? <StudentOverview /> : <Navigate to="/dashboard" replace />} />
       <Route path="/tools" element={<ToolsPage />} />
       <Route path="/my-absences" element={<MyAbsences />} />
       <Route path="/reviews" element={<TeacherReviews />} />

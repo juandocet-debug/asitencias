@@ -103,6 +103,7 @@ export default function Dashboard() {
                         isStudent={isStudent}
                         onClick={() => navigate(isStudent ? '/my-absences' : '/classes')}
                     />
+                    {isStudent && <JoinCourseCard onClick={() => navigate('/register')} />}
                 </aside>
             </div>
 
@@ -113,6 +114,16 @@ export default function Dashboard() {
                 onSave={saveSchedule}
             />
         </MobilePageFrame>
+    );
+}
+
+function JoinCourseCard({ onClick }) {
+    return (
+        <button onClick={onClick} className="w-full rounded-[2rem] bg-white p-5 text-left shadow-sm ring-1 ring-slate-100">
+            <p className="text-lg font-black text-[#172033]">Agregarme a una clase</p>
+            <p className="mt-2 text-sm font-semibold text-slate-500">Ingresa el código que te dio tu profesor.</p>
+            <div className="mt-4 rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-black text-white">Unirme con código</div>
+        </button>
     );
 }
 
