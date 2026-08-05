@@ -1,6 +1,6 @@
 
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { useUser } from './context/UserContext';
 
@@ -27,6 +27,7 @@ const PracticasPage = lazy(() => import('./pages/Practicas'));
 const PracticaDetalle = lazy(() => import('./pages/PracticaDetalle'));
 const MisPracticas = lazy(() => import('./pages/MisPracticas'));
 const StudentOverview = lazy(() => import('./pages/StudentOverview'));
+const CompleteStudentProfile = lazy(() => import('./pages/CompleteStudentProfile'));
 
 // ── Spinner global de carga lazy ─────────────────────────────────────────────
 const PageLoader = () => (
@@ -39,8 +40,12 @@ const PageLoader = () => (
 // ── Ruta protegida ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
+  const location = useLocation();
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.requires_onboarding && location.pathname !== '/complete-profile') {
+    return <Navigate to="/complete-profile" replace />;
+  }
   return children;
 };
 
@@ -76,6 +81,7 @@ const ProtectedRoutes = () => {
       <Route path="/coordinator/investigacion" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Investigación</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
       <Route path="/coordinator/extension" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Extensión</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/complete-profile" element={<CompleteStudentProfile />} />
       <Route path="/badges" element={<div className="p-4">Módulo de Insignias: En Construcción</div>} />
       <Route path="/settings" element={<div className="p-4">Configuración: En Construcción</div>} />
     </Routes>

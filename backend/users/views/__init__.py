@@ -21,6 +21,9 @@ from .users import (
     coordinator_types,
 )
 
+from .directory import import_directory
+from .onboarding import complete_onboarding
+
 from .ilinyx import (
     search_all_users,
     list_courses_for_ilinyx,

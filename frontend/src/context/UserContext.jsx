@@ -99,10 +99,12 @@ export const UserProvider = ({ children }) => {
             setIsWaking(false);
             setUser(userData);
             setActiveRoleState(getSavedActiveRole(userData));
+            return userData;
         } catch (error) {
             setIsWaking(false);
             if (error?.response?.status === 401) setAccessToken(null);
             setUser(null);
+            return null;
         } finally {
             setLoading(false);
         }

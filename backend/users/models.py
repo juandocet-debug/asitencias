@@ -87,6 +87,8 @@ class User(AbstractUser):
     personal_email = models.EmailField(blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     photo = CloudinaryField('image', blank=True, null=True, folder='profile_photos')
+    is_directory_imported = models.BooleanField(default=False, db_index=True)
+    requires_onboarding = models.BooleanField(default=False, db_index=True)
 
     def save(self, *args, **kwargs):
         # Sincronizar: si roles está vacío, inicializar con el rol principal

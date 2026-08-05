@@ -27,8 +27,9 @@ export default function Login() {
             const response = await api.post('/token/', { username, password });
             setAccessToken(response.data.access);
             localStorage.setItem('username', username);
-            if (fetchUser) await fetchUser();
-            navigate(classCode ? `/register?code=${classCode}` : '/dashboard');
+            const userData = fetchUser ? await fetchUser() : null;
+            if (userData?.requires_onboarding) navigate('/complete-profile');
+            else navigate(classCode ? `/register?code=${classCode}` : '/dashboard');
         } catch (err) {
             const status = err?.response?.status;
             const isTimeout = err?.code === 'ECONNABORTED' || !err?.response;

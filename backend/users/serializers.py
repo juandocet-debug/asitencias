@@ -63,6 +63,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'first_name', 'last_name', 'email', 'role', 'roles',
             'document_number', 'second_name', 'second_lastname',
             'personal_email', 'phone_number', 'photo',
+            'is_directory_imported', 'requires_onboarding',
             'faculty', 'faculty_name', 'program', 'program_name',
             'coordinator_profiles',
         )
@@ -257,12 +258,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'first_name', 'last_name', 'email', 'role', 'roles',
             'document_number', 'photo', 'phone_number', 'personal_email',
+            'second_name', 'second_lastname',
+            'is_directory_imported', 'requires_onboarding',
             'faculty', 'faculty_name', 'program', 'program_name',
             'coordinator_profiles',
         )
         read_only_fields = (
             'id', 'first_name', 'last_name', 'email', 'role', 'roles',
-            'document_number', 'faculty', 'program',
+            'document_number', 'second_name', 'second_lastname',
+            'is_directory_imported', 'requires_onboarding',
+            'faculty', 'program',
         )
 
     def update(self, instance, validated_data):

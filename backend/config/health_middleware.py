@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.db import connection
 
 
 class HealthCheckMiddleware:
@@ -7,5 +8,7 @@ class HealthCheckMiddleware:
 
     def __call__(self, request):
         if request.path == '/api/health/':
-            return JsonResponse({'status': 'ok'})
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT 1')
+            return JsonResponse({'status': 'ok', 'database': 'available'})
         return self.get_response(request)
