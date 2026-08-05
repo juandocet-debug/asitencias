@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 /**
  * RegisterStudent.jsx — Orquestador del flujo de registro multi-paso.
  *
@@ -19,6 +19,7 @@ import { Toast, SuccessModal } from '../components/register/registerUtils';
 import SidebarInfo from '../components/register/SidebarInfo';
 import StepPersonalData from '../components/register/StepPersonalData';
 import StepPhoto from '../components/register/StepPhoto';
+import MobilePageFrame from '../components/mobile/MobilePageFrame';
 
 // ── Utilidades de validación y errores ───────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -151,6 +152,61 @@ export default function RegisterStudent() {
         } finally { setLoading(false); }
     };
 
+    if (user) {
+        return (
+            <MobilePageFrame>
+                {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+                <div className="pt-4">
+                    <button onClick={() => navigate('/dashboard')} className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-black text-slate-500 shadow-sm ring-1 ring-slate-100">
+                        <ArrowLeft size={16} /> Volver al panel
+                    </button>
+
+                    <section className="overflow-hidden rounded-[2.2rem] bg-white shadow-[0_18px_50px_rgba(50,58,90,0.10)] ring-1 ring-white/80">
+                        <div className="bg-gradient-to-br from-[#8b6dff] to-[#7657f6] p-6 text-white">
+                            <div className="mb-10 grid h-14 w-14 place-items-center rounded-2xl bg-white/20">
+                                <BookOpen size={26} />
+                            </div>
+                            <p className="text-xs font-black uppercase tracking-[0.35em] text-white/70">Clase</p>
+                            <h1 className="mt-2 text-3xl font-black leading-tight">Agregarme a una clase</h1>
+                            <p className="mt-3 text-sm font-semibold text-white/75">Ingresa el código que te dio tu profesor.</p>
+                        </div>
+
+                        {user.role === 'STUDENT' ? (
+                            <form onSubmit={handleJoinClass} className="space-y-5 p-5">
+                                {error && (
+                                    <div className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-600">
+                                        {error}
+                                    </div>
+                                )}
+                                <label className="block">
+                                    <span className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-500">Código de clase</span>
+                                    <input
+                                        type="text"
+                                        name="class_code"
+                                        value={formData.class_code}
+                                        onChange={handleChange}
+                                        placeholder="Ej: MATH101"
+                                        required
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-center font-black uppercase tracking-[0.25em] text-slate-900 outline-none focus:border-[#7657f6] focus:ring-4 focus:ring-violet-100"
+                                    />
+                                </label>
+                                <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-4 text-base font-black text-white shadow-xl shadow-slate-300/60 disabled:opacity-70">
+                                    {loading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={20} /> Unirme con código</>}
+                                </button>
+                            </form>
+                        ) : (
+                            <div className="p-5">
+                                <div className="rounded-2xl bg-amber-50 p-5 text-center text-sm font-semibold text-amber-700">
+                                    Esta acción es solo para estudiantes.
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                </div>
+            </MobilePageFrame>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#eef0f8] flex flex-col md:flex-row shadow-2xl overflow-hidden">
             {toast && <Toast {...toast} onClose={() => setToast(null)} />}
@@ -183,10 +239,10 @@ export default function RegisterStudent() {
                         </Link>
 
                         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                            {user ? 'Unirse a una Clase' : 'Crear Cuenta'}
+                            Crear Cuenta
                         </h2>
                         <p className="text-slate-500 mb-5 text-sm md:text-base">
-                            {user ? 'Ingresa el código que te dio tu profesor para unirse.' : 'Completa el formulario para registrarte en el sistema.'}
+                            Completa el formulario para registrarte en el sistema.
                         </p>
 
                         {error && (
@@ -195,61 +251,33 @@ export default function RegisterStudent() {
                             </div>
                         )}
 
-                        {/* ── Usuario ya logueado ── */}
-                        {user ? (
-                            user.role === 'STUDENT' ? (
-                                <form onSubmit={handleJoinClass} className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-semibold text-slate-700">Código de la Clase</label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400"><BookOpen className="h-5 w-5" /></div>
-                                            <input type="text" name="class_code" value={formData.class_code} onChange={handleChange}
-                                                placeholder="Ej: MATH101" required
-                                                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-upn-500 focus:border-transparent transition-all font-mono tracking-widest uppercase placeholder:font-sans placeholder:tracking-normal" />
-                                        </div>
-                                        <p className="text-xs text-slate-400 mt-2">El código tiene letras y números.</p>
-                                    </div>
-                                    <button type="submit" disabled={loading}
-                                        className="w-full bg-gradient-to-r from-upn-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70">
-                                        {loading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={20} /> Unirse ahora</>}
-                                    </button>
-                                </form>
-                            ) : (
-                                <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl text-center">
-                                    <AlertCircle className="mx-auto text-amber-500 mb-3" size={32} />
-                                    <h4 className="font-bold text-slate-800 mb-2">Ya tienes una sesión activa</h4>
-                                    <p className="text-sm text-slate-600 mb-4">Estás conectado como <strong>{user.role === 'TEACHER' ? 'Docente' : 'Administrador'}</strong>. Como docente no puedes registrarte como estudiante.</p>
-                                    <button onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-slate-800 text-white rounded-xl text-sm font-bold">Ir a mi Dashboard</button>
-                                </div>
-                            )
-                        ) : (
-                            /* ── Registro multi-paso ── */
-                            <form onSubmit={e => e.preventDefault()} className="space-y-4 md:space-y-6">
-                                <AnimatePresence mode="wait">
-                                    {step === 1 && (
-                                        <StepPersonalData
-                                            formData={formData}
-                                            onChange={handleChange}
-                                            onNext={() => { if (validateStep1()) { setError(null); setStep(2); } }}
-                                        />
-                                    )}
-                                    {step === 2 && (
-                                        <StepPhoto
-                                            formData={formData}
-                                            setFormData={setFormData}
-                                            onBack={() => setStep(1)}
-                                            onSubmit={handleSubmit}
-                                            loading={loading}
-                                            error={error}
-                                            showToast={showToast}
-                                        />
-                                    )}
-                                </AnimatePresence>
-                            </form>
-                        )}
+                        <form onSubmit={e => e.preventDefault()} className="space-y-4 md:space-y-6">
+                            <AnimatePresence mode="wait">
+                                {step === 1 && (
+                                    <StepPersonalData
+                                        formData={formData}
+                                        onChange={handleChange}
+                                        onNext={() => { if (validateStep1()) { setError(null); setStep(2); } }}
+                                    />
+                                )}
+                                {step === 2 && (
+                                    <StepPhoto
+                                        formData={formData}
+                                        setFormData={setFormData}
+                                        onBack={() => setStep(1)}
+                                        onSubmit={handleSubmit}
+                                        loading={loading}
+                                        error={error}
+                                        showToast={showToast}
+                                    />
+                                )}
+                            </AnimatePresence>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     );
 }
+
+
