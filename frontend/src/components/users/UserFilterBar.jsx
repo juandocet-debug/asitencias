@@ -2,7 +2,7 @@
 // Barra de búsqueda + filtros de rol con contador.
 
 import React from 'react';
-import { Search, User, GraduationCap, BookOpen, Briefcase, Shield } from 'lucide-react';
+import { Search, User, GraduationCap, BookOpen, Briefcase, Shield, Loader2 } from 'lucide-react';
 
 const FILTERS = [
     { key: 'ALL', label: 'Todos', statKey: 'total', icon: <User size={13} />, active: 'bg-slate-700 text-white', plain: 'bg-slate-100 text-slate-600 hover:bg-slate-200' },
@@ -12,7 +12,7 @@ const FILTERS = [
     { key: 'ADMIN', label: 'Admins', statKey: 'admins', icon: <Shield size={13} />, active: 'bg-upn-600 text-white', plain: 'bg-upn-50 text-upn-700 hover:bg-upn-100' },
 ];
 
-export default function UserFilterBar({ searchTerm, onSearch, activeRole, onRoleChange, stats, resultCount }) {
+export default function UserFilterBar({ searchTerm, onSearch, activeRole, onRoleChange, stats, resultCount, isFetching }) {
     return (
         <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-3 items-start md:items-center">
             {/* Buscador */}
@@ -25,6 +25,9 @@ export default function UserFilterBar({ searchTerm, onSearch, activeRole, onRole
                     onChange={e => onSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-upn-100"
                 />
+                {isFetching && (
+                    <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-blue-500" />
+                )}
             </div>
 
             {/* Filtros de rol */}

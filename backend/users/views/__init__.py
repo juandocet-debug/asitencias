@@ -21,7 +21,7 @@ from .users import (
     coordinator_types,
 )
 
-from .directory import import_directory
+from .directory import import_directory, directory_history, directory_batch_detail
 from .onboarding import complete_onboarding
 
 from .ilinyx import (

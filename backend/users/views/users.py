@@ -65,16 +65,12 @@ class UserViewSet(viewsets.ModelViewSet):
         return qs
 
     def _stats_for(self, qs):
-        users = list(qs.values('role', 'roles'))
         return {
-            'total': len(users),
-            'students': sum(1 for item in users if item['role'] == 'STUDENT'),
-            'teachers': sum(1 for item in users if item['role'] == 'TEACHER'),
-            'coordinators': sum(
-                1 for item in users
-                if 'COORDINATOR' in (item.get('roles') or [])
-            ),
-            'admins': sum(1 for item in users if item['role'] == 'ADMIN'),
+            'total': qs.count(),
+            'students': qs.filter(role='STUDENT').count(),
+            'teachers': qs.filter(role='TEACHER').count(),
+            'coordinators': qs.filter(roles__contains=['COORDINATOR']).count(),
+            'admins': qs.filter(role='ADMIN').count(),
         }
 
     def get_queryset(self):
@@ -105,7 +101,8 @@ class UserViewSet(viewsets.ModelViewSet):
                   'id', 'username', 'first_name', 'last_name', 'email', 'role',
                   'roles', 'document_number', 'second_name', 'second_lastname',
                   'personal_email', 'phone_number', 'photo', 'faculty_id',
-                  'program_id', 'faculty__name', 'program__name',
+                  'program_id', 'is_directory_imported', 'requires_onboarding',
+                  'directory_batch_id', 'faculty__name', 'program__name',
               )
               .order_by('first_name', 'last_name', 'id')
         )

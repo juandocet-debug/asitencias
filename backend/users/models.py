@@ -89,6 +89,13 @@ class User(AbstractUser):
     photo = CloudinaryField('image', blank=True, null=True, folder='profile_photos')
     is_directory_imported = models.BooleanField(default=False, db_index=True)
     requires_onboarding = models.BooleanField(default=False, db_index=True)
+    directory_batch = models.ForeignKey(
+        'DirectoryImportBatch',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='users',
+    )
 
     def save(self, *args, **kwargs):
         # Sincronizar: si roles está vacío, inicializar con el rol principal
@@ -174,3 +181,48 @@ class PasswordResetToken(models.Model):
 
     def __str__(self):
         return f"Reset token for {self.user.username}"
+
+
+class DirectoryImportBatch(models.Model):
+    file_name = models.CharField(max_length=255)
+    created_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='directory_imports',
+    )
+    created_count = models.PositiveIntegerField(default=0)
+    updated_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
+    errors = models.JSONField(default=list, blank=True)
+    is_reverted = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.file_name} ({self.created_at:%Y-%m-%d %H:%M})"
+
+
+class DirectoryImportEntry(models.Model):
+    ACTION_CHOICES = (
+        ('created', 'Creado'),
+        ('updated', 'Actualizado'),
+        ('skipped', 'Omitido'),
+    )
+    batch = models.ForeignKey(
+        DirectoryImportBatch,
+        on_delete=models.CASCADE,
+        related_name='entries',
+    )
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    email = models.EmailField(blank=True)
+    document_number = models.CharField(max_length=20, blank=True)
+    previous_data = models.JSONField(default=dict, blank=True)
+    message = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['id']

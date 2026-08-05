@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Edit2, Trash2, BarChart2 } from 'lucide-react';
+import { Mail, Edit2, Trash2, BarChart2, Loader2 } from 'lucide-react';
 import { ROLE_LABELS, ROLE_STYLES, ROLE_ICONS, COORDINATOR_TYPE_LABELS } from '../../constants/userRoles';
 import { getMediaUrl } from '../../utils/dateUtils';
 
@@ -24,7 +24,7 @@ function CoordBadge({ type }) {
     );
 }
 
-export default function UserTable({ users, onEdit, onDelete }) {
+export default function UserTable({ users, isFetching, onEdit, onDelete }) {
     const navigate = useNavigate();
     if (!users.length) {
         return (
@@ -35,7 +35,12 @@ export default function UserTable({ users, onEdit, onDelete }) {
     }
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="relative bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {isFetching && (
+                <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm">
+                    <Loader2 size={14} className="animate-spin" /> Actualizando
+                </div>
+            )}
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead className="bg-slate-50 border-b border-slate-100">

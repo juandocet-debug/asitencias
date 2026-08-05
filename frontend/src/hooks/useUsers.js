@@ -1,7 +1,7 @@
 // hooks/useUsers.js
 // Encapsula carga paginada de usuarios, catálogos, toasts y eliminación.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 
 const DEFAULT_STATS = {
@@ -14,7 +14,8 @@ const DEFAULT_STATS = {
 
 export function useUsers(initialRole = 'ALL') {
     const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
     const [page, setPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeRole, setActiveRole] = useState(initialRole);
@@ -24,6 +25,7 @@ export function useUsers(initialRole = 'ALL') {
     const [allPrograms, setAllPrograms] = useState([]);
     const [toast, setToast] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const requestRef = useRef(null);
 
     const showToast = useCallback((message, type = 'success') => {
         setToast({ message, type });
@@ -35,8 +37,10 @@ export function useUsers(initialRole = 'ALL') {
         const nextSearch = options.searchTerm ?? searchTerm;
         const nextRole = options.activeRole ?? activeRole;
 
+        requestRef.current?.abort();
+        requestRef.current = new AbortController();
         try {
-            setLoading(true);
+            setIsFetching(true);
             const res = await api.get('/users/', {
                 params: {
                     page: nextPage,
@@ -44,6 +48,7 @@ export function useUsers(initialRole = 'ALL') {
                     search: nextSearch || undefined,
                     role: nextRole !== 'ALL' ? nextRole : undefined,
                 },
+                signal: requestRef.current.signal,
             });
             const payload = res.data;
             setUsers(Array.isArray(payload) ? payload : payload.results || []);
@@ -53,10 +58,12 @@ export function useUsers(initialRole = 'ALL') {
                 previous: Array.isArray(payload) ? null : payload.previous,
             });
             setStats(payload.stats || DEFAULT_STATS);
-        } catch {
+        } catch (error) {
+            if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') return;
             showToast('Error al cargar usuarios', 'error');
         } finally {
-            setLoading(false);
+            setIsFetching(false);
+            setInitialLoading(false);
         }
     }, [activeRole, page, searchTerm, showToast]);
 
@@ -78,9 +85,11 @@ export function useUsers(initialRole = 'ALL') {
     }, [fetchCatalogs]);
 
     useEffect(() => {
+        const hasUsefulSearch = searchTerm.trim().length === 0 || searchTerm.trim().length >= 2;
+        if (!hasUsefulSearch) return;
         const timeout = setTimeout(() => {
             fetchUsers({ page, searchTerm, activeRole });
-        }, 300);
+        }, 550);
         return () => clearTimeout(timeout);
     }, [activeRole, fetchUsers, page, searchTerm]);
 
@@ -96,7 +105,7 @@ export function useUsers(initialRole = 'ALL') {
     };
 
     return {
-        users, loading, faculties, allPrograms,
+        users, loading: initialLoading, isFetching, faculties, allPrograms,
         page, setPage, searchTerm, setSearchTerm,
         activeRole, setActiveRole, pagination,
         toast, setToast, showToast,

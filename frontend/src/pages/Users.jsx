@@ -22,7 +22,7 @@ export default function UsersPage() {
     const [editingUser, setEditingUser] = useState(null);
 
     const {
-        users, loading, faculties, allPrograms,
+        users, loading, isFetching, faculties, allPrograms,
         page, setPage, searchTerm, setSearchTerm,
         activeRole, setActiveRole, pagination,
         toast, setToast, showToast,
@@ -95,11 +95,13 @@ export default function UsersPage() {
                     onRoleChange={handleRoleFilter}
                     stats={stats}
                     resultCount={pagination.count}
+                    isFetching={isFetching}
                 />
             </SoftCard>
 
             <UserTable
                 users={users}
+                isFetching={isFetching}
                 onEdit={openEditModal}
                 onDelete={setDeleteConfirm}
             />
@@ -108,14 +110,14 @@ export default function UsersPage() {
                 <span>Página {page} · {pagination.count} usuario(s)</span>
                 <div className="flex gap-2">
                     <button
-                        disabled={!pagination.previous}
+                        disabled={!pagination.previous || isFetching}
                         onClick={() => setPage(prev => Math.max(1, prev - 1))}
                         className="rounded-xl border border-slate-200 px-3 py-2 font-bold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         Anterior
                     </button>
                     <button
-                        disabled={!pagination.next}
+                        disabled={!pagination.next || isFetching}
                         onClick={() => setPage(prev => prev + 1)}
                         className="rounded-xl border border-slate-200 px-3 py-2 font-bold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                     >
