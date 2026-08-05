@@ -217,20 +217,22 @@ function ActionCard({ onClick }) {
 function StudentCheckinCard({ checkins, onDone }) {
     const [code, setCode] = useState('');
     const [error, setError] = useState('');
+    const [reward, setReward] = useState(null);
     const [saving, setSaving] = useState(false);
     const open = checkins.find(item => !item.already_marked);
-    if (!open) return null;
+    if (!open && !reward) return null;
 
     const submit = async () => {
         if (!code.trim()) return;
         setError('');
         setSaving(true);
         try {
-            await api.post('/academic/attendance/self_checkin/', {
+            const { data } = await api.post('/academic/attendance/self_checkin/', {
                 session_id: open.session_id,
                 code: code.trim().toUpperCase(),
             });
             setCode('');
+            setReward(data.reward);
             onDone?.();
         } catch (requestError) {
             setError(requestError.response?.data?.error || 'No se pudo registrar la asistencia.');
@@ -238,6 +240,24 @@ function StudentCheckinCard({ checkins, onDone }) {
             setSaving(false);
         }
     };
+
+    if (reward) {
+        return (
+            <SoftCard className="overflow-hidden bg-gradient-to-br from-[#8b6dff] to-[#7657f6] text-white shadow-xl shadow-violet-200">
+                <div className="flex items-center gap-4">
+                    <div className="animate-bounce text-5xl">{reward.icon}</div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70">Recompensa</p>
+                        <h3 className="mt-1 text-xl font-black">{reward.title}</h3>
+                        <p className="mt-1 text-sm font-semibold text-white/75">{reward.message}</p>
+                    </div>
+                </div>
+                <button onClick={() => setReward(null)} className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#7657f6]">
+                    +{reward.points} puntos · Listo
+                </button>
+            </SoftCard>
+        );
+    }
 
     return (
         <SoftCard className="border-violet-100 bg-[#f0edff]/90">

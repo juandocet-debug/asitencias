@@ -10,6 +10,7 @@ from academic.serializers import (
     AttendanceSessionQuerySerializer,
 )
 from academic.services.self_checkin import (
+    get_self_checkin_for_teacher,
     list_open_checkins_for_student,
     mark_student_self_checkin,
     open_self_checkin_for_teacher,
@@ -73,6 +74,19 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Curso no encontrado'}, status=404)
         return Response(result)
 
+    @action(detail=False, methods=['get'], url_path='current_self_checkin')
+    def current_self_checkin(self, request):
+        try:
+            result = get_self_checkin_for_teacher(
+                request.user,
+                request.query_params.get('session_id'),
+            )
+        except (Course.DoesNotExist, Session.DoesNotExist, ValueError):
+            return Response({'error': 'Ventana no encontrada'}, status=404)
+        if not result:
+            return Response({'error': 'La ventana ya cerró'}, status=400)
+        return Response(result)
+
     @action(detail=False, methods=['get'], url_path='my_open_checkins')
     def my_open_checkins(self, request):
         return Response(list_open_checkins_for_student(request.user))
@@ -88,7 +102,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Código y sesión requeridos'}, status=400)
 
         try:
-            attendance, error, code_status = mark_student_self_checkin(
+            attendance, error, code_status, reward = mark_student_self_checkin(
                 request.user, session_id, code
             )
         except Session.DoesNotExist:
@@ -99,6 +113,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return Response({
             'success': True,
             'attendance_id': attendance.id,
+            'status': attendance.status,
+            'reward': reward,
             'message': 'Asistencia registrada correctamente.',
         })
     @action(detail=False, methods=['get'], url_path='session_attendance')

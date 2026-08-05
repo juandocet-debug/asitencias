@@ -62,6 +62,7 @@ class Session(models.Model):
     topic = models.CharField(max_length=200, blank=True)
     self_checkin_enabled = models.BooleanField(default=False)
     self_checkin_code = models.CharField(max_length=6, blank=True)
+    self_checkin_opened_at = models.DateTimeField(null=True, blank=True)
     self_checkin_expires_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

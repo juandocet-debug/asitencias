@@ -188,19 +188,21 @@ export default function ClassDetails() {
 
 function StudentClassCheckin({ checkins, onDone, showToast }) {
     const [code, setCode] = useState('');
+    const [reward, setReward] = useState(null);
     const [saving, setSaving] = useState(false);
     const open = checkins.find(item => !item.already_marked);
-    if (!open) return null;
+    if (!open && !reward) return null;
 
     const submit = async () => {
         if (!code.trim()) return;
         setSaving(true);
         try {
-            await api.post('/academic/attendance/self_checkin/', {
+            const { data } = await api.post('/academic/attendance/self_checkin/', {
                 session_id: open.session_id,
                 code: code.trim().toUpperCase(),
             });
             setCode('');
+            setReward(data.reward);
             showToast('Asistencia registrada correctamente', 'success');
             onDone?.();
         } catch (error) {
@@ -209,6 +211,10 @@ function StudentClassCheckin({ checkins, onDone, showToast }) {
             setSaving(false);
         }
     };
+
+    if (reward) {
+        return <RewardCard reward={reward} onClose={() => setReward(null)} />;
+    }
 
     return (
         <section className="rounded-[2rem] bg-[#f0edff] p-4 shadow-sm ring-1 ring-violet-100">
@@ -236,6 +242,25 @@ function StudentClassCheckin({ checkins, onDone, showToast }) {
                 >
                     {saving ? 'Marcando...' : 'Marcar asistencia'}
                 </button>
+            </div>
+        </section>
+    );
+}
+
+function RewardCard({ reward, onClose }) {
+    return (
+        <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#8b6dff] to-[#7657f6] p-5 text-white shadow-xl shadow-violet-200">
+            <div className="flex items-center gap-4">
+                <div className="animate-bounce text-5xl drop-shadow-lg">{reward.icon}</div>
+                <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70">Recompensa</p>
+                    <h3 className="mt-1 text-xl font-black">{reward.title}</h3>
+                    <p className="mt-1 text-sm font-semibold text-white/75">{reward.message}</p>
+                </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between rounded-2xl bg-white/15 p-3">
+                <span className="text-sm font-black">+{reward.points} puntos</span>
+                <button onClick={onClose} className="rounded-xl bg-white px-4 py-2 text-xs font-black text-[#7657f6]">Listo</button>
             </div>
         </section>
     );

@@ -21,6 +21,26 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
     const autoStatus = mode === 'auto' ? getAutoStatus() : null;
     const autoConf = autoStatus ? statusConfig[autoStatus] : null;
 
+    React.useEffect(() => {
+        if (!checkin?.session_id) return undefined;
+        const timer = setInterval(async () => {
+            const next = Math.max((checkin.code_expires_in || 1) - 1, 0);
+            if (next > 0) {
+                setCheckin(prev => prev ? { ...prev, code_expires_in: next } : prev);
+                return;
+            }
+            try {
+                const { data } = await api.get('/academic/attendance/current_self_checkin/', {
+                    params: { session_id: checkin.session_id },
+                });
+                setCheckin(data);
+            } catch {
+                setCheckin(null);
+            }
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [checkin?.session_id, checkin?.code_expires_in]);
+
     const handleSaveClick = async () => {
         try {
             await handleSave();
@@ -158,6 +178,8 @@ function ModeBar({ mode, setMode, markAll, checkin, openingCheckin, onOpenChecki
 }
 
 function CheckinFeedback({ checkin }) {
+    const remaining = Math.max(checkin.code_expires_in || 0, 0);
+    const progress = `${Math.max((remaining / 30) * 100, 4)}%`;
     const expiresAt = new Date(checkin.expires_at).toLocaleTimeString('es-CO', {
         hour: '2-digit',
         minute: '2-digit',
@@ -168,11 +190,17 @@ function CheckinFeedback({ checkin }) {
             <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-violet-100">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7657f6]">Ventana abierta</p>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <div className="rounded-2xl bg-[#2a2147] px-5 py-3 text-2xl font-black tracking-[0.24em] text-white">
+                    <div className="rounded-2xl bg-[#2a2147] px-5 py-3 text-2xl font-black tracking-[0.24em] text-white shadow-xl shadow-violet-200">
                         {checkin.code}
                     </div>
+                    <div className="relative grid h-14 w-14 place-items-center rounded-full bg-[#f0edff]">
+                        <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(#7657f6 ${progress}, #e9e4ff 0)` }} />
+                        <div className="relative grid h-11 w-11 place-items-center rounded-full bg-white text-sm font-black text-[#7657f6]">
+                            {remaining}
+                        </div>
+                    </div>
                     <p className="text-sm font-bold text-slate-600">
-                        Muéstralo en clase. Cierra a las <span className="text-[#7657f6]">{expiresAt}</span>.
+                        El código cambia cada 30s. Cierra a las <span className="text-[#7657f6]">{expiresAt}</span>.
                     </p>
                 </div>
             </div>
