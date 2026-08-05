@@ -12,7 +12,6 @@ export const useUser = () => {
 
 /**
  * Intenta /users/me/ con backoff exponencial.
- * Render (plan gratuito) duerme tras 15 min y puede tardar hasta 60s en despertar.
  * Reintentamos durante ~90s en total antes de rendirse.
  */
 const fetchUserWithRetry = async (onWaking) => {
@@ -32,7 +31,7 @@ const fetchUserWithRetry = async (onWaking) => {
             // Último intento — rendirse
             if (attempt === MAX_ATTEMPTS) throw error;
 
-            // A partir del 2° intento mostrar indicador de "calentando"
+            // A partir del 2° intento mostrar indicador de "reconectando"
             if (attempt >= 2 && onWaking) onWaking(attempt);
 
             const delay = BASE_DELAY * Math.min(attempt, 3); // 3s → 6s → 9s → 9s...
@@ -50,7 +49,7 @@ const getSavedActiveRole = (userData) => {
     return userData.role || allRoles[0];
 };
 
-/* ── Pantalla de calentamiento de servidor ─────────────────────────────── */
+/* ── Pantalla de reconexi�n ─────────────────────────────── */
 export const WakingScreen = () => (
     <div className="fixed inset-0 bg-gradient-to-br from-upn-900 via-upn-800 to-slate-900 flex flex-col items-center justify-center z-50">
         <div className="text-center max-w-sm px-6">
@@ -66,10 +65,10 @@ export const WakingScreen = () => (
                 </div>
             </div>
 
-            <h2 className="text-xl font-black text-white mb-2">Despertando el servidor</h2>
+            <h2 className="text-xl font-black text-white mb-2">Reconectando con el servicio</h2>
             <p className="text-upn-300 text-sm leading-relaxed">
-                El servidor está en modo ahorro de energía.<br />
-                Estará listo en unos segundos…
+                Estamos verificando la conexi�n.<br />
+                Intenta de nuevo en unos segundos�
             </p>
 
             {/* Barra de progreso animada */}
@@ -96,7 +95,7 @@ export const WakingScreen = () => (
 export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isWaking, setIsWaking] = useState(false); // servidor despertando
+    const [isWaking, setIsWaking] = useState(false); // reconectando
     const [activeRole, setActiveRoleState] = useState(null);
 
     const setActiveRole = (role) => {
@@ -109,7 +108,7 @@ export const UserProvider = ({ children }) => {
         setLoading(true);
         try {
             const userData = await fetchUserWithRetry((attempt) => {
-                // Mostrar pantalla de "calentando" a partir del 2° intento fallido
+                // Mostrar pantalla de "reconectando" a partir del 2° intento fallido
                 setIsWaking(true);
             });
             setIsWaking(false);

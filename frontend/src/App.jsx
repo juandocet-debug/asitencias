@@ -1,47 +1,9 @@
 
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { useUser } from './context/UserContext';
-import api from './services/api';
 
-// ── Keep-alive inteligente para Render (plan gratuito) ───────────────────────
-// SOLO pinga si la pestaña está visible y activa.
-const PING_INTERVAL_MS = 12 * 60 * 1000; // 12 minutos — Render duerme a los 15 min de inactividad
-
-function useServerKeepAlive() {
-  useEffect(() => {
-    let interval = null;
-
-    const doPing = () => {
-      if (document.visibilityState === 'visible') {
-        api.get('/ping/').catch(() => { }); // silencioso si falla
-      }
-    };
-
-    const startPing = () => {
-      doPing();
-      interval = setInterval(doPing, PING_INTERVAL_MS);
-    };
-
-    const stopPing = () => {
-      if (interval) { clearInterval(interval); interval = null; }
-    };
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') startPing();
-      else stopPing();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibility);
-    if (document.visibilityState === 'visible') startPing();
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      stopPing();
-    };
-  }, []);
-}
 
 
 // ──────────────────────────────────────────────
@@ -122,7 +84,6 @@ const ProtectedRoutes = () => {
 
 // ── App principal ─────────────────────────────────────────────────────────────
 function App() {
-  useServerKeepAlive();
   return (
     <UserProvider>
       <BrowserRouter>

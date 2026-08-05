@@ -1,8 +1,8 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, ArrowRight, Eye, EyeOff, CreditCard, Zap } from 'lucide-react';
+import { Lock, ArrowRight, Eye, EyeOff, CreditCard } from 'lucide-react';
 import api, { setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 
@@ -19,37 +19,6 @@ export default function Login() {
     const [searchParams] = useSearchParams();
     const classCode = searchParams.get('code');
 
-    // ── Wakeup automático al cargar ───────────────────────────────────────────
-    // Estado: null = chequeando, 'sleeping' = despertando, 'awake' = listo
-    const [serverState, setServerState] = useState(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        const QUICK_TIMEOUT = 4000; // si tarda más de 4s → servidor dormido
-
-        const wakeup = async () => {
-            try {
-                await api.get('/ping/', { timeout: QUICK_TIMEOUT });
-                if (!cancelled) setServerState('awake');
-            } catch (err) {
-                if (cancelled) return;
-                // Servidor dormido → mostrar banner y seguir intentando
-                setServerState('sleeping');
-                // Reintentar cada 5s hasta que despierte
-                const retry = setInterval(async () => {
-                    try {
-                        await api.get('/ping/', { timeout: 10000 });
-                        clearInterval(retry);
-                        if (!cancelled) setServerState('awake');
-                    } catch (_) { /* sigue intentando */ }
-                }, 5000);
-            }
-        };
-
-        wakeup();
-        return () => { cancelled = true; };
-    }, []);
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!username || !password) return;
@@ -65,7 +34,7 @@ export default function Login() {
             const status = err?.response?.status;
             const isTimeout = err?.code === 'ECONNABORTED' || !err?.response;
             if (isTimeout) {
-                setError('⏳ El servidor está despertando. Espera unos segundos e intenta de nuevo.');
+                setError('No se pudo conectar con el servicio. Revisa tu conexi�n e intenta de nuevo.');
             } else if (status === 401 || status === 400) {
                 setError('Credenciales inválidas. Verifique su usuario y contraseña.');
             } else {
@@ -118,41 +87,6 @@ export default function Login() {
 
             {/* ══ Panel derecho — Formulario ══ */}
             <div className="w-full md:w-[55%] flex flex-col items-center justify-center bg-white px-6 md:px-14 lg:px-20 gap-3">
-
-                {/* ── Banner de wakeup ─────────────────────────────────────────── */}
-                <AnimatePresence>
-                    {serverState === 'sleeping' && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -12, scale: 0.97 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                            transition={{ duration: 0.35 }}
-                            className="w-full max-w-[400px] rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-3"
-                        >
-                            <span className="relative flex-shrink-0 w-3 h-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
-                            </span>
-                            <div className="text-xs text-amber-800 font-medium leading-tight">
-                                <span className="font-bold">Despertando el servidor…</span>
-                                <br />
-                                <span className="text-amber-600">Puede tardar hasta 30 segundos. Ya puedes ingresar tus datos.</span>
-                            </div>
-                        </motion.div>
-                    )}
-                    {serverState === 'awake' && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -12, scale: 0.97 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="w-full max-w-[400px] rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3"
-                        >
-                            <Zap className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                            <p className="text-xs text-emerald-700 font-semibold">Servidor listo · Puedes iniciar sesión</p>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
 
                 <div className="w-full max-w-[400px]">
 
