@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, MoreVertical, Plus } from 'lucide-react';
+import { Archive, Filter, MoreVertical, Plus, RotateCcw } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -26,13 +26,15 @@ export default function Classes() {
     const [editingId, setEditingId] = useState(null);
     const [selectedYear, setSelectedYear] = useState(currentYear);
     const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+    const [archiveView, setArchiveView] = useState('active');
     const canManage = activeRole === 'ADMIN' || activeRole === 'TEACHER';
 
-    useEffect(() => { fetchCourses(); }, []);
+    useEffect(() => { fetchCourses(); }, [archiveView]);
 
     const fetchCourses = async () => {
         try {
-            const { data } = await api.get('/academic/courses/');
+            const archivedParam = archiveView === 'archived' ? 'true' : archiveView === 'all' ? 'all' : 'false';
+            const { data } = await api.get(`/academic/courses/?archived=${archivedParam}`);
             setCourses(data);
         } catch {
             setCourses([]);
@@ -72,11 +74,20 @@ export default function Classes() {
 
     const handleDelete = async (id) => {
         try {
-            await api.delete(`/academic/courses/${id}/`);
+            await api.post(`/academic/courses/${id}/archive/`);
             fetchCourses();
             setDeleteModalOpen(false);
         } catch {
-            alert('Error al eliminar la clase');
+            alert('Error al archivar la clase');
+        }
+    };
+
+    const handleRestore = async (id) => {
+        try {
+            await api.post(`/academic/courses/${id}/restore/`);
+            fetchCourses();
+        } catch {
+            alert('Error al restaurar la clase');
         }
     };
 
@@ -101,6 +112,8 @@ export default function Classes() {
                 setSelectedYear={setSelectedYear}
             />
 
+            <ArchiveTabs value={archiveView} onChange={setArchiveView} />
+
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                 {filteredCourses.map(course => (
                     <CourseCard
@@ -110,6 +123,7 @@ export default function Classes() {
                         onClick={() => navigate(`/classes/${course.id}`)}
                         onEdit={handleEdit}
                         onDelete={(id) => { setItemToDelete(id); setDeleteModalOpen(true); }}
+                        onRestore={handleRestore}
                     />
                 ))}
             </div>
@@ -128,12 +142,37 @@ export default function Classes() {
                 isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={() => handleDelete(itemToDelete)}
-                title="Eliminar Clase"
-                message="¿Estás seguro de eliminar esta clase? Esta acción también borrará todas las asistencias asociadas."
-                confirmText="Eliminar"
-                isDestructive
+                title="Archivar clase"
+                message="¿Quieres archivar esta clase? No se borran estudiantes, asistencias ni reportes; solo se oculta del listado principal."
+                confirmText="Archivar"
             />
         </MobilePageFrame>
+    );
+}
+
+function ArchiveTabs({ value, onChange }) {
+    const tabs = [
+        { id: 'active', label: 'Activas', icon: Filter },
+        { id: 'archived', label: 'Archivadas', icon: Archive },
+        { id: 'all', label: 'Todas', icon: RotateCcw },
+    ];
+
+    return (
+        <div className="app-glass flex w-full gap-1 rounded-2xl p-1 sm:w-fit">
+            {tabs.map(tab => {
+                const Icon = tab.icon;
+                const active = value === tab.id;
+                return (
+                    <button
+                        key={tab.id}
+                        onClick={() => onChange(tab.id)}
+                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition sm:flex-none ${active ? 'bg-white text-[#7657f6] shadow-sm' : 'text-slate-500'}`}
+                    >
+                        <Icon size={14} /> {tab.label}
+                    </button>
+                );
+            })}
+        </div>
     );
 }
 

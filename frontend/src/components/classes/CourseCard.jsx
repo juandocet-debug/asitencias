@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Eye, Trash2, Users } from 'lucide-react';
+import { Archive, Edit2, Eye, RotateCcw, Users } from 'lucide-react';
 
 export const COLOR_PALETTE = {
     blue: { gradient: 'linear-gradient(135deg, #7aa7ff, #6f8cff)', lightBg: '#eef4ff', color: '#5273e8', label: 'Azul' },
@@ -10,14 +10,15 @@ export const COLOR_PALETTE = {
     cyan: { gradient: 'linear-gradient(135deg, #7ad8ff, #56b6f7)', lightBg: '#ecfeff', color: '#0e7490', label: 'Cian' },
 };
 
-export default function CourseCard({ course, canManage, onEdit, onDelete, onClick }) {
+export default function CourseCard({ course, canManage, onEdit, onDelete, onRestore, onClick }) {
     const palette = COLOR_PALETTE[course.color] || COLOR_PALETTE.violet;
     const studentCount = course.students?.length ?? 0;
+    const archived = Boolean(course.is_archived);
 
     return (
         <div
             onClick={onClick}
-            className="group cursor-pointer overflow-hidden rounded-[1.45rem] border border-white/80 bg-white shadow-[0_16px_35px_rgba(82,90,130,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-[1.7rem]"
+            className={`group cursor-pointer overflow-hidden rounded-[1.45rem] border border-white/80 bg-white shadow-[0_16px_35px_rgba(82,90,130,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-[1.7rem] ${archived ? 'opacity-70 grayscale-[0.25]' : ''}`}
         >
             <div className="relative min-h-[8.4rem] overflow-hidden px-3 py-3 sm:min-h-[8.8rem] sm:px-4 sm:py-4" style={{ background: palette.gradient }}>
                 <div className="absolute -right-9 top-12 h-16 w-16 rounded-full bg-[#eef0f8]" />
@@ -38,9 +39,15 @@ export default function CourseCard({ course, canManage, onEdit, onDelete, onClic
                             <button onClick={event => { event.stopPropagation(); onEdit(course); }} className="grid h-7 w-7 place-items-center rounded-xl bg-white/20 text-white sm:h-8 sm:w-8" title="Editar">
                                 <Edit2 size={13} />
                             </button>
-                            <button onClick={event => { event.stopPropagation(); onDelete(course.id); }} className="grid h-7 w-7 place-items-center rounded-xl bg-white/20 text-white hover:bg-red-500/80 sm:h-8 sm:w-8" title="Eliminar">
-                                <Trash2 size={13} />
-                            </button>
+                            {archived ? (
+                                <button onClick={event => { event.stopPropagation(); onRestore(course.id); }} className="grid h-7 w-7 place-items-center rounded-xl bg-white/20 text-white sm:h-8 sm:w-8" title="Restaurar">
+                                    <RotateCcw size={13} />
+                                </button>
+                            ) : (
+                                <button onClick={event => { event.stopPropagation(); onDelete(course.id); }} className="grid h-7 w-7 place-items-center rounded-xl bg-white/20 text-white hover:bg-amber-500/80 sm:h-8 sm:w-8" title="Archivar">
+                                    <Archive size={13} />
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -55,6 +62,7 @@ export default function CourseCard({ course, canManage, onEdit, onDelete, onClic
                         {course.start_date && new Date(course.start_date).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}
                     </span>
                 </div>
+                {archived && <span className="inline-flex rounded-xl bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">Archivada</span>}
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
