@@ -60,6 +60,9 @@ class Session(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sessions')
     date = models.DateField()
     topic = models.CharField(max_length=200, blank=True)
+    self_checkin_enabled = models.BooleanField(default=False)
+    self_checkin_code = models.CharField(max_length=6, blank=True)
+    self_checkin_expires_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.course} - {self.date}"

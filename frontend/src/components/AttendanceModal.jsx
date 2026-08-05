@@ -1,10 +1,13 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { Check, X, Search, Save, Loader2, Users, User, Clock } from 'lucide-react';
 import { useAttendanceModal } from '../hooks/useAttendanceModal';
 import StudentAttendanceCard from './attendance/StudentAttendanceCard';
 import { statusConfig } from './attendance/statusConfig';
+import api from '../services/api';
 
 export default function AttendanceModal({ isOpen, onClose, courseId, students = [], getMediaUrl, onSaved, initialDate }) {
+    const [checkin, setCheckin] = useState(null);
+    const [openingCheckin, setOpeningCheckin] = useState(false);
     const {
         attendanceData, attendanceDate, setAttendanceDate, isExistingSession, loadingSession,
         mode, setMode, timeRanges, setTimeRanges,
@@ -28,6 +31,22 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
         }
     };
 
+    const openStudentCheckin = async () => {
+        setOpeningCheckin(true);
+        try {
+            const { data } = await api.post('/academic/attendance/open_self_checkin/', {
+                course_id: courseId,
+                minutes: 10,
+            });
+            setCheckin(data);
+            onSaved?.('Ventana de asistencia abierta para estudiantes', 'success');
+        } catch {
+            onSaved?.('No se pudo abrir la asistencia para estudiantes', 'error');
+        } finally {
+            setOpeningCheckin(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 backdrop-blur-md sm:items-center" onClick={onClose}>
             <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f7f8fc] shadow-2xl sm:mx-4 sm:h-[92vh] sm:max-w-5xl sm:rounded-[2rem]" onClick={e => e.stopPropagation()}>
@@ -40,7 +59,14 @@ export default function AttendanceModal({ isOpen, onClose, courseId, students = 
                     onClose={onClose}
                 />
 
-                <ModeBar mode={mode} setMode={setMode} markAll={markAll} />
+                <ModeBar
+                    mode={mode}
+                    setMode={setMode}
+                    markAll={markAll}
+                    checkin={checkin}
+                    openingCheckin={openingCheckin}
+                    onOpenCheckin={openStudentCheckin}
+                />
 
                 {mode === 'auto' && (
                     <AutoTimeBar
@@ -108,7 +134,7 @@ function ModalHeader({ isExistingSession, students, mode, attendanceDate, setAtt
     );
 }
 
-function ModeBar({ mode, setMode, markAll }) {
+function ModeBar({ mode, setMode, markAll, checkin, openingCheckin, onOpenCheckin }) {
     return (
         <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
             <div className="flex rounded-2xl border border-slate-200 bg-slate-50 p-1 shadow-sm">
@@ -123,6 +149,9 @@ function ModeBar({ mode, setMode, markAll }) {
             ) : (
                 <button onClick={() => markAll('ABSENT')} className="ml-auto rounded-xl bg-slate-200 px-3 py-2 text-[11px] font-black text-slate-600">Reiniciar</button>
             )}
+            <button onClick={onOpenCheckin} disabled={openingCheckin} className="w-full rounded-2xl bg-[#2a2147] px-4 py-3 text-xs font-black text-white shadow-lg shadow-violet-100 disabled:opacity-60 sm:w-auto">
+                {openingCheckin ? 'Abriendo...' : checkin ? `Código: ${checkin.code}` : 'Abrir para estudiantes'}
+            </button>
         </div>
     );
 }
@@ -201,6 +230,7 @@ function Counter({ color, value }) {
         </div>
     );
 }
+
 
 
 

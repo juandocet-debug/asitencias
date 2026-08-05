@@ -1,13 +1,18 @@
-from rest_framework import viewsets, permissions, status
+﻿from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 
-from academic.models import Attendance, Course
+from academic.models import Attendance, Course, Session
 from academic.serializers import (
     AttendanceCreateSerializer,
     AttendanceSerializer,
     AttendanceSessionQuerySerializer,
+)
+from academic.services.self_checkin import (
+    list_open_checkins_for_student,
+    mark_student_self_checkin,
+    open_self_checkin_for_teacher,
 )
 from modulos.asistencia.aplicacion import (
     ConsultarAsistenciaSesionUseCase,
@@ -56,6 +61,46 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'], url_path='open_self_checkin')
+    def open_self_checkin(self, request):
+        try:
+            result = open_self_checkin_for_teacher(
+                request.user,
+                request.data.get('course_id'),
+                request.data.get('minutes') or 10,
+            )
+        except (Course.DoesNotExist, ValueError):
+            return Response({'error': 'Curso no encontrado'}, status=404)
+        return Response(result)
+
+    @action(detail=False, methods=['get'], url_path='my_open_checkins')
+    def my_open_checkins(self, request):
+        return Response(list_open_checkins_for_student(request.user))
+
+    @action(detail=False, methods=['post'], url_path='self_checkin')
+    def self_checkin(self, request):
+        code = str(request.data.get('code') or '').strip().upper()
+        session_id = request.data.get('session_id')
+
+        if request.user.role != 'STUDENT':
+            return Response({'error': 'Solo estudiantes'}, status=403)
+        if not code or not session_id:
+            return Response({'error': 'Código y sesión requeridos'}, status=400)
+
+        try:
+            attendance, error, code_status = mark_student_self_checkin(
+                request.user, session_id, code
+            )
+        except Session.DoesNotExist:
+            return Response({'error': 'Sesión no encontrada'}, status=404)
+        if error:
+            return Response({'error': error}, status=code_status)
+
+        return Response({
+            'success': True,
+            'attendance_id': attendance.id,
+            'message': 'Asistencia registrada correctamente.',
+        })
     @action(detail=False, methods=['get'], url_path='session_attendance')
     def session_attendance(self, request):
         """
@@ -318,3 +363,4 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             })
 
         return Response(result)
+

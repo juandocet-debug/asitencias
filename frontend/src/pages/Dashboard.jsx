@@ -26,6 +26,7 @@ export default function Dashboard() {
     const [period, setPeriod] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
+    const [checkins, setCheckins] = useState([]);
 
     useEffect(() => {
         if (!isAdmin) fetchStats();
@@ -40,6 +41,10 @@ export default function Dashboard() {
             if (period) params.period = period;
             const { data } = await api.get('/academic/dashboard/stats/', { params });
             setStats(data);
+            if (isStudent) {
+                const open = await api.get('/academic/attendance/my_open_checkins/');
+                setCheckins(open.data || []);
+            }
         } catch (error) {
             console.error('Error fetching dashboard stats:', error);
         } finally {
@@ -98,6 +103,7 @@ export default function Dashboard() {
                 </section>
 
                 <aside className="space-y-4">
+                    {isStudent && <StudentCheckinCard checkins={checkins} onDone={fetchStats} />}
                     {isStudent && <RiskAlerts alerts={stats.stats.alerts || []} />}
                     {isStudent && <JoinCourseCard onClick={() => navigate('/register')} />}
                     {!isStudent && <ActionCard onClick={() => navigate('/classes')} />}
@@ -205,6 +211,47 @@ function ActionCard({ onClick }) {
                 Ir a clases
             </div>
         </button>
+    );
+}
+
+function StudentCheckinCard({ checkins, onDone }) {
+    const [code, setCode] = useState('');
+    const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
+    const open = checkins.find(item => !item.already_marked);
+    if (!open) return null;
+
+    const submit = async () => {
+        if (!code.trim()) return;
+        setError('');
+        setSaving(true);
+        try {
+            await api.post('/academic/attendance/self_checkin/', {
+                session_id: open.session_id,
+                code: code.trim().toUpperCase(),
+            });
+            setCode('');
+            onDone?.();
+        } catch (requestError) {
+            setError(requestError.response?.data?.error || 'No se pudo registrar la asistencia.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <SoftCard className="border-violet-100 bg-[#f0edff]/90">
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#7657f6]">Ahora</p>
+            <h3 className="mt-1 text-xl font-black text-[#172033]">Marcar asistencia</h3>
+            <p className="mt-1 text-sm font-semibold text-slate-500">{open.course_name}</p>
+            <div className="mt-4 grid gap-2">
+                <input value={code} onChange={event => setCode(event.target.value.toUpperCase())} placeholder="Código del profesor" className="rounded-2xl border border-white/80 bg-white px-4 py-3 text-center font-black uppercase tracking-[0.18em] outline-none focus:ring-4 focus:ring-violet-100" />
+                <button onClick={submit} disabled={saving || !code.trim()} className="rounded-2xl bg-gradient-to-br from-[#8b6dff] to-[#7657f6] px-4 py-3 text-sm font-black text-white shadow-xl shadow-violet-200 disabled:opacity-60">
+                    {saving ? 'Marcando...' : 'Estoy en clase ✓'}
+                </button>
+                {error && <p className="rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-bold text-red-600">{error}</p>}
+            </div>
+        </SoftCard>
     );
 }
 
