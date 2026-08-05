@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, MoreVertical, Plus } from 'lucide-react';
@@ -35,8 +34,8 @@ export default function Classes() {
         try {
             const { data } = await api.get('/academic/courses/');
             setCourses(data);
-        } catch (error) {
-            console.error('Error fetching courses:', error);
+        } catch {
+            setCourses([]);
         } finally {
             setLoading(false);
         }

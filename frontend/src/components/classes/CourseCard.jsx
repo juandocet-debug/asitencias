@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React from 'react';
 import { Edit2, Eye, Trash2, Users } from 'lucide-react';
 
