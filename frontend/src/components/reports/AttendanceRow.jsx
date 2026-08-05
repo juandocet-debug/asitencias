@@ -3,7 +3,7 @@
 // en la tabla del reporte. Hace clic para abrir el modal de detalle.
 
 import React, { useState } from 'react';
-import { Mail, FileText, Edit3, X } from 'lucide-react';
+import { Mail, FileText, Edit3, X, Star } from 'lucide-react';
 
 export default function AttendanceRow({ student, onClick, getMediaUrl }) {
     const [showPhoto, setShowPhoto] = useState(false);
@@ -71,6 +71,16 @@ export default function AttendanceRow({ student, onClick, getMediaUrl }) {
 
                 {/* Contadores de asistencia */}
                 <div className="hidden md:flex items-center gap-2">
+                    <div className="text-center px-2.5 py-1 bg-[#f0edff] rounded-lg min-w-[46px]">
+                        <span className="text-sm font-bold text-[#7657f6]">{student.points || 0}</span>
+                        <p className="text-[9px] text-[#7657f6] font-medium">Pts</p>
+                    </div>
+                    <div className="text-center px-2.5 py-1 bg-amber-50 rounded-lg min-w-[46px]">
+                        <span className="inline-flex items-center gap-1 text-sm font-bold text-amber-600">
+                            <Star size={11} fill="currentColor" />{student.stars || 0}
+                        </span>
+                        <p className="text-[9px] text-amber-600 font-medium">Est.</p>
+                    </div>
                     <div className="text-center px-2.5 py-1 bg-emerald-50 rounded-lg min-w-[40px]">
                         <span className="text-sm font-bold text-emerald-600">{student.present}</span>
                         <p className="text-[9px] text-emerald-600 font-medium">Asist.</p>
@@ -89,6 +99,11 @@ export default function AttendanceRow({ student, onClick, getMediaUrl }) {
                             <p className="text-[9px] text-blue-600 font-medium">Exc.</p>
                         </div>
                     )}
+                </div>
+
+                <div className="grid gap-1 md:hidden">
+                    <span className="rounded-full bg-[#f0edff] px-2 py-0.5 text-[10px] font-black text-[#7657f6]">{student.points || 0} pts</span>
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-600">⭐ {student.stars || 0}</span>
                 </div>
 
                 {/* Porcentaje de asistencia */}

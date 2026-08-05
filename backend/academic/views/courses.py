@@ -183,6 +183,8 @@ class CourseViewSet(viewsets.ModelViewSet):
             'document_number': student.document_number,
             'total_sessions': total_sessions,
             'attendance_rate': rate,
+            'points': grouped['present'] * 10 + grouped['late'] * 2,
+            'stars': student.badges.count(),
             **grouped,
         }
 
