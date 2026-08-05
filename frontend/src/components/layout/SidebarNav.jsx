@@ -117,7 +117,6 @@ export default function SidebarNav({ user, effectiveRole, allRoles, setActiveRol
                 {/* Estudiante */}
                 {isStudent && <>
                     <SidebarItem icon={AlertCircle} label="Mis Faltas" to="/my-absences" onClick={onClose} subtitle="Justificar inasistencias" />
-                    <SidebarItem icon={ClipboardList} label="Mis Prácticas" to="/mis-practicas" onClick={onClose} subtitle="Reflexiones y asistencia" />
                     <button
                         onClick={openJoinModal}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-upn-200 hover:bg-upn-800/60 hover:text-white transition-all group mt-1"
