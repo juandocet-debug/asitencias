@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, User, Upload, Loader2 } from 'lucide-react';
 
@@ -13,49 +13,46 @@ import UserFormModal from '../components/users/UserFormModal';
 
 export default function UsersPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-
-    // UI state
-    const [searchTerm, setSearchTerm] = useState('');
-    const [activeRole, setActiveRole] = useState(searchParams.get('role') || 'ALL');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
 
-    // Datos + acciones
     const {
         users, loading, faculties, allPrograms,
+        page, setPage, searchTerm, setSearchTerm,
+        activeRole, setActiveRole, pagination,
         toast, setToast, showToast,
         deleteConfirm, setDeleteConfirm,
         fetchUsers, handleDelete, stats,
-    } = useUsers();
+    } = useUsers(searchParams.get('role') || 'ALL');
 
-    // Sincronizar filtro de rol con la URL
     useEffect(() => {
         const roleParam = searchParams.get('role');
         setActiveRole(roleParam || 'ALL');
-    }, [searchParams]);
+        setPage(1);
+    }, [searchParams, setActiveRole, setPage]);
 
     const handleRoleFilter = (role) => {
         setActiveRole(role);
+        setPage(1);
         if (role === 'ALL') searchParams.delete('role');
         else searchParams.set('role', role);
         setSearchParams(searchParams, { replace: true });
     };
 
-    const openCreateModal = () => { setEditingUser(null); setIsModalOpen(true); };
-    const openEditModal = (user) => { setEditingUser(user); setIsModalOpen(true); };
+    const handleSearch = (value) => {
+        setSearchTerm(value);
+        setPage(1);
+    };
 
-    // Filtrar usuarios (depende de UI state → no va en el hook)
-    const filteredUsers = users.filter(user => {
-        const matchesSearch =
-            user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.document_number?.includes(searchTerm) ||
-            user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesRole = activeRole === 'ALL'
-            || user.role === activeRole
-            || (user.roles || []).includes(activeRole);
-        return matchesSearch && matchesRole;
-    });
+    const openCreateModal = () => {
+        setEditingUser(null);
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (user) => {
+        setEditingUser(user);
+        setIsModalOpen(true);
+    };
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
@@ -67,7 +64,6 @@ export default function UsersPage() {
         <div className="space-y-6">
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-            {/* Encabezado */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -89,20 +85,39 @@ export default function UsersPage() {
 
             <UserFilterBar
                 searchTerm={searchTerm}
-                onSearch={setSearchTerm}
+                onSearch={handleSearch}
                 activeRole={activeRole}
                 onRoleChange={handleRoleFilter}
                 stats={stats}
-                resultCount={filteredUsers.length}
+                resultCount={pagination.count}
             />
 
             <UserTable
-                users={filteredUsers}
+                users={users}
                 onEdit={openEditModal}
                 onDelete={setDeleteConfirm}
             />
 
-            {/* Modal crear/editar */}
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+                <span>Página {page} · {pagination.count} usuario(s)</span>
+                <div className="flex gap-2">
+                    <button
+                        disabled={!pagination.previous}
+                        onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                        className="rounded-xl border border-slate-200 px-3 py-2 font-bold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        Anterior
+                    </button>
+                    <button
+                        disabled={!pagination.next}
+                        onClick={() => setPage(prev => prev + 1)}
+                        className="rounded-xl border border-slate-200 px-3 py-2 font-bold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
             {isModalOpen && (
                 <UserFormModal
                     editingUser={editingUser}
@@ -116,7 +131,6 @@ export default function UsersPage() {
                 />
             )}
 
-            {/* Modal confirmar eliminación */}
             {deleteConfirm && (
                 <DeleteConfirmModal
                     title="¿Eliminar Usuario?"

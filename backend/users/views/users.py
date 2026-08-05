@@ -3,6 +3,7 @@
 # (Facultades, Programas, Tipos de Coordinador).
 
 from rest_framework import generics, permissions, status, viewsets
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.filters import SearchFilter
@@ -19,6 +20,12 @@ from ..models import Faculty, Program, CoordinatorProfile
 User = get_user_model()
 
 
+class UserPagination(PageNumberPagination):
+    page_size = 25
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class UserViewSet(viewsets.ModelViewSet):
     """
     CRUD de usuarios para el ADMIN.
@@ -27,8 +34,9 @@ class UserViewSet(viewsets.ModelViewSet):
     Soporta ?search=término para buscar por nombre, apellido, cédula o email.
     """
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [SearchFilter]
+    filter_backends = []
     search_fields = ['first_name', 'last_name', 'username', 'email']
+    pagination_class = UserPagination
 
     def get_serializer_class(self):
         """Seleccionar serializer según la acción."""
@@ -38,9 +46,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return AdminUserUpdateSerializer
         return UserSerializer
 
-    def get_queryset(self):
+    def _base_queryset(self):
         user = self.request.user
-        search = self.request.query_params.get('search', '').strip()
         user_roles = user.roles or [user.role]
 
         # Base queryset según rol del usuario logueado
@@ -55,16 +62,61 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             qs = User.objects.none()
 
+        return qs
+
+    def _stats_for(self, qs):
+        users = list(qs.values('role', 'roles'))
+        return {
+            'total': len(users),
+            'students': sum(1 for item in users if item['role'] == 'STUDENT'),
+            'teachers': sum(1 for item in users if item['role'] == 'TEACHER'),
+            'coordinators': sum(
+                1 for item in users
+                if 'COORDINATOR' in (item.get('roles') or [])
+            ),
+            'admins': sum(1 for item in users if item['role'] == 'ADMIN'),
+        }
+
+    def get_queryset(self):
+        search = self.request.query_params.get('search', '').strip()
+        role = self.request.query_params.get('role', '').strip()
+        qs = self._base_queryset()
+
         # Filtro de búsqueda adicional
         if search:
             qs = qs.filter(
                 Q(first_name__icontains=search) |
                 Q(last_name__icontains=search)  |
                 Q(username__icontains=search)   |
-                Q(email__icontains=search)
+                Q(email__icontains=search)      |
+                Q(document_number__icontains=search)
             )
 
-        return qs.order_by('first_name', 'last_name')
+        if role and role != 'ALL':
+            qs = qs.filter(
+                Q(role=role) |
+                Q(roles__contains=[role])
+            )
+
+        return (
+            qs.select_related('faculty', 'program')
+              .prefetch_related('coordinator_profiles__program')
+              .only(
+                  'id', 'username', 'first_name', 'last_name', 'email', 'role',
+                  'roles', 'document_number', 'second_name', 'second_lastname',
+                  'personal_email', 'phone_number', 'photo', 'faculty_id',
+                  'program_id', 'faculty__name', 'program__name',
+              )
+              .order_by('first_name', 'last_name', 'id')
+        )
+
+    def list(self, request, *args, **kwargs):
+        filtered_qs = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(filtered_qs)
+        serializer = self.get_serializer(page, many=True)
+        response = self.get_paginated_response(serializer.data)
+        response.data['stats'] = self._stats_for(self._base_queryset())
+        return response
 
     def create(self, request, *args, **kwargs):
         """Crear usuario — solo ADMIN."""

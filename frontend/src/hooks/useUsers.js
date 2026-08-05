@@ -1,13 +1,25 @@
 // hooks/useUsers.js
-// Encapsula la carga de usuarios y catálogos, el toast, y la eliminación.
-// El form (crear/editar) vive dentro de UserFormModal como estado local.
+// Encapsula carga paginada de usuarios, catálogos, toasts y eliminación.
 
 import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
 
-export function useUsers() {
+const DEFAULT_STATS = {
+    total: 0,
+    students: 0,
+    teachers: 0,
+    coordinators: 0,
+    admins: 0,
+};
+
+export function useUsers(initialRole = 'ALL') {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeRole, setActiveRole] = useState(initialRole);
+    const [pagination, setPagination] = useState({ count: 0, next: null, previous: null });
+    const [stats, setStats] = useState(DEFAULT_STATS);
     const [faculties, setFaculties] = useState([]);
     const [allPrograms, setAllPrograms] = useState([]);
     const [toast, setToast] = useState(null);
@@ -18,16 +30,35 @@ export function useUsers() {
         setTimeout(() => setToast(null), 4000);
     }, []);
 
-    const fetchUsers = useCallback(async () => {
+    const fetchUsers = useCallback(async (options = {}) => {
+        const nextPage = options.page ?? page;
+        const nextSearch = options.searchTerm ?? searchTerm;
+        const nextRole = options.activeRole ?? activeRole;
+
         try {
-            const res = await api.get('/users/');
-            setUsers(res.data);
+            setLoading(true);
+            const res = await api.get('/users/', {
+                params: {
+                    page: nextPage,
+                    page_size: 25,
+                    search: nextSearch || undefined,
+                    role: nextRole !== 'ALL' ? nextRole : undefined,
+                },
+            });
+            const payload = res.data;
+            setUsers(Array.isArray(payload) ? payload : payload.results || []);
+            setPagination({
+                count: Array.isArray(payload) ? payload.length : payload.count || 0,
+                next: Array.isArray(payload) ? null : payload.next,
+                previous: Array.isArray(payload) ? null : payload.previous,
+            });
+            setStats(payload.stats || DEFAULT_STATS);
         } catch {
             showToast('Error al cargar usuarios', 'error');
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, [activeRole, page, searchTerm, showToast]);
 
     const fetchCatalogs = useCallback(async () => {
         try {
@@ -43,11 +74,15 @@ export function useUsers() {
     }, []);
 
     useEffect(() => {
-        queueMicrotask(() => {
-            fetchUsers();
-            fetchCatalogs();
-        });
-    }, [fetchUsers, fetchCatalogs]);
+        fetchCatalogs();
+    }, [fetchCatalogs]);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            fetchUsers({ page, searchTerm, activeRole });
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [activeRole, fetchUsers, page, searchTerm]);
 
     const handleDelete = async (userId) => {
         try {
@@ -60,20 +95,12 @@ export function useUsers() {
         }
     };
 
-    // Estadísticas derivadas del listado
-    const stats = {
-        total: users.length,
-        students: users.filter(u => u.role === 'STUDENT').length,
-        teachers: users.filter(u => u.role === 'TEACHER').length,
-        coordinators: users.filter(u => (u.roles || []).includes('COORDINATOR')).length,
-        admins: users.filter(u => u.role === 'ADMIN').length,
-    };
-
     return {
         users, loading, faculties, allPrograms,
+        page, setPage, searchTerm, setSearchTerm,
+        activeRole, setActiveRole, pagination,
         toast, setToast, showToast,
         deleteConfirm, setDeleteConfirm,
-        fetchUsers, handleDelete,
-        stats,
+        fetchUsers, handleDelete, stats,
     };
 }

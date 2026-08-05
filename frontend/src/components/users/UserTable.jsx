@@ -55,7 +55,7 @@ export default function UserTable({ users, onEdit, onDelete }) {
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold overflow-hidden flex-shrink-0">
                                             {user.photo
-                                                ? <img src={getMediaUrl(user.photo)} alt="" className="w-full h-full object-cover" />
+                                                ? <img src={getMediaUrl(user.photo)} alt="" loading="lazy" className="w-full h-full object-cover" />
                                                 : <span>{user.first_name?.[0]}{user.last_name?.[0]}</span>
                                             }
                                         </div>
