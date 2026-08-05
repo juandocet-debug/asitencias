@@ -1,18 +1,18 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 // pages/ClassDetails.jsx  — Orquestador (~110 líneas)
 // La lógica de cada sección vive en sus propios componentes.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Users, Edit2, X, User, Mail, Phone, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Edit2, X, User, Mail, Phone, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import { getMediaUrl } from '../utils/dateUtils';
 
 import Toast from '../components/ui/Toast';
 import ClassActionsBar from '../components/classDetails/ClassActionsBar';
-import StudentAbsencesSection from '../components/classDetails/StudentAbsencesSection';
 import StudentListSection from '../components/classDetails/StudentListSection';
+import StudentClassGameView from '../components/classDetails/StudentClassGameView';
 import AttendanceModal from '../components/AttendanceModal';
 import ScheduleModal from '../components/ScheduleModal';
 import ManageStudentsModal from '../components/reports/ManageStudentsModal';
@@ -27,7 +27,7 @@ export default function ClassDetails() {
     const isStudent = activeRole === 'STUDENT';
     const isAdmin = activeRole === 'ADMIN' || (activeRole == null && user?.is_superuser === true);
 
-    // ── State ────────────────────────────────────────────────────────
+    // -- State --------------------------------------------------------
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
@@ -44,7 +44,7 @@ export default function ClassDetails() {
         setToast({ message, type });
     }, []);
 
-    // ── Fetch ─────────────────────────────────────────────────────────
+    // -- Fetch ---------------------------------------------------------
     useEffect(() => { fetchCourse(); }, [id]);
 
     const fetchCourse = async () => {
@@ -82,15 +82,32 @@ export default function ClassDetails() {
         } catch { showToast('Error al guardar el horario', 'error'); }
     };
 
-    // ── Guards ────────────────────────────────────────────────────────
+    // -- Guards --------------------------------------------------------
     if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-upn-600" /></div>;
     if (!course) return <div className="p-8 text-center text-slate-500">Clase no encontrada</div>;
+
+    if (isStudent) {
+        return (
+            <>
+                {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+                <StudentClassGameView
+                    course={course}
+                    checkins={openCheckins}
+                    myAbsences={myAbsences}
+                    onBack={() => navigate('/classes')}
+                    onDone={() => { fetchOpenCheckins(); fetchAbsences(); }}
+                    onExcuseSubmitted={fetchAbsences}
+                    showToast={showToast}
+                />
+            </>
+        );
+    }
 
     return (
         <div className="space-y-6 pb-20 md:pb-0">
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-            {/* ── Header ── */}
+            {/* -- Header -- */}
             <div className="flex items-center gap-4">
                 <button onClick={() => navigate('/classes')} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
                     <ArrowLeft size={24} />
@@ -111,7 +128,7 @@ export default function ClassDetails() {
                 </div>
             </div>
 
-            {/* ── Acciones (profesor/admin) ── */}
+            {/* -- Acciones (profesor/admin) -- */}
             {!isStudent && (
                 <ClassActionsBar
                     course={course} isAdmin={isAdmin} courseId={id}
@@ -121,14 +138,11 @@ export default function ClassDetails() {
                 />
             )}
 
-            {/* ── Vista estudiante: mis faltas ── */}
-            {isStudent && <StudentClassCheckin checkins={openCheckins} onDone={() => { fetchOpenCheckins(); fetchAbsences(); }} showToast={showToast} />}
-            {isStudent && <StudentAbsencesSection myAbsences={myAbsences} onExcuseSubmitted={fetchAbsences} showToast={showToast} />}
-
+            {/* -- Vista estudiante: mis faltas -- */}
             {/* Vista profesor: lista de estudiantes */}
-            {!isStudent && <StudentListSection students={course.students || []} onSelectStudent={setSelectedStudent} getMediaUrl={getMediaUrl} />}
+            <StudentListSection students={course.students || []} onSelectStudent={setSelectedStudent} getMediaUrl={getMediaUrl} />
 
-            {/* ── Modal QR ── */}
+            {/* -- Modal QR -- */}
             {qrOpen && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setQrOpen(false)}>
                     <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center relative shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -143,7 +157,7 @@ export default function ClassDetails() {
                 </div>
             )}
 
-            {/* ── Modal foto estudiante ── */}
+            {/* -- Modal foto estudiante -- */}
             {selectedStudent && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
                     <div className="max-w-md w-full bg-white rounded-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -165,7 +179,7 @@ export default function ClassDetails() {
                 </div>
             )}
 
-            {/* ── Modales de lógica ── */}
+            {/* -- Modales de lógica -- */}
             <AttendanceModal
                 isOpen={attendanceOpen} onClose={() => setAttendanceOpen(false)}
                 courseId={id} students={course.students || []}
@@ -186,82 +200,4 @@ export default function ClassDetails() {
     );
 }
 
-function StudentClassCheckin({ checkins, onDone, showToast }) {
-    const [code, setCode] = useState('');
-    const [reward, setReward] = useState(null);
-    const [saving, setSaving] = useState(false);
-    const open = checkins.find(item => !item.already_marked);
-    if (!open && !reward) return null;
 
-    const submit = async () => {
-        if (!code.trim()) return;
-        setSaving(true);
-        try {
-            const { data } = await api.post('/academic/attendance/self_checkin/', {
-                session_id: open.session_id,
-                code: code.trim().toUpperCase(),
-            });
-            setCode('');
-            setReward(data.reward);
-            showToast('Asistencia registrada correctamente', 'success');
-            onDone?.();
-        } catch (error) {
-            showToast(error.response?.data?.error || 'No se pudo registrar la asistencia', 'error');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    if (reward) {
-        return <RewardCard reward={reward} onClose={() => setReward(null)} />;
-    }
-
-    return (
-        <section className="rounded-[2rem] bg-[#f0edff] p-4 shadow-sm ring-1 ring-violet-100">
-            <div className="flex items-start gap-3">
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#7657f6] text-white">
-                    <CheckCircle size={22} />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7657f6]">Asistencia abierta</p>
-                    <h3 className="mt-1 text-xl font-black text-slate-900">Estoy en clase</h3>
-                    <p className="mt-1 text-sm font-semibold text-slate-500">Ingresa el código que está mostrando el profesor.</p>
-                </div>
-            </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
-                <input
-                    value={code}
-                    onChange={event => setCode(event.target.value.toUpperCase())}
-                    placeholder="CÓDIGO"
-                    className="rounded-2xl border border-white bg-white px-4 py-3 text-center font-black uppercase tracking-[0.18em] outline-none focus:ring-4 focus:ring-violet-100"
-                />
-                <button
-                    onClick={submit}
-                    disabled={saving || !code.trim()}
-                    className="rounded-2xl bg-gradient-to-br from-[#8b6dff] to-[#7657f6] px-5 py-3 text-sm font-black text-white shadow-xl shadow-violet-200 disabled:opacity-60"
-                >
-                    {saving ? 'Marcando...' : 'Marcar asistencia'}
-                </button>
-            </div>
-        </section>
-    );
-}
-
-function RewardCard({ reward, onClose }) {
-    return (
-        <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#8b6dff] to-[#7657f6] p-5 text-white shadow-xl shadow-violet-200">
-            <div className="flex items-center gap-4">
-                <div className="animate-bounce text-5xl drop-shadow-lg">{reward.icon}</div>
-                <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70">Recompensa</p>
-                    <h3 className="mt-1 text-xl font-black">{reward.title}</h3>
-                    <p className="mt-1 text-sm font-semibold text-white/75">{reward.message}</p>
-                </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between rounded-2xl bg-white/15 p-3">
-                <span className="text-sm font-black">+{reward.points} puntos</span>
-                <button onClick={onClose} className="rounded-xl bg-white px-4 py-2 text-xs font-black text-[#7657f6]">Listo</button>
-            </div>
-        </section>
-    );
-}

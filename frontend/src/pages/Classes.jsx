@@ -6,6 +6,7 @@ import api from '../services/api';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CourseCard from '../components/classes/CourseCard';
 import CourseFormModal from '../components/classes/CourseFormModal';
+import StudentClassesView from '../components/classes/StudentClassesView';
 import MobilePageFrame from '../components/mobile/MobilePageFrame';
 import MobileHero from '../components/mobile/MobileHero';
 import SoftCard from '../components/mobile/SoftCard';
@@ -28,6 +29,7 @@ export default function Classes() {
     const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
     const [archiveView, setArchiveView] = useState('active');
     const canManage = activeRole === 'ADMIN' || activeRole === 'TEACHER';
+    const isStudent = activeRole === 'STUDENT';
 
     useEffect(() => { fetchCourses(); }, [archiveView]);
 
@@ -94,6 +96,23 @@ export default function Classes() {
     const availableYears = [...new Set(courses.map(course => course.year))].sort((a, b) => b - a);
     if (!availableYears.includes(currentYear)) availableYears.unshift(currentYear);
     const filteredCourses = courses.filter(course => selectedYear === 'Todos' || String(course.year) === String(selectedYear));
+
+    if (isStudent) {
+        return (
+            <StudentClassesView
+                courses={filteredCourses}
+                loading={loading}
+                selectedYear={selectedYear}
+                availableYears={availableYears}
+                archiveView={archiveView}
+                yearOpen={yearDropdownOpen}
+                setYearOpen={setYearDropdownOpen}
+                setSelectedYear={setSelectedYear}
+                setArchiveView={setArchiveView}
+                onOpen={course => navigate(`/classes/${course.id}`)}
+            />
+        );
+    }
 
     return (
         <MobilePageFrame>

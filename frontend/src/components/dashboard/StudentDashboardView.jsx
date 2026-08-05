@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, AlertCircle, Award, BookOpen, Calendar, CheckCircle, Clock, Radio, Shield, Star, Zap } from 'lucide-react';
+import { Activity, AlertCircle, Calendar, CheckCircle, Clock, Star, Zap } from 'lucide-react';
 import api from '../../services/api';
 
 const missionTones = {
@@ -20,10 +20,10 @@ export default function StudentDashboardView({ user, stats, checkins, onRefresh,
             <div className="relative mx-auto w-full max-w-md space-y-5 md:max-w-6xl md:space-y-7">
                 <PlayerHero user={user} stats={data} />
                 <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                    <MissionCard tone="violet" icon={BookOpen} title="Mis clases" value={data.total_courses || 0} detail="Cursos activos" />
-                    <MissionCard tone="rose" icon={Activity} title="Asistencia" value={`${data.attendance_rate || 0}%`} detail="Promedio global" />
-                    <MissionCard tone="amber" icon={Star} title="Puntos" value={data.points || 0} detail={`${data.stars || 0} estrellas`} />
-                    <MissionCard tone="emerald" icon={Shield} title="Faltas" value={data.total_absences || 0} detail="Gestionar excusas" onClick={() => navigate('/my-absences')} />
+                    <MissionCard tone="violet" glyph="✦" title="Mis clases" value={data.total_courses || 0} detail="Cursos activos" />
+                    <MissionCard tone="rose" glyph="◆" title="Asistencia" value={`${data.attendance_rate || 0}%`} detail="Promedio global" />
+                    <MissionCard tone="amber" glyph="★" title="Puntos" value={data.points || 0} detail={`${data.stars || 0} estrellas`} />
+                    <MissionCard tone="emerald" glyph="⬡" title="Faltas" value={data.total_absences || 0} detail="Gestionar excusas" onClick={() => navigate('/my-absences')} />
                 </section>
                 <ProgressHud stats={data} history={stats.recent_attendance || []} />
                 <div className="grid gap-5 lg:grid-cols-[1.35fr_0.9fr]">
@@ -70,14 +70,14 @@ function PlayerHero({ user, stats }) {
     );
 }
 
-function MissionCard({ icon: Icon, title, value, detail, tone, onClick }) {
+function MissionCard({ glyph, title, value, detail, tone, onClick }) {
     const Tag = onClick ? 'button' : 'div';
     return (
         <Tag onClick={onClick} className={`group relative min-h-[8.9rem] overflow-hidden rounded-[1.7rem] border bg-gradient-to-br ${missionTones[tone]} to-black/20 p-4 text-left shadow-2xl transition active:scale-[0.98]`}>
             <HudCorners small />
             <div className="absolute -right-8 top-8 h-20 w-20 rounded-full bg-white/10 blur-sm transition group-hover:scale-125" />
             <div className="relative flex h-full flex-col justify-between">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/30 bg-black/25 shadow-[0_0_16px_currentColor]"><Icon size={20} /></div>
+                <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/30 bg-black/25 text-xl font-black shadow-[0_0_16px_currentColor]">{glyph}</div>
                 <div>
                     <p className="text-3xl font-black italic leading-none text-white">{value}</p>
                     <h3 className="mt-1 text-sm font-black">{title}</h3>
@@ -105,10 +105,10 @@ function ProgressHud({ stats, history }) {
                     <LevelBadge xp={xp} xpWidth={xpWidth} />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <HudMetric tone="violet" icon={<Award size={30} />} label="Puntos" value={stats.points || 0} />
-                    <HudMetric tone="amber" icon={<Star size={30} fill="currentColor" />} label="Estrellas" value={stats.stars || 0} />
-                    <HudMetric tone="emerald" icon={<CheckCircle size={30} />} label="Presentes" value={stats.total_present || 0} />
-                    <HudMetric tone="rose" icon={<Clock size={30} />} label="Retardos" value={stats.total_lates || 0} />
+                    <HudMetric tone="violet" glyph="◇" label="Puntos" value={stats.points || 0} />
+                    <HudMetric tone="amber" glyph="★" label="Estrellas" value={stats.stars || 0} />
+                    <HudMetric tone="emerald" glyph="✓" label="Presentes" value={stats.total_present || 0} />
+                    <HudMetric tone="rose" glyph="⏱" label="Retardos" value={stats.total_lates || 0} />
                 </div>
                 <AttendanceHistory history={history} />
             </div>
@@ -132,7 +132,7 @@ function LevelBadge({ xp, xpWidth }) {
     );
 }
 
-function HudMetric({ icon, label, value, tone }) {
+function HudMetric({ glyph, label, value, tone }) {
     const tones = {
         violet: 'border-violet-400/50 text-violet-200 from-violet-500/25',
         amber: 'border-amber-400/50 text-amber-200 from-amber-500/25',
@@ -143,7 +143,7 @@ function HudMetric({ icon, label, value, tone }) {
         <div className={`relative overflow-hidden rounded-[1.5rem] border bg-gradient-to-br ${tones[tone]} to-transparent p-4 shadow-[0_0_24px_rgba(118,87,246,0.18)]`}>
             <div className="absolute inset-x-4 bottom-3 h-1 rounded-full bg-white/10"><div className="h-full w-2/3 rounded-full bg-current shadow-[0_0_10px_currentColor]" /></div>
             <div className="flex items-center gap-4 pb-4">
-                <div className="grid h-16 w-16 place-items-center rounded-2xl border border-current/40 bg-black/25 shadow-[0_0_22px_currentColor]">{icon}</div>
+                <div className="grid h-16 w-16 place-items-center rounded-2xl border border-current/40 bg-black/25 text-3xl font-black shadow-[0_0_22px_currentColor]">{glyph}</div>
                 <div><p className="text-4xl font-black italic text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.35)]">{value}</p><p className="text-sm font-black">{label}</p></div>
             </div>
         </div>
