@@ -56,17 +56,18 @@ export function useAttendanceModal({ isOpen, courseId, students, initialDate }) 
                 const hasExisting = Object.keys(existing).length > 0;
                 setIsExistingSession(hasExisting);
 
-                // Pre-cargar: existente si hay, PRESENT si es nueva fecha
+                // Pre-cargar: existente si hay, ABSENT si es nueva fecha.
+                // Así el estudiante no aparece presente hasta marcarse o ser marcado.
                 const newData = {};
                 students.forEach(s => {
-                    newData[s.id] = existing[String(s.id)] || 'PRESENT';
+                    newData[s.id] = existing[String(s.id)] || 'ABSENT';
                 });
                 setAttendanceData(newData);
             } catch {
                 if (cancelled) return;
-                // Fallback: todos en PRESENT
+                // Fallback seguro: nadie queda presente sin confirmación.
                 const newData = {};
-                students.forEach(s => { newData[s.id] = 'PRESENT'; });
+                students.forEach(s => { newData[s.id] = 'ABSENT'; });
                 setAttendanceData(newData);
                 setIsExistingSession(false);
             } finally {
@@ -130,7 +131,7 @@ export function useAttendanceModal({ isOpen, courseId, students, initialDate }) 
             });
         } else {
             setAttendanceData(prev => {
-                const cur = prev[studentId] || 'PRESENT';
+                const cur = prev[studentId] || 'ABSENT';
                 const nxt = cur === 'PRESENT' ? 'ABSENT' : (cur === 'ABSENT' ? 'LATE' : 'PRESENT');
                 return { ...prev, [studentId]: nxt };
             });
