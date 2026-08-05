@@ -93,6 +93,12 @@ class DashboardViewSet(viewsets.ViewSet):
 
             total_recorded = total_present + total_late + total_absent + excused
             global_rate = round(((total_present + total_late + excused) / total_recorded) * 100, 1) if total_recorded > 0 else 0
+            recent = Attendance.objects.filter(
+                student=user,
+                session__course__in=courses,
+            ).select_related('session', 'session__course').order_by('-session__date')[:8]
+            badges = getattr(user, 'badges', None)
+            badge_count = badges.count() if badges else 0
 
             return Response({
                 'role': 'STUDENT',
@@ -101,9 +107,21 @@ class DashboardViewSet(viewsets.ViewSet):
                     'attendance_rate': global_rate,
                     'total_absences': total_absent,
                     'total_lates': total_late,
+                    'total_present': total_present,
+                    'total_recorded': total_recorded,
+                    'points': total_present * 10 + total_late * 2,
+                    'stars': badge_count,
                     'alerts': alerts
                 },
-                'today_classes': today_classes
+                'today_classes': today_classes,
+                'recent_attendance': [
+                    {
+                        'course_name': item.session.course.name,
+                        'date': item.session.date.isoformat(),
+                        'status': item.status,
+                    }
+                    for item in recent
+                ],
             })
 
         elif effective == 'ADMIN':

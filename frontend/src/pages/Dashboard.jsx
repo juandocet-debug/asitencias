@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, AlertCircle, BookOpen, Calendar, CheckCircle, Clock, Edit2, Users } from 'lucide-react';
+import { Activity, AlertCircle, Award, BookOpen, Calendar, CheckCircle, Clock, Edit2, Star, Users } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 import ScheduleModal from '../components/ScheduleModal';
@@ -81,6 +81,8 @@ export default function Dashboard() {
                 ))}
             </section>
 
+            {isStudent && <StudentProgress stats={stats.stats || {}} history={stats.recent_attendance || []} />}
+
             <div className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
                 <section className="space-y-3">
                     <SectionHeader title="Clases de hoy" actionLabel="Ver clases" onAction={() => navigate('/classes')} />
@@ -136,8 +138,8 @@ function buildCards({ stats, isStudent, navigate }) {
         return [
             { title: 'Mis clases', value: data.total_courses || 0, icon: BookOpen, detail: 'Cursos activos' },
             { title: 'Asistencia', value: `${data.attendance_rate || 0}%`, icon: Activity, detail: 'Promedio global' },
+            { title: 'Puntos', value: data.points || 0, icon: Star, detail: `${data.stars || 0} estrellas` },
             { title: 'Faltas', value: data.total_absences || 0, icon: AlertCircle, detail: 'Gestionar excusas', onClick: () => navigate('/my-absences') },
-            { title: 'Hoy', value: stats.today_classes?.length || 0, icon: Calendar, detail: 'Clases programadas' },
         ];
     }
     return [
@@ -146,6 +148,59 @@ function buildCards({ stats, isStudent, navigate }) {
         { title: 'Clases hoy', value: data.today_sessions || 0, icon: Calendar },
         { title: 'Asistencia', value: `${data.today_attendance_rate || 0}%`, icon: CheckCircle },
     ];
+}
+
+function StudentProgress({ stats, history }) {
+    const labels = {
+        PRESENT: ['Presente', 'bg-emerald-50 text-emerald-700', '✓'],
+        LATE: ['Retardo', 'bg-amber-50 text-amber-700', '⏰'],
+        ABSENT: ['Falta', 'bg-red-50 text-red-700', '×'],
+        EXCUSED: ['Excusa', 'bg-slate-100 text-slate-600', '•'],
+    };
+
+    return (
+        <SoftCard className="space-y-4 bg-white/90">
+            <div className="flex items-center justify-between gap-3">
+                <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#7657f6]">Mi progreso</p>
+                    <h3 className="mt-1 text-xl font-black text-[#172033]">Puntos, estrellas y asistencias</h3>
+                </div>
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#f0edff] text-2xl">⭐</div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <MiniMetric icon={<Star size={17} />} label="Puntos" value={stats.points || 0} />
+                <MiniMetric icon={<Award size={17} />} label="Estrellas" value={stats.stars || 0} />
+                <MiniMetric icon={<CheckCircle size={17} />} label="Presentes" value={stats.total_present || 0} />
+                <MiniMetric icon={<Clock size={17} />} label="Retardos" value={stats.total_lates || 0} />
+            </div>
+            <div className="space-y-2">
+                <p className="text-sm font-black text-[#172033]">Últimas asistencias</p>
+                {history.length ? history.map((item, index) => {
+                    const status = labels[item.status] || labels.ABSENT;
+                    return (
+                        <div key={`${item.date}-${index}`} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
+                            <span className={`grid h-9 w-9 place-items-center rounded-xl text-sm font-black ${status[1]}`}>{status[2]}</span>
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-black text-[#172033]">{item.course_name}</p>
+                                <p className="text-xs font-semibold text-slate-400">{item.date}</p>
+                            </div>
+                            <span className={`rounded-full px-3 py-1 text-xs font-black ${status[1]}`}>{status[0]}</span>
+                        </div>
+                    );
+                }) : <p className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-400">Aún no tienes asistencias registradas.</p>}
+            </div>
+        </SoftCard>
+    );
+}
+
+function MiniMetric({ icon, label, value }) {
+    return (
+        <div className="rounded-2xl bg-[#f7f5ff] p-3">
+            <div className="mb-2 grid h-9 w-9 place-items-center rounded-xl bg-white text-[#7657f6] shadow-sm">{icon}</div>
+            <p className="text-xl font-black text-[#172033]">{value}</p>
+            <p className="text-xs font-bold text-slate-500">{label}</p>
+        </div>
+    );
 }
 
 function Filters({ year, period, setYear, setPeriod }) {
