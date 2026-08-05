@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileSpreadsheet, History, Loader2, RotateCcw, Upload, X } from 'lucide-react';
+import { FileSpreadsheet, History, Loader2, RotateCcw, Trash2, Upload, X } from 'lucide-react';
 import api from '../../services/api';
 
 export default function DirectoryImportModal({ onClose, onImported }) {
@@ -46,15 +46,16 @@ export default function DirectoryImportModal({ onClose, onImported }) {
         }
     };
 
-    const revertBatch = async (batch) => {
-        if (!window.confirm(`¿Revertir la carga "${batch.file_name}"?`)) return;
+    const deleteBatch = async (batch) => {
+        const action = batch.is_reverted ? 'eliminar del histórico' : 'revertir';
+        if (!window.confirm(`¿Deseas ${action} la carga "${batch.file_name}"?`)) return;
         setLoading(true);
         try {
             await api.delete(`/users/directory/imports/${batch.id}/`);
             await loadHistory();
             onImported?.();
         } catch (err) {
-            setError(err.response?.data?.error || 'No se pudo revertir la carga.');
+            setError(err.response?.data?.error || 'No se pudo procesar la carga.');
         } finally {
             setLoading(false);
         }
@@ -67,7 +68,7 @@ export default function DirectoryImportModal({ onClose, onImported }) {
                 <Header onClose={onClose} />
                 <div className="grid max-h-[78vh] gap-5 overflow-y-auto p-6 lg:grid-cols-[1fr_1fr]">
                     <ImportForm file={file} setFile={setFile} loading={loading} onSubmit={submit} />
-                    <HistoryPanel loading={historyLoading} history={history} onRevert={revertBatch} />
+                    <HistoryPanel loading={historyLoading} history={history} onDelete={deleteBatch} />
                     {error && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 lg:col-span-2">{error}</div>}
                     {result && <ImportResult result={result} />}
                 </div>
@@ -107,20 +108,20 @@ function ImportForm({ file, setFile, loading, onSubmit }) {
     );
 }
 
-function HistoryPanel({ loading, history, onRevert }) {
+function HistoryPanel({ loading, history, onDelete }) {
     return (
         <div className="space-y-3 rounded-3xl border border-slate-100 bg-slate-50 p-4">
             <div className="flex items-center gap-2 font-black text-slate-800"><History size={18} /> Histórico de cargas</div>
             {loading && <div className="text-sm font-bold text-blue-600">Cargando histórico...</div>}
             {!loading && history.length === 0 && <div className="text-sm font-semibold text-slate-400">Aún no hay cargas registradas.</div>}
             <div className="max-h-80 space-y-3 overflow-auto pr-1">
-                {history.map(batch => <HistoryItem key={batch.id} batch={batch} onRevert={onRevert} />)}
+                {history.map(batch => <HistoryItem key={batch.id} batch={batch} onDelete={onDelete} />)}
             </div>
         </div>
     );
 }
 
-function HistoryItem({ batch, onRevert }) {
+function HistoryItem({ batch, onDelete }) {
     return (
         <div className="rounded-2xl bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
@@ -135,9 +136,13 @@ function HistoryItem({ batch, onRevert }) {
             <p className="mt-2 text-xs font-bold text-slate-500">
                 {batch.created_count} creados · {batch.updated_count} actualizados · {batch.skipped_count} omitidos
             </p>
-            {!batch.is_reverted && (
-                <button type="button" onClick={() => onRevert(batch)} className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-black text-red-600">
+            {!batch.is_reverted ? (
+                <button type="button" onClick={() => onDelete(batch)} className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-black text-red-600">
                     <RotateCcw size={14} /> Revertir carga
+                </button>
+            ) : (
+                <button type="button" onClick={() => onDelete(batch)} className="mt-3 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">
+                    <Trash2 size={14} /> Eliminar del histórico
                 </button>
             )}
         </div>

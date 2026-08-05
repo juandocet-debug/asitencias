@@ -65,6 +65,9 @@ def directory_batch_detail(request, batch_id):
     except DirectoryImportBatch.DoesNotExist:
         return Response({'error': 'Carga no encontrada.'}, status=404)
     if request.method == 'DELETE':
+        if batch.is_reverted:
+            batch.delete()
+            return Response({'message': 'Registro eliminado del histórico.'})
         affected = revert_directory_batch(batch)
         return Response({'message': 'Carga revertida.', 'affected': affected})
     entries = batch.entries.select_related('user')[:200]
