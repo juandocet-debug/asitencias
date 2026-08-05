@@ -63,7 +63,7 @@ export default function Dashboard() {
         }
     };
 
-    if (loading) return <LoadingState />;
+    if (loading) return isStudent ? <GameLoadingState /> : <LoadingState />;
     if (!stats) return null;
 
     if (isStudent) {
@@ -196,5 +196,24 @@ function LoadingState() {
         <div className="grid h-64 place-items-center">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-violet-200 border-t-[#7657f6]" />
         </div>
+    );
+}
+
+function GameLoadingState() {
+    return (
+        <section className="relative grid min-h-full place-items-center overflow-hidden bg-[#050219] px-6 py-24 text-white">
+            <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(139,109,255,0.42),transparent_30%),radial-gradient(circle_at_78%_18%,rgba(255,198,76,0.16),transparent_24%),linear-gradient(180deg,#120934_0%,#06021a_55%,#03010d_100%)]" />
+            <div className="pointer-events-none fixed inset-0 opacity-[0.16] [background-image:linear-gradient(rgba(139,109,255,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(139,109,255,.35)_1px,transparent_1px)] [background-size:42px_42px]" />
+            <div className="relative rounded-[2rem] border border-violet-300/35 bg-[#10072e]/90 p-8 text-center shadow-[0_0_55px_rgba(118,87,246,0.38)]">
+                <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.6rem] border border-violet-300/45 bg-black/25 text-3xl shadow-[0_0_24px_rgba(139,109,255,0.55)]">
+                    <span className="animate-pulse">✦</span>
+                </div>
+                <div className="mx-auto mt-5 h-2 w-48 overflow-hidden rounded-full bg-violet-950">
+                    <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 shadow-[0_0_14px_rgba(139,109,255,0.9)]" />
+                </div>
+                <p className="mt-4 text-[11px] font-black uppercase tracking-[0.28em] text-violet-300">Cargando misión</p>
+                <p className="mt-1 text-sm font-semibold text-violet-100/70">Preparando tu tablero de jugador...</p>
+            </div>
+        </section>
     );
 }

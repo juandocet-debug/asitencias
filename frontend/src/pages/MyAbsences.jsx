@@ -1,234 +1,200 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
-import { AlertCircle, FileText, Upload, CheckCircle, ArrowLeft, Loader2, X, Clock, BookOpen, Calendar } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, BookOpen, Calendar, CheckCircle, FileText, Loader2, Upload, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-
-// Toast Component local
-function Toast({ message, type, onClose }) {
-    useEffect(() => {
-        const timer = setTimeout(onClose, 4000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
-
-    const bgColor = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800';
-    return (
-        <div className={`fixed bottom-6 right-6 ${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-[100] animate-in slide-in-from-bottom-5 duration-300`}>
-            <span className="font-medium">{message}</span>
-            <button onClick={onClose}>
-                <X size={16} />
-            </button>
-        </div>
-    );
-}
 
 export default function MyAbsences() {
     const navigate = useNavigate();
     const [absences, setAbsences] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
-
-    // Modal state for excuse
-    const [excuseModalOpen, setExcuseModalOpen] = useState(false);
     const [selectedAbsence, setSelectedAbsence] = useState(null);
     const [excuseNote, setExcuseNote] = useState('');
     const [excuseFile, setExcuseFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        fetchAbsences();
-    }, []);
+    useEffect(() => { fetchAbsences(); }, []);
 
     const fetchAbsences = async () => {
         try {
             const res = await api.get('/academic/attendance/all_my_absences/');
             setAbsences(res.data);
-        } catch (error) {
-            console.error(error);
-            showToast("Error al cargar faltas", "error");
+        } catch {
+            setToast({ message: 'Error al cargar faltas', type: 'error' });
         } finally {
             setLoading(false);
         }
     };
 
-    const showToast = (message, type = 'success') => setToast({ message, type });
+    const closeModal = () => {
+        setSelectedAbsence(null);
+        setExcuseNote('');
+        setExcuseFile(null);
+    };
 
-    const handleExcuseSubmit = async (e) => {
-        e.preventDefault();
+    const handleExcuseSubmit = async (event) => {
+        event.preventDefault();
         setSubmitting(true);
         const formData = new FormData();
         formData.append('attendance_id', selectedAbsence.id);
         formData.append('excuse_note', excuseNote);
-        if (excuseFile) {
-            formData.append('excuse_file', excuseFile);
-        }
-
+        if (excuseFile) formData.append('excuse_file', excuseFile);
         try {
-            await api.post('/academic/attendance/submit_excuse/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            showToast('Excusa enviada correctamente', 'success');
-            setExcuseModalOpen(false);
-            setExcuseNote('');
-            setExcuseFile(null);
+            await api.post('/academic/attendance/submit_excuse/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            setToast({ message: 'Excusa enviada correctamente', type: 'success' });
+            closeModal();
             fetchAbsences();
         } catch (error) {
-            showToast(error.response?.data?.error || 'Error al enviar excusa', 'error');
+            setToast({ message: error.response?.data?.error || 'Error al enviar excusa', type: 'error' });
         } finally {
             setSubmitting(false);
         }
     };
 
-    if (loading) return (
-        <div className="flex items-center justify-center h-screen">
-            <Loader2 className="w-8 h-8 animate-spin text-upn-600" />
-        </div>
-    );
+    if (loading) return <GameLoading />;
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-20 p-4">
-            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <section className="relative min-h-full overflow-hidden bg-[#050219] px-4 pb-28 pt-5 text-white md:px-8 md:pb-10">
+            <GameBackdrop />
+            <div className="relative mx-auto w-full max-w-md space-y-5 md:max-w-5xl">
+                {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+                <header className="relative overflow-hidden rounded-[2.2rem] border border-violet-300/35 bg-[#10072e]/90 p-5 shadow-[0_0_60px_rgba(118,87,246,0.32)]">
+                    <HudCorners />
+                    <button onClick={() => navigate(-1)} className="mb-4 grid h-11 w-11 place-items-center rounded-2xl border border-violet-300/25 bg-white/8 text-violet-100">
+                        <ArrowLeft size={22} />
+                    </button>
+                    <p className="text-[11px] font-black uppercase tracking-[0.32em] text-violet-200">Registro de eventos</p>
+                    <h1 className="mt-2 text-4xl font-black italic leading-none drop-shadow-[0_0_16px_rgba(139,109,255,0.9)]">Faltas y retardos</h1>
+                    <p className="mt-3 text-sm font-semibold text-violet-100/70">Gestiona excusas y mantén limpia tu racha de asistencia.</p>
+                </header>
 
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
-                <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
-                    <ArrowLeft size={24} />
-                </button>
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Mis Faltas y Retardos</h2>
-                    <p className="text-slate-500 text-sm">Gestiona tus excusas médicas o personales por inasistencia.</p>
-                </div>
-            </div>
-
-            {/* Absences List */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden p-8">
-                {absences.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4">
-                        {absences.map(att => (
-                            <div key={att.id} className="group border border-slate-100 rounded-2xl p-6 flex flex-col md:flex-row justify-between md:items-center gap-6 hover:border-upn-200 transition-all bg-slate-50/30 hover:bg-white hover:shadow-lg">
-                                <div className="flex items-center gap-5">
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-sm ${att.status === 'ABSENT' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                                        {att.status === 'ABSENT' ? 'F' : 'R'}
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-md ${att.status === 'ABSENT' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                {att.status_label}
-                                            </span>
-                                            <span className="text-slate-300">•</span>
-                                            <span className="text-sm font-bold text-slate-400 flex items-center gap-1">
-                                                <Calendar size={14} /> {att.date}
-                                            </span>
-                                        </div>
-                                        <h4 className="font-bold text-slate-800 text-lg group-hover:text-upn-700 transition-colors">{att.course_name}</h4>
-                                        <div className="mt-2 flex items-center gap-3">
-                                            <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${att.excuse_status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : att.excuse_status === 'REJECTED' ? 'bg-red-100 text-red-700' : att.excuse_status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${att.excuse_status === 'APPROVED' ? 'bg-emerald-500' : att.excuse_status === 'REJECTED' ? 'bg-red-500' : att.excuse_status === 'PENDING' ? 'bg-amber-500' : 'bg-slate-400'}`}></div>
-                                                {att.excuse_status_label || 'Sin Excusa'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    {!att.has_excuse ? (
-                                        <button
-                                            onClick={() => { setSelectedAbsence(att); setExcuseModalOpen(true); }}
-                                            className="w-full md:w-auto px-6 py-3 bg-upn-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-upn-600/20 hover:bg-upn-700 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 justify-center"
-                                        >
-                                            <Upload size={18} /> Gestionar Excusa
-                                        </button>
-                                    ) : (
-                                        <div className="w-full md:w-auto px-6 py-3 bg-slate-100 text-slate-500 rounded-xl text-sm font-bold flex items-center gap-2 justify-center border border-slate-200">
-                                            <FileText size={18} /> Excusa en Trámite
-                                        </div>
-                                    )}
-                                    <button
-                                        onClick={() => navigate(`/classes/${att.course_id}`)}
-                                        className="p-3 text-slate-400 hover:text-upn-600 hover:bg-upn-50 rounded-xl transition-all"
-                                        title="Ver detalles de la clase"
-                                    >
-                                        <BookOpen size={20} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl text-emerald-500">
-                            <CheckCircle size={40} />
+                <section className="relative overflow-hidden rounded-[2rem] border border-violet-300/30 bg-[#0d0828]/92 p-5 shadow-[0_0_38px_rgba(118,87,246,0.22)]">
+                    <HudCorners />
+                    {absences.length ? (
+                        <div className="space-y-3">
+                            {absences.map(absence => (
+                                <AbsenceCard key={absence.id} absence={absence} onExcuse={() => setSelectedAbsence(absence)} onOpen={() => navigate(`/classes/${absence.course_id}`)} />
+                            ))}
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2">¡Todo al día!</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto">No tienes inasistencias ni retardos registrados en el periodo seleccionado.</p>
-                    </div>
+                    ) : <CleanRecord />}
+                </section>
+
+                {selectedAbsence && (
+                    <ExcuseModal
+                        absence={selectedAbsence}
+                        note={excuseNote}
+                        setNote={setExcuseNote}
+                        setFile={setExcuseFile}
+                        file={excuseFile}
+                        submitting={submitting}
+                        onClose={closeModal}
+                        onSubmit={handleExcuseSubmit}
+                    />
                 )}
             </div>
+        </section>
+    );
+}
 
-            {/* Modal for uploading excuse */}
-            {excuseModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !submitting && setExcuseModalOpen(false)}></div>
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in duration-200">
-                        <div className="p-8">
-                            <h3 className="text-2xl font-bold text-slate-800 mb-2">Enviar Excusa</h3>
-                            <p className="text-slate-500 text-sm mb-6">
-                                {selectedAbsence?.course_name} - {selectedAbsence?.date}
-                            </p>
-
-                            <form onSubmit={handleExcuseSubmit} className="space-y-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Motivo de la inasistencia</label>
-                                    <textarea
-                                        value={excuseNote}
-                                        onChange={(e) => setExcuseNote(e.target.value)}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-upn-500 focus:outline-none min-h-[120px]"
-                                        placeholder="Describe brevemente el motivo..."
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Soporte Médico/Documental (Opcional)</label>
-                                    <div className="relative group">
-                                        <input
-                                            type="file"
-                                            onChange={(e) => setExcuseFile(e.target.files[0])}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                            accept=".pdf,image/*"
-                                        />
-                                        <div className="border-2 border-dashed border-slate-200 group-hover:border-upn-400 group-hover:bg-upn-50 transition-all rounded-xl p-4 flex items-center justify-center gap-3">
-                                            <Upload className="text-slate-400 group-hover:text-upn-600" size={20} />
-                                            <span className="text-sm font-medium text-slate-500 group-hover:text-upn-700">
-                                                {excuseFile ? excuseFile.name : 'Subir foto o PDF'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 mt-2">Formatos permitidos: JPG, PNG, PDF. Tamaño máx: 5MB.</p>
-                                </div>
-
-                                <div className="flex gap-4 pt-4">
-                                    <button
-                                        type="button"
-                                        disabled={submitting}
-                                        onClick={() => setExcuseModalOpen(false)}
-                                        className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={submitting}
-                                        className="flex-1 px-4 py-3 bg-upn-600 text-white font-bold rounded-xl shadow-lg shadow-upn-600/20 hover:bg-upn-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Enviar Excusa'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+function AbsenceCard({ absence, onExcuse, onOpen }) {
+    const absent = absence.status === 'ABSENT';
+    return (
+        <div className={`rounded-[1.5rem] border p-4 ${absent ? 'border-rose-300/35 bg-rose-500/10 text-rose-100' : 'border-amber-300/35 bg-amber-500/10 text-amber-100'}`}>
+            <div className="flex items-center gap-3">
+                <div className="grid h-14 w-14 place-items-center rounded-2xl border border-current/35 bg-black/25 text-xl font-black shadow-[0_0_16px_currentColor]">{absent ? '!' : '⏱'}</div>
+                <div className="min-w-0 flex-1">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-white/60">{absence.status_label}</p>
+                    <h3 className="truncate text-lg font-black text-white">{absence.course_name}</h3>
+                    <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-white/65"><Calendar size={13} /> {absence.date}</p>
                 </div>
-            )}
+            </div>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                {!absence.has_excuse ? (
+                    <button onClick={onExcuse} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-xs font-black text-[#7657f6]">
+                        <Upload size={15} /> Gestionar excusa
+                    </button>
+                ) : (
+                    <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-xs font-black">
+                        <FileText size={15} /> {absence.excuse_status_label || 'Excusa enviada'}
+                    </div>
+                )}
+                <button onClick={onOpen} className="grid h-11 place-items-center rounded-2xl border border-white/20 bg-black/20 px-4 text-xs font-black text-white sm:w-14">
+                    <BookOpen size={18} />
+                </button>
+            </div>
         </div>
+    );
+}
+
+function CleanRecord() {
+    return (
+        <div className="rounded-[1.8rem] border border-emerald-300/25 bg-emerald-500/10 p-10 text-center text-emerald-100">
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.6rem] border border-emerald-300/40 bg-black/25 shadow-[0_0_24px_rgba(32,231,166,.35)]">
+                <CheckCircle size={42} />
+            </div>
+            <h2 className="mt-5 text-3xl font-black italic text-white">¡Todo al día!</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm font-semibold text-emerald-100/70">No tienes inasistencias ni retardos registrados en el periodo seleccionado.</p>
+        </div>
+    );
+}
+
+function ExcuseModal({ absence, note, setNote, file, setFile, submitting, onClose, onSubmit }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur" onClick={() => !submitting && onClose()}>
+            <form onSubmit={onSubmit} className="w-full max-w-md rounded-[2rem] border border-violet-300/35 bg-[#10072e] p-5 text-white shadow-2xl" onClick={event => event.stopPropagation()}>
+                <div className="flex items-start justify-between">
+                    <div><p className="text-[10px] font-black uppercase tracking-[0.24em] text-violet-300">Justificación</p><h3 className="text-2xl font-black">Enviar excusa</h3></div>
+                    <button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10"><X size={18} /></button>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-violet-100/70">{absence.course_name} · {absence.date}</p>
+                <textarea required rows="3" value={note} onChange={event => setNote(event.target.value)} placeholder="Explica brevemente..." className="mt-4 w-full rounded-2xl border border-violet-300/25 bg-black/25 p-3 text-sm outline-none focus:ring-4 focus:ring-violet-300/20" />
+                <input type="file" onChange={event => setFile(event.target.files[0])} className="mt-3 w-full text-sm text-violet-100 file:mr-3 file:rounded-full file:border-0 file:bg-violet-500 file:px-4 file:py-2 file:text-sm file:font-black file:text-white" />
+                {file && <p className="mt-2 text-xs font-bold text-violet-100/70">{file.name}</p>}
+                <button type="submit" disabled={submitting} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-3 text-sm font-black text-white disabled:opacity-60">
+                    {submitting && <Loader2 size={18} className="animate-spin" />} Enviar excusa
+                </button>
+            </form>
+        </div>
+    );
+}
+
+function Toast({ message, type, onClose }) {
+    useEffect(() => {
+        const timer = setTimeout(onClose, 4000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+    return <div className={`fixed bottom-6 right-6 z-[100] rounded-2xl px-5 py-3 text-sm font-black text-white shadow-2xl ${type === 'error' ? 'bg-rose-600' : 'bg-emerald-500'}`}>{message}</div>;
+}
+
+function GameLoading() {
+    return (
+        <section className="relative grid min-h-full place-items-center overflow-hidden bg-[#050219] px-6 py-24 text-white">
+            <GameBackdrop />
+            <div className="relative rounded-[2rem] border border-violet-300/35 bg-[#10072e]/90 p-8 text-center shadow-[0_0_55px_rgba(118,87,246,0.38)]">
+                <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.6rem] border border-violet-300/45 bg-black/25 text-3xl shadow-[0_0_24px_rgba(139,109,255,0.55)]"><span className="animate-pulse">✦</span></div>
+                <p className="mt-4 text-[11px] font-black uppercase tracking-[0.28em] text-violet-300">Cargando eventos</p>
+            </div>
+        </section>
+    );
+}
+
+function GameBackdrop() {
+    return (
+        <>
+            <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_14%_7%,rgba(139,109,255,0.42),transparent_28%),radial-gradient(circle_at_78%_12%,rgba(255,198,76,0.18),transparent_24%),linear-gradient(180deg,#120934_0%,#06021a_52%,#03010d_100%)]" />
+            <div className="pointer-events-none fixed inset-0 opacity-[0.16] [background-image:linear-gradient(rgba(139,109,255,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(139,109,255,.35)_1px,transparent_1px)] [background-size:42px_42px]" />
+        </>
+    );
+}
+
+function HudCorners() {
+    return (
+        <>
+            <span className="absolute left-3 top-3 h-6 w-6 border-l border-t border-violet-300/50" />
+            <span className="absolute right-3 top-3 h-6 w-6 border-r border-t border-violet-300/50" />
+            <span className="absolute bottom-3 left-3 h-6 w-6 border-b border-l border-violet-300/50" />
+            <span className="absolute bottom-3 right-3 h-6 w-6 border-b border-r border-violet-300/50" />
+        </>
     );
 }
