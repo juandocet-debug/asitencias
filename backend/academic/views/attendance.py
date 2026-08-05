@@ -4,9 +4,23 @@ from rest_framework.response import Response
 from django.utils import timezone
 
 from academic.models import Attendance, Course
-from academic.serializers import AttendanceSerializer, AttendanceCreateSerializer
-from modulos.asistencia.aplicacion import RegistrarAsistenciaUseCase
-from modulos.asistencia.dominio import AsistenciaInvalidaError
+from academic.serializers import (
+    AttendanceCreateSerializer,
+    AttendanceSerializer,
+    AttendanceSessionQuerySerializer,
+)
+from modulos.asistencia.aplicacion import (
+    ConsultarAsistenciaSesionUseCase,
+    EliminarSesionAsistenciaUseCase,
+    RegistrarAsistenciaUseCase,
+)
+from modulos.asistencia.dominio import (
+    AccesoAsistenciaDenegadoError,
+    ActorAsistencia,
+    AsistenciaInvalidaError,
+    CursoNoEncontradoError,
+    SesionNoEncontradaError,
+)
 from modulos.asistencia.infraestructura import DjangoAsistenciaRepository
 
 
@@ -14,6 +28,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.all()
     serializer_class = AttendanceSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @staticmethod
+    def _actor(user):
+        return ActorAsistencia.crear(
+            usuario_id=user.id,
+            roles=getattr(user, 'roles', None) or [getattr(user, 'role', '')],
+            es_superusuario=getattr(user, 'is_superuser', False),
+        )
 
     @action(detail=False, methods=['post'])
     def bulk_create(self, request):
@@ -41,20 +63,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         GET /api/academic/attendance/session_attendance/?course_id=X&date=YYYY-MM-DD
         Retorna: { "student_id": "status", ... }  → vacío si no hay sesión aún.
         """
-        from academic.models import Session
-        course_id = request.query_params.get('course_id')
-        date_str  = request.query_params.get('date')
-
-        if not course_id or not date_str:
-            return Response({'error': 'course_id y date son requeridos'}, status=400)
-
-        session = Session.objects.filter(course_id=course_id, date=date_str).first()
-        if not session:
-            return Response({})   # Fecha sin sesión → modal arranca limpio
-
-        attendances = Attendance.objects.filter(session=session)
-        result = {str(a.student_id): a.status for a in attendances}
-        return Response(result)
+        serializer = AttendanceSessionQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            result = ConsultarAsistenciaSesionUseCase(
+                DjangoAsistenciaRepository()
+            ).ejecutar(self._actor(request.user), data['course_id'], data['date'])
+            return Response(result)
+        except AccesoAsistenciaDenegadoError as error:
+            return Response({'error': str(error)}, status=403)
+        except CursoNoEncontradoError as error:
+            return Response({'error': str(error)}, status=404)
 
     @action(detail=False, methods=['delete'], url_path='delete_session')
     def delete_session(self, request):
@@ -63,37 +83,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         Solo el profesor dueño del curso puede hacerlo.
         DELETE /api/academic/attendance/delete_session/?course_id=X&date=YYYY-MM-DD
         """
-        from academic.models import Session, Course
-
-        course_id = request.query_params.get('course_id')
-        date_str  = request.query_params.get('date')
-
-        if not course_id or not date_str:
-            return Response({'error': 'course_id y date son requeridos'}, status=400)
-
-        # Verificar que el curso le pertenece al usuario que pide
-        user = request.user
-        user_roles = getattr(user, 'roles', None) or [getattr(user, 'role', '')]
+        serializer = AttendanceSessionQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
         try:
-            course = Course.objects.get(id=course_id)
-        except Course.DoesNotExist:
-            return Response({'error': 'Curso no encontrado'}, status=404)
-
-        es_admin = 'ADMIN' in user_roles or getattr(user, 'is_superuser', False)
-        es_profesor_del_curso = course.teacher_id == user.id
-
-        if not es_admin and not es_profesor_del_curso:
-            return Response({'error': 'No autorizado'}, status=403)
-
-        # Buscar la sesión
-        session = Session.objects.filter(course_id=course_id, date=date_str).first()
-        if not session:
-            return Response({'error': 'No existe sesión para esa fecha'}, status=404)
-
-        # Borrar — los Attendance se eliminan en cascada (on_delete=CASCADE)
-        session.delete()
-
-        return Response({'status': 'deleted'}, status=status.HTTP_200_OK)
+            EliminarSesionAsistenciaUseCase(
+                DjangoAsistenciaRepository()
+            ).ejecutar(self._actor(request.user), data['course_id'], data['date'])
+            return Response({'status': 'deleted'}, status=status.HTTP_200_OK)
+        except AccesoAsistenciaDenegadoError as error:
+            return Response({'error': str(error)}, status=403)
+        except (CursoNoEncontradoError, SesionNoEncontradaError) as error:
+            return Response({'error': str(error)}, status=404)
 
     @action(detail=False, methods=['get'], url_path='course_sessions')
     def course_sessions(self, request):

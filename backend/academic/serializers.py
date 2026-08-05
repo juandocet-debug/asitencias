@@ -46,3 +46,8 @@ class AttendanceCreateSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
     date = serializers.DateField()
     attendances = AttendanceItemSerializer(many=True, allow_empty=False)
+
+
+class AttendanceSessionQuerySerializer(serializers.Serializer):
+    course_id = serializers.IntegerField(min_value=1)
+    date = serializers.DateField()

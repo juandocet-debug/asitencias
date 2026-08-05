@@ -2,10 +2,46 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Iterable
 
 
 class AsistenciaInvalidaError(ValueError):
     """Datos de un llamado que violan reglas del dominio."""
+
+
+class CursoNoEncontradoError(LookupError):
+    """El curso solicitado no existe."""
+
+
+class SesionNoEncontradaError(LookupError):
+    """No existe una sesion para el curso y fecha solicitados."""
+
+
+class AccesoAsistenciaDenegadoError(PermissionError):
+    """El actor no puede ejecutar la operacion de asistencia."""
+
+
+@dataclass(frozen=True, slots=True)
+class ActorAsistencia:
+    usuario_id: int
+    roles: frozenset[str]
+    es_superusuario: bool = False
+
+    @classmethod
+    def crear(
+        cls,
+        usuario_id: int,
+        roles: Iterable[str],
+        es_superusuario: bool = False,
+    ) -> "ActorAsistencia":
+        return cls(usuario_id, frozenset(roles), es_superusuario)
+
+    def puede_administrar(self, docente_id: int) -> bool:
+        return (
+            self.es_superusuario
+            or "ADMIN" in self.roles
+            or self.usuario_id == docente_id
+        )
 
 
 class EstadoAsistencia(StrEnum):

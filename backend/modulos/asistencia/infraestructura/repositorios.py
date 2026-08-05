@@ -39,3 +39,27 @@ class DjangoAsistenciaRepository(AsistenciaRepositoryPort):
                 defaults={"status": registro.estado.value},
             )
         return len(registros)
+
+    def obtener_docente_id(self, curso_id: int) -> int | None:
+        return Course.objects.filter(id=curso_id).values_list(
+            'teacher_id', flat=True
+        ).first()
+
+    def usuario_matriculado(self, curso_id: int, usuario_id: int) -> bool:
+        return Course.objects.filter(id=curso_id, students__id=usuario_id).exists()
+
+    def obtener_asistencia_sesion(self, curso_id: int, fecha: date) -> dict[int, str]:
+        return dict(
+            Attendance.objects.filter(
+                session__course_id=curso_id,
+                session__date=fecha,
+            ).values_list('student_id', 'status')
+        )
+
+    @transaction.atomic
+    def eliminar_sesion(self, curso_id: int, fecha: date) -> bool:
+        eliminados, _ = Session.objects.filter(
+            course_id=curso_id,
+            date=fecha,
+        ).delete()
+        return eliminados > 0

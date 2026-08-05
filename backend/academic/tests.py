@@ -156,6 +156,19 @@ class AttendanceContractTests(TestCase):
             {str(self.student.id): "PRESENT", str(self.second_student.id): "LATE"},
         )
 
+    def test_session_attendance_is_scoped_to_course_members(self):
+        endpoint = "/api/academic/attendance/session_attendance/"
+        params = {"course_id": self.course.id, "date": "2026-08-02"}
+
+        self.authenticate(self.other_teacher)
+        denied = self.client.get(endpoint, params)
+        self.assertEqual(denied.status_code, 403)
+
+        self.authenticate(self.student)
+        allowed = self.client.get(endpoint, params)
+        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(allowed.json(), {})
+
     def test_only_owner_or_admin_can_delete_session_and_attendance_cascades(self):
         session = Session.objects.create(course=self.course, date="2026-08-03")
         Attendance.objects.create(
@@ -298,6 +311,18 @@ class FakeAttendanceRepository(AsistenciaRepositoryPort):
     def registrar_lote(self, curso_id, fecha, registros):
         self.received = (curso_id, fecha, registros)
         return len(registros)
+
+    def obtener_docente_id(self, curso_id):
+        return 10
+
+    def usuario_matriculado(self, curso_id, usuario_id):
+        return False
+
+    def obtener_asistencia_sesion(self, curso_id, fecha):
+        return {}
+
+    def eliminar_sesion(self, curso_id, fecha):
+        return False
 
 
 class AttendanceDomainTests(TestCase):
