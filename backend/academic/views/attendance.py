@@ -1,4 +1,4 @@
-﻿from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -50,11 +50,17 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             data = serializer.validated_data
             try:
                 RegistrarAsistenciaUseCase(DjangoAsistenciaRepository()).ejecutar(
+                    actor=self._actor(request.user),
                     curso_id=data['course_id'],
                     fecha=data['date'],
                     asistencias=data['attendances'],
                 )
-            except (AsistenciaInvalidaError, Course.DoesNotExist) as error:
+            except AccesoAsistenciaDenegadoError as error:
+                return Response(
+                    {'error': str(error)},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            except (AsistenciaInvalidaError, CursoNoEncontradoError, Course.DoesNotExist) as error:
                 return Response(
                     {'error': str(error)},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -164,12 +170,25 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         Permite al profesor ver el historial y elegir cuál editar.
         GET /api/academic/attendance/course_sessions/?course_id=X
         """
-        from academic.models import Session
+        from academic.models import Course, Session
         course_id = request.query_params.get('course_id')
         if not course_id:
             return Response({'error': 'course_id requerido'}, status=400)
 
-        sessions = Session.objects.filter(course_id=course_id).order_by('-date')
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response({'error': 'Curso no encontrado'}, status=404)
+
+        user = request.user
+        roles = getattr(user, 'roles', None) or [getattr(user, 'role', '')]
+        is_admin = 'ADMIN' in roles or getattr(user, 'is_superuser', False)
+        is_teacher_owner = ('TEACHER' in roles or 'PRACTICE_TEACHER' in roles) and course.teacher == user
+
+        if not is_admin and not is_teacher_owner:
+            return Response({'error': 'No autorizado para ver las sesiones de esta clase'}, status=403)
+
+        sessions = Session.objects.filter(course=course).order_by('-date')
         result = []
         for session in sessions:
             atts = Attendance.objects.filter(session=session)
@@ -186,71 +205,39 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def submit_excuse(self, request):
         """Estudiante sube una excusa para una falta"""
+        from academic.services.excuses import submit_student_excuse
         attendance_id = request.data.get('attendance_id')
         excuse_note = request.data.get('excuse_note', '')
         excuse_file = request.FILES.get('excuse_file')
 
-        if not attendance_id:
-            return Response({'error': 'Falta el ID de asistencia'}, status=400)
+        attendance, error, code_status = submit_student_excuse(
+            request.user, attendance_id, excuse_note, excuse_file
+        )
+        if error:
+            return Response({'error': error}, status=code_status)
 
-        try:
-            attendance = Attendance.objects.get(id=attendance_id)
-
-            if attendance.student != request.user:
-                return Response({'error': 'No autorizado'}, status=403)
-
-            if attendance.status not in ['ABSENT', 'LATE']:
-                return Response({'error': 'Solo puedes subir excusas para faltas o retardos'}, status=400)
-
-            attendance.excuse_note = excuse_note
-            attendance.excuse_status = 'PENDING'
-            attendance.excuse_submitted_at = timezone.now()
-
-            if excuse_file:
-                attendance.excuse_file = excuse_file
-
-            attendance.save()
-
-            return Response({
-                'success': True,
-                'message': 'Excusa enviada correctamente. Espera la revisión del profesor.'
-            })
-
-        except Attendance.DoesNotExist:
-            return Response({'error': 'Registro no encontrado'}, status=404)
-        except Exception as e:
-            return Response({'error': str(e)}, status=500)
+        return Response({
+            'success': True,
+            'message': 'Excusa enviada correctamente. Espera la revisión del profesor.'
+        })
 
     @action(detail=False, methods=['post'])
     def review_excuse(self, request):
         """Profesor revisa una excusa (aprobar/rechazar)"""
+        from academic.services.excuses import review_excuse_by_teacher
         attendance_id = request.data.get('attendance_id')
-        decision = request.data.get('decision')  # 'APPROVED' o 'REJECTED'
+        decision = request.data.get('decision')
 
-        if not attendance_id or decision not in ['APPROVED', 'REJECTED']:
-            return Response({'error': 'Datos inválidos'}, status=400)
+        attendance, error, code_status = review_excuse_by_teacher(
+            request.user, attendance_id, decision
+        )
+        if error:
+            return Response({'error': error}, status=code_status)
 
-        try:
-            attendance = Attendance.objects.get(id=attendance_id)
-
-            if attendance.session.course.teacher != request.user:
-                return Response({'error': 'No autorizado'}, status=403)
-
-            attendance.excuse_status = decision
-            attendance.excuse_reviewed_at = timezone.now()
-
-            if decision == 'APPROVED':
-                attendance.status = 'EXCUSED'
-
-            attendance.save()
-
-            return Response({
-                'success': True,
-                'message': f'Excusa {"aprobada" if decision == "APPROVED" else "rechazada"}'
-            })
-
-        except Attendance.DoesNotExist:
-            return Response({'error': 'Registro no encontrado'}, status=404)
+        return Response({
+            'success': True,
+            'message': f'Excusa {"aprobada" if decision == "APPROVED" else "rechazada"}'
+        })
 
     @action(detail=False, methods=['get'])
     def pending_excuses(self, request):

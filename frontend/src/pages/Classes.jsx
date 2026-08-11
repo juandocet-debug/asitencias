@@ -69,8 +69,8 @@ export default function Classes() {
             setIsModalOpen(false);
             resetForm();
             fetchCourses();
-        } catch {
-            alert('Error al guardar la clase');
+        } catch (err) {
+            console.error('Error al guardar clase:', err);
         }
     };
 
@@ -79,8 +79,8 @@ export default function Classes() {
             await api.post(`/academic/courses/${id}/archive/`);
             fetchCourses();
             setDeleteModalOpen(false);
-        } catch {
-            alert('Error al archivar la clase');
+        } catch (err) {
+            console.error('Error al archivar clase:', err);
         }
     };
 
@@ -88,8 +88,8 @@ export default function Classes() {
         try {
             await api.post(`/academic/courses/${id}/restore/`);
             fetchCourses();
-        } catch {
-            alert('Error al restaurar la clase');
+        } catch (err) {
+            console.error('Error al restaurar clase:', err);
         }
     };
 

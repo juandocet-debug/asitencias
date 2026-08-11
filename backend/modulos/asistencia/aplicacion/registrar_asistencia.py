@@ -4,7 +4,10 @@ from datetime import date
 from typing import Iterable, Mapping
 
 from modulos.asistencia.dominio.entidades import (
+    AccesoAsistenciaDenegadoError,
+    ActorAsistencia,
     AsistenciaInvalidaError,
+    CursoNoEncontradoError,
     RegistroAsistencia,
 )
 from modulos.asistencia.dominio.puertos import AsistenciaRepositoryPort
@@ -16,6 +19,7 @@ class RegistrarAsistenciaUseCase:
 
     def ejecutar(
         self,
+        actor: ActorAsistencia,
         curso_id: int,
         fecha: date,
         asistencias: Iterable[Mapping[str, object]],
@@ -26,6 +30,13 @@ class RegistrarAsistenciaUseCase:
             )
         if not isinstance(fecha, date):
             raise AsistenciaInvalidaError("La fecha de asistencia no es valida.")
+
+        docente_id = self._repositorio.obtener_docente_id(curso_id)
+        if docente_id is None:
+            raise CursoNoEncontradoError("Curso no encontrado")
+
+        if not actor.puede_administrar(docente_id):
+            raise AccesoAsistenciaDenegadoError("No autorizado para registrar asistencia en este curso")
 
         registros = [
             RegistroAsistencia.crear(

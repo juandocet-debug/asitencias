@@ -327,11 +327,14 @@ class FakeAttendanceRepository(AsistenciaRepositoryPort):
 
 class AttendanceDomainTests(TestCase):
     def test_use_case_rejects_duplicate_students_before_persistence(self):
+        from modulos.asistencia.dominio import ActorAsistencia
         repository = FakeAttendanceRepository()
         use_case = RegistrarAsistenciaUseCase(repository)
+        actor = ActorAsistencia.crear(usuario_id=10, roles=["TEACHER"])
 
         with self.assertRaises(AsistenciaInvalidaError):
             use_case.ejecutar(
+                actor=actor,
                 curso_id=1,
                 fecha=date(2026, 8, 9),
                 asistencias=[
@@ -341,3 +344,71 @@ class AttendanceDomainTests(TestCase):
             )
 
         self.assertIsNone(repository.received)
+
+
+class AdditionalSecurityTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(username="prof1", role="TEACHER")
+        self.other_teacher = User.objects.create_user(username="prof2", role="TEACHER")
+        self.student = User.objects.create_user(username="stud1", role="STUDENT")
+        self.other_student = User.objects.create_user(username="stud2", role="STUDENT")
+        self.course = Course.objects.create(teacher=self.teacher, name="Fisica", code="FIS01")
+        self.course.students.add(self.student)
+        self.session = Session.objects.create(course=self.course, date=date.today())
+        self.attendance = Attendance.objects.create(session=self.session, student=self.student, status="ABSENT")
+        self.client = APIClient()
+
+    def test_student_cannot_view_course_sessions(self):
+        self.client.force_authenticate(self.student)
+        res = self.client.get(f"/api/academic/attendance/course_sessions/?course_id={self.course.id}")
+        self.assertEqual(res.status_code, 403)
+
+    def test_student_cannot_submit_excuse_for_another_student(self):
+        self.client.force_authenticate(self.other_student)
+        res = self.client.post("/api/academic/attendance/submit_excuse/", {
+            "attendance_id": self.attendance.id,
+            "excuse_note": "Fui al médico"
+        })
+        self.assertEqual(res.status_code, 403)
+
+    def test_student_cannot_call_bulk_create(self):
+        self.client.force_authenticate(self.student)
+        payload = {
+            "course_id": self.course.id,
+            "date": "2026-08-11",
+            "attendances": [{"student_id": self.student.id, "status": "PRESENT"}]
+        }
+        res = self.client.post("/api/academic/attendance/bulk_create/", payload, format="json")
+        self.assertEqual(res.status_code, 403)
+
+    def test_other_teacher_cannot_call_bulk_create(self):
+        self.client.force_authenticate(self.other_teacher)
+        payload = {
+            "course_id": self.course.id,
+            "date": "2026-08-11",
+            "attendances": [{"student_id": self.student.id, "status": "PRESENT"}]
+        }
+        res = self.client.post("/api/academic/attendance/bulk_create/", payload, format="json")
+        self.assertEqual(res.status_code, 403)
+
+    def test_owner_teacher_can_call_bulk_create(self):
+        self.client.force_authenticate(self.teacher)
+        payload = {
+            "course_id": self.course.id,
+            "date": "2026-08-11",
+            "attendances": [{"student_id": self.student.id, "status": "PRESENT"}]
+        }
+        res = self.client.post("/api/academic/attendance/bulk_create/", payload, format="json")
+        self.assertEqual(res.status_code, 201)
+
+    def test_admin_can_call_bulk_create(self):
+        admin = User.objects.create_user(username="adminuser", role="ADMIN", is_superuser=True)
+        self.client.force_authenticate(admin)
+        payload = {
+            "course_id": self.course.id,
+            "date": "2026-08-11",
+            "attendances": [{"student_id": self.student.id, "status": "PRESENT"}]
+        }
+        res = self.client.post("/api/academic/attendance/bulk_create/", payload, format="json")
+        self.assertEqual(res.status_code, 201)
+

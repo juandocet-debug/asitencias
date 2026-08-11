@@ -58,8 +58,8 @@ export default function Dashboard() {
             await api.patch(`/academic/courses/${courseId}/`, { schedule });
             setIsModalOpen(false);
             fetchStats();
-        } catch {
-            alert('Error al guardar el horario');
+        } catch (err) {
+            console.error('Error al guardar el horario', err);
         }
     };
 
