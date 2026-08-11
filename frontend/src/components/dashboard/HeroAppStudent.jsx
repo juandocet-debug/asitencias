@@ -1,8 +1,8 @@
 import React from 'react';
 
 /**
- * HeroAppStudent - Limpiado por completo.
- * Muestra únicamente la tarjeta verde de fondoHero.png al 95% de ancho, sin ningún texto ni barra inferior.
+ * HeroAppStudent - Ajustado para que la imagen fondoHero.png llene el 100% absoluto de todo el contenedor hero (ancho y alto total del rectángulo rojo),
+ * utilizando un div con la imagen expandida a cover/full stretch sin márgenes vacíos arriba/abajo ni min-height sobrante.
  */
 export default function HeroAppStudent({ user, stats, onAction }) {
   return (
@@ -25,18 +25,15 @@ export default function HeroAppStudent({ user, stats, onAction }) {
         </button>
       </header>
 
-      {/* Tarjeta Hero totalmente limpia mostrando solo la imagen de fondo verde al 95% */}
-      <div className="w-full flex justify-center">
-        <div 
-          className="relative w-[95%] min-h-[14rem] sm:min-h-[16rem] overflow-hidden shadow-2xl transition-all border-4 border-red-500 cursor-pointer"
-          onClick={onAction}
-          style={{
-            backgroundImage: `url('/src/assets/fondoHero.png')`,
-            backgroundSize: '100% 100%',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            borderRadius: '2.5rem'
-          }}
+      {/* Tarjeta donde la imagen ocupa el 100% absoluto de todo el espacio marcado por el cuadro rojo */}
+      <div 
+        className="relative w-full border-4 border-red-500 rounded-[2.5rem] overflow-hidden cursor-pointer"
+        onClick={onAction}
+      >
+        <img 
+          src="/src/assets/fondoHero.png" 
+          alt="Fondo Hero" 
+          className="w-full h-auto object-contain block scale-110 sm:scale-105 transform origin-center transition-transform"
         />
       </div>
     </div>
