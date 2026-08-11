@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, AlertCircle, Calendar, CheckCircle, Clock, Star, Zap } from 'lucide-react';
 import api from '../../services/api';
+import HeroAppStudent from './HeroAppStudent';
 
 const missionTones = {
     violet: 'border-violet-300/55 from-violet-500/35 text-violet-100 shadow-violet-500/20',
@@ -14,11 +15,11 @@ export default function StudentDashboardView({ user, stats, checkins, onRefresh,
     const todayClasses = stats.today_classes || [];
 
     return (
-        <section className="relative min-h-full overflow-hidden bg-[#050219] px-4 pb-28 pt-5 text-white md:px-8 md:pb-10">
+        <section className="relative min-h-full overflow-hidden bg-[#050219] px-4 pb-28 pt-4 text-white md:px-8 md:pb-10">
             <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_14%_7%,rgba(139,109,255,0.42),transparent_28%),radial-gradient(circle_at_78%_12%,rgba(255,198,76,0.18),transparent_24%),radial-gradient(circle_at_70%_78%,rgba(32,231,166,0.16),transparent_28%),linear-gradient(180deg,#120934_0%,#06021a_48%,#03010d_100%)]" />
             <div className="pointer-events-none fixed inset-0 opacity-[0.16] [background-image:linear-gradient(rgba(139,109,255,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(139,109,255,.35)_1px,transparent_1px)] [background-size:42px_42px]" />
             <div className="relative mx-auto w-full max-w-md space-y-5 md:max-w-6xl md:space-y-7">
-                <PlayerHero user={user} stats={data} />
+                <HeroAppStudent user={user} stats={data} onAction={() => navigate('/classes')} />
                 <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                     <MissionCard tone="violet" glyph="✦" title="Mis clases" value={data.total_courses || 0} detail="Cursos activos" />
                     <MissionCard tone="rose" glyph="◆" title="Asistencia" value={`${data.attendance_rate || 0}%`} detail="Promedio global" />
