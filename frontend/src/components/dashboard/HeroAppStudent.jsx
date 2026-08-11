@@ -1,8 +1,9 @@
 import React from 'react';
-import fondoHero from '../../assets/fondoHero.png';
 
 /**
- * HeroAppStudent - Componente héroe usando la imagen exacta fondoHero.png como fondo de la tarjeta.
+ * HeroAppStudent - Corrección de dimensiones y posiciones exactas:
+ * - La imagen de fondo `fondoHero.png` actúa como background real del contenedor para expandirse y acomodar todo el texto y avatares ADENTRO sin desbordarse.
+ * - Los textos y la barra inferior están contenidos adentro del espacio verde.
  */
 export default function HeroAppStudent({ user, stats, onAction }) {
   const points = stats?.points || 0;
@@ -27,63 +28,58 @@ export default function HeroAppStudent({ user, stats, onAction }) {
         </button>
       </header>
 
-      {/* Tarjeta usando fondoHero.png como imagen de fondo exacta */}
-      <div className="relative w-full text-slate-950 transition-all overflow-hidden rounded-[2.2rem]">
-        {/* Imagen de fondo aislada para recortar espacios blancos */}
-        <div className="relative w-full overflow-hidden rounded-[2.2rem]">
-          <img 
-            src={fondoHero} 
-            alt="Fondo Hero" 
-            className="w-full h-auto object-cover block"
-          />
-
-          {/* Contenido superpuesto dentro de la tarjeta usando coordenadas absolutas e index z-10 */}
-          <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-between z-10">
-            <div>
-              {/* Título de Canal y ? */}
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <h3 className="text-base sm:text-lg font-extrabold text-slate-950">Canal Activo</h3>
-                <span className="w-4 h-4 rounded-full border border-slate-950 text-slate-950 text-[11px] font-bold flex items-center justify-center">?</span>
-              </div>
-
-              {/* Subtítulo */}
-              <p className="text-xs sm:text-sm font-semibold text-slate-900/80 max-w-[18rem]">
-                Ubícate cerca a la cámara de tu aula para validar asistencia.
-              </p>
-            </div>
-
-            {/* Cápsula Traslúcida Horizontal Inferior */}
-            <div className="flex items-center justify-between gap-2 p-1.5 px-3 rounded-full bg-slate-950/10 backdrop-blur-sm border border-slate-950/10">
-              {/* Avatares Circulares */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center -space-x-2 shrink-0">
-                  <div className="w-7 h-7 rounded-full bg-purple-700 border-2 border-[#a6f500] overflow-hidden">
-                    <img src={user?.photo || '/este-agon.png'} alt="user" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-cyan-600 border-2 border-[#a6f500] flex items-center justify-center text-[10px] font-bold text-white">
-                    A
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-indigo-600 border-2 border-[#a6f500] flex items-center justify-center text-[10px] font-bold text-white">
-                    B
-                  </div>
-                </div>
-
-                {/* Texto 999+ personas activadas */}
-                <span className="text-xs font-extrabold text-slate-950 truncate">
-                  {points > 0 ? `${points}+ Activos` : '999+ personas activadas'}
-                </span>
-              </div>
-
-              {/* Botón "Activar ->" */}
-              <button
-                onClick={onAction}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-slate-950 hover:bg-slate-900 text-white text-xs font-extrabold shadow-md shrink-0 transition active:scale-95"
-              >
-                <span>Activar</span>
-                <span className="text-xs">→</span>
-              </button>
-            </div>
+      {/* Tarjeta con altura adaptativa y background-image para envolver TODO el contenido dentro */}
+      <div 
+        className="relative w-full min-h-[13.5rem] sm:min-h-[14.5rem] p-5 sm:p-6 text-slate-950 flex flex-col justify-between overflow-hidden shadow-2xl transition-all"
+        style={{
+          backgroundImage: `url('/src/assets/fondoHero.png')`,
+          backgroundSize: '100% 100%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          borderRadius: '2.2rem'
+        }}
+      >
+        {/* Parte Superior: Título y descripción */}
+        <div className="relative z-10 pt-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <h3 className="text-base sm:text-lg font-black text-slate-950">Canal Activo</h3>
+            <span className="w-4.5 h-4.5 rounded-full border-2 border-slate-950 text-slate-950 text-[11px] font-black flex items-center justify-center">?</span>
           </div>
+
+          <p className="text-xs sm:text-sm font-extrabold text-slate-900/90 leading-tight max-w-[17rem] sm:max-w-[22rem]">
+            Ubícate cerca a la cámara de tu aula para validar asistencia.
+          </p>
+        </div>
+
+        {/* Parte Inferior: Franja verde traslúcida con avatares + 999+ personas activadas + botón negro dentro del área verde */}
+        <div className="relative z-10 mt-6 flex items-center justify-between gap-2 p-1.5 sm:p-2 px-3 sm:px-4 rounded-full bg-slate-950/15 backdrop-blur-md border border-slate-950/15">
+          {/* Avatares y Contador */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center -space-x-2 shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-purple-700 border-2 border-[#ccff00] overflow-hidden">
+                <img src={user?.photo || '/este-agon.png'} alt="user" className="w-full h-full object-cover" />
+              </div>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-cyan-600 border-2 border-[#ccff00] flex items-center justify-center text-[10px] font-black text-white">
+                A
+              </div>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 border-2 border-[#ccff00] flex items-center justify-center text-[10px] font-black text-white">
+                B
+              </div>
+            </div>
+
+            <span className="text-xs sm:text-sm font-black text-slate-950 truncate">
+              {points > 0 ? `${points}+ Activos` : '999+ personas activadas'}
+            </span>
+          </div>
+
+          {/* Botón Activar */}
+          <button
+            onClick={onAction}
+            className="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-slate-950 hover:bg-slate-900 text-white text-xs sm:text-sm font-black shadow-lg shrink-0 transition active:scale-95"
+          >
+            <span>Activar</span>
+            <span className="text-xs sm:text-sm">→</span>
+          </button>
         </div>
       </div>
     </div>
