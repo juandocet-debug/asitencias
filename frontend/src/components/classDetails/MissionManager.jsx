@@ -48,8 +48,8 @@ export default function MissionManager({ courseId, showToast }) {
 
   return (
     <section className="rounded-[1.8rem] bg-transparent font-['Montserrat'] text-white">
-      <div className="grid items-start gap-7 xl:grid-cols-[0.62fr_1.38fr]">
-        <div className="space-y-4 xl:sticky xl:top-4">
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(20rem,0.44fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-4 xl:sticky xl:top-4">
           <MissionCampaignEditor
             form={missionForm}
             setForm={setMissionForm}
@@ -59,7 +59,7 @@ export default function MissionManager({ courseId, showToast }) {
             setFontSize={setFontSize}
           />
         </div>
-        <div className="xl:sticky xl:top-4">
+        <div className="min-w-0 xl:sticky xl:top-4">
           <MissionPhonePreview mission={activeMission} form={missionForm} fontSize={fontSize} />
           {activeMission && <MissionPreview mission={activeMission} />}
         </div>
