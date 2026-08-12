@@ -62,6 +62,14 @@ class MissionResourceSerializer(serializers.ModelSerializer):
 class MissionSerializer(serializers.ModelSerializer):
     resources = MissionResourceSerializer(many=True, read_only=True)
     course_name = serializers.CharField(source='course.name', read_only=True)
+    image_url = serializers.SerializerMethodField()
+    hero_image_url = serializers.SerializerMethodField()
+
+    def get_image_url(self, instance):
+        return media_url(instance.image)
+
+    def get_hero_image_url(self, instance):
+        return media_url(instance.hero_image)
 
     class Meta:
         model = Mission
@@ -74,7 +82,9 @@ class MissionSerializer(serializers.ModelSerializer):
             'description',
             'lore_text',
             'image',
+            'image_url',
             'hero_image',
+            'hero_image_url',
             'group_size',
             'inventory_name',
             'inventory_description',
@@ -83,3 +93,12 @@ class MissionSerializer(serializers.ModelSerializer):
             'resources',
         )
         read_only_fields = ('created_at', 'updated_at')
+
+
+def media_url(file_field):
+    if not file_field:
+        return None
+    try:
+        return file_field.url
+    except Exception:
+        return None

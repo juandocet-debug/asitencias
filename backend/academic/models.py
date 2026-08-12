@@ -5,6 +5,7 @@ from datetime import date
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from cloudinary.models import CloudinaryField
 
 
 def generate_course_code():
@@ -105,8 +106,14 @@ class Mission(models.Model):
     hero_subtitle = models.CharField(max_length=200, blank=True, help_text="Subtítulo épico para la cabecera de la Campaña")
     description = models.TextField(blank=True)
     lore_text = models.TextField(blank=True, help_text="Historia / Lore de la Campaña")
-    image = models.ImageField(upload_to='missions/', null=True, blank=True)
-    hero_image = models.ImageField(upload_to='missions/hero/', null=True, blank=True, help_text="Imagen de portada estilo Fortnite/Gamer")
+    image = CloudinaryField('image', blank=True, null=True, folder='missions')
+    hero_image = CloudinaryField(
+        'image',
+        blank=True,
+        null=True,
+        folder='missions/hero',
+        help_text="Imagen de portada estilo Fortnite/Gamer",
+    )
     group_size = models.PositiveSmallIntegerField(default=4)
     inventory_name = models.CharField(max_length=120, blank=True)
     inventory_description = models.TextField(blank=True)

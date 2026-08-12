@@ -22,7 +22,7 @@ export function missionToForm(mission) {
     group_size: mission.group_size || 4,
     inventory_name: mission.inventory_name || '',
     inventory_description: mission.inventory_description || '',
-    image: mission.image || null,
-    hero_image: mission.hero_image || null,
+    image: mission.image_url || mission.image || null,
+    hero_image: mission.hero_image_url || mission.hero_image || null,
   };
 }

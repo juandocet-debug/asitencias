@@ -90,7 +90,7 @@ function MissionPreview({ mission }) {
   return (
     <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-2 pr-4">
       <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl bg-[#ccff00]/10">
-        {mission.image ? <img src={getMediaUrl(mission.image)} alt="" className="h-full w-full object-cover" /> : <Package size={24} />}
+        {mission.image_url || mission.image ? <img src={getMediaUrl(mission.image_url || mission.image)} alt="" className="h-full w-full object-cover" /> : <Package size={24} />}
       </div>
       <div>
         <p className="text-sm font-black">{mission.name}</p>
