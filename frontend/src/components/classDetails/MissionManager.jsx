@@ -4,13 +4,11 @@ import api from '../../services/api';
 import { getMediaUrl } from '../../utils/dateUtils';
 import MissionCampaignEditor from '../missions/MissionCampaignEditor';
 import MissionPhonePreview from '../missions/MissionPhonePreview';
-import { MissionList, ResourceForm } from '../missions/MissionResources';
-import { initialMission, initialResource, missionToForm } from '../missions/missionDefaults';
+import { initialMission, missionToForm } from '../missions/missionDefaults';
 
 export default function MissionManager({ courseId, showToast }) {
   const [missions, setMissions] = useState([]);
   const [missionForm, setMissionForm] = useState(initialMission);
-  const [resourceForm, setResourceForm] = useState(initialResource);
   const [saving, setSaving] = useState(false);
   const [fontSize, setFontSize] = useState('normal');
 
@@ -48,30 +46,10 @@ export default function MissionManager({ courseId, showToast }) {
     }
   };
 
-  const addResource = async (event) => {
-    event.preventDefault();
-    if (!activeMission) return;
-    setSaving(true);
-    try {
-      const payload = new FormData();
-      Object.entries(resourceForm).forEach(([key, value]) => {
-        if (value !== null && value !== '') payload.append(key, value);
-      });
-      await api.post(`/academic/missions/${activeMission.id}/resources/`, payload, formHeaders);
-      setResourceForm(initialResource);
-      await fetchMissions();
-      showToast?.('Recurso agregado a la misión', 'success');
-    } catch {
-      showToast?.('No se pudo agregar el recurso', 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <section className="rounded-[1.8rem] bg-transparent font-['Montserrat'] text-white">
-      <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-4">
+      <div className="grid items-start gap-7 xl:grid-cols-[0.75fr_1.25fr]">
+        <div className="space-y-4 xl:sticky xl:top-4">
           <MissionCampaignEditor
             form={missionForm}
             setForm={setMissionForm}
@@ -80,21 +58,12 @@ export default function MissionManager({ courseId, showToast }) {
             fontSize={fontSize}
             setFontSize={setFontSize}
           />
-          <ResourceForm
-            disabled={!activeMission}
-            form={resourceForm}
-            mission={activeMission}
-            setForm={setResourceForm}
-            saving={saving}
-            onSubmit={addResource}
-          />
         </div>
-        <div className="sticky top-4">
+        <div className="xl:sticky xl:top-4">
           <MissionPhonePreview mission={activeMission} form={missionForm} fontSize={fontSize} />
           {activeMission && <MissionPreview mission={activeMission} />}
         </div>
       </div>
-      <MissionList missions={missions} />
     </section>
   );
 }
@@ -103,8 +72,14 @@ const formHeaders = { headers: { 'Content-Type': 'multipart/form-data' } };
 
 function missionPayload(form, courseId) {
   const payload = new FormData();
+  const fileFields = new Set(['image', 'hero_image']);
   payload.append('course', courseId);
   Object.entries(form).forEach(([key, value]) => {
+    if (fileFields.has(key)) {
+      if (value instanceof File) payload.append(key, value);
+      else if (value === null || value === '') payload.append(key, '');
+      return;
+    }
     if (value instanceof File || value === '' || typeof value === 'number') payload.append(key, value);
     else if (typeof value === 'string' && !value.startsWith('http')) payload.append(key, value);
   });

@@ -4,7 +4,7 @@ import { Field, FileField, SubmitButton } from './MissionFields';
 
 export default function MissionCampaignEditor({ form, setForm, saving, onSubmit, fontSize, setFontSize }) {
   return (
-    <form onSubmit={onSubmit} className="space-y-3.5 rounded-3xl border border-[#ccff00]/30 bg-black/50 p-5 shadow-2xl backdrop-blur-xl">
+    <form onSubmit={onSubmit} className="space-y-4 rounded-3xl border border-[#ccff00]/30 bg-black/50 p-5 shadow-2xl backdrop-blur-xl">
       <div className="flex items-center justify-between border-b border-slate-800 pb-2">
         <div>
           <h4 className="text-xs font-black uppercase tracking-wider text-[#ccff00]">Editor de campaña gamer</h4>
@@ -22,12 +22,6 @@ export default function MissionCampaignEditor({ form, setForm, saving, onSubmit,
         <FileField label="Portada hero" icon={<Image size={16} />} value={form.hero_image} accept="image/*" onChange={(file) => setForm({ ...form, hero_image: file })} onClear={() => setForm({ ...form, hero_image: null })} />
         <FileField label="Personaje / objeto" icon={<Image size={16} />} value={form.image} accept="image/*" onChange={(file) => setForm({ ...form, image: file })} onClear={() => setForm({ ...form, image: null })} />
       </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <Field label="Tamaño grupo" type="number" value={form.group_size} min="1" onChange={(value) => setForm({ ...form, group_size: value })} />
-        <Field label="Objeto / carta / recompensa" value={form.inventory_name} onChange={(value) => setForm({ ...form, inventory_name: value })} />
-      </div>
-      <Field label="Detalle del inventario" value={form.inventory_description} onChange={(value) => setForm({ ...form, inventory_description: value })} textarea />
 
       <SubmitButton saving={saving} label="Guardar campaña gamer" />
     </form>
