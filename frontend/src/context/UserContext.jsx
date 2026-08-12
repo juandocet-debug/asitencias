@@ -1,5 +1,5 @@
 ﻿import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import api, { refreshAccessToken, setAccessToken } from '../services/api';
+import api, { clearClientSession, refreshAccessToken } from '../services/api';
 
 const UserContext = createContext();
 const MAX_ATTEMPTS = 8;
@@ -102,7 +102,7 @@ export const UserProvider = ({ children }) => {
             return userData;
         } catch (error) {
             setIsWaking(false);
-            if (error?.response?.status === 401) setAccessToken(null);
+            if ([401, 403].includes(error?.response?.status)) clearClientSession();
             setUser(null);
             return null;
         } finally {
@@ -115,7 +115,11 @@ export const UserProvider = ({ children }) => {
     useEffect(() => {
         refreshAccessToken()
             .then(fetchUser)
-            .catch(() => setLoading(false));
+            .catch(() => {
+                clearClientSession();
+                setUser(null);
+                setLoading(false);
+            });
     }, [fetchUser]);
 
     return (

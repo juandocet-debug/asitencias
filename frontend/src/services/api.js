@@ -16,6 +16,14 @@ export const setAccessToken = (token) => {
 
 export const hasAccessToken = () => Boolean(accessToken);
 
+export const clearClientSession = () => {
+    setAccessToken(null);
+    localStorage.removeItem('username');
+    Object.keys(localStorage)
+        .filter(key => key.startsWith('active_role_'))
+        .forEach(key => localStorage.removeItem(key));
+};
+
 export const refreshAccessToken = async () => {
     if (!refreshPromise) {
         refreshPromise = axios.post(
@@ -33,11 +41,11 @@ export const refreshAccessToken = async () => {
 };
 
 export const logoutSession = async () => {
-    setAccessToken(null);
+    clearClientSession();
     try {
         await axios.post(`${baseURL}/token/logout/`, {}, { withCredentials: true });
     } catch {
-        // La sesión local queda cerrada incluso si la red no responde.
+        // La sesión local queda cerrada aunque la red no responda.
     }
 };
 
@@ -60,7 +68,7 @@ api.interceptors.response.use(
                 request.headers.Authorization = `Bearer ${token}`;
                 return api.request(request);
             } catch {
-                setAccessToken(null);
+                clearClientSession();
                 if (window.location.pathname !== '/login') window.location.assign('/login');
             }
         }

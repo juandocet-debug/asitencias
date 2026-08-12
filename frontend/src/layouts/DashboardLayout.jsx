@@ -6,7 +6,7 @@ import SidebarNav from '../components/layout/SidebarNav';
 import Topbar from '../components/layout/Topbar';
 import JoinClassModal from '../components/layout/JoinClassModal';
 import MobileBottomNav from '../components/mobile/MobileBottomNav';
-import { logoutSession } from '../services/api';
+import { clearClientSession, logoutSession } from '../services/api';
 
 export default function DashboardLayout() {
     const navigate = useNavigate();
@@ -19,8 +19,12 @@ export default function DashboardLayout() {
 
     const handleLogout = async () => {
         await logoutSession();
-        localStorage.removeItem('username');
-        if (user?.id) localStorage.removeItem(`active_role_${user.id}`);
+        if (setUser) setUser(null);
+        navigate('/login');
+    };
+
+    const handleForceLogout = () => {
+        clearClientSession();
         if (setUser) setUser(null);
         navigate('/login');
     };
@@ -46,6 +50,9 @@ export default function DashboardLayout() {
                         <img src="/este-agon.png" alt="AGON" className="h-12 object-contain animate-pulse" />
                     </div>
                     <p className="text-sm font-bold text-slate-500">Sincronizando perfil...</p>
+                    <button onClick={handleForceLogout} className="rounded-full bg-white px-4 py-2 text-xs font-black text-slate-500 shadow hover:text-red-500">
+                        Cerrar sesión
+                    </button>
                 </div>
             </div>
         );

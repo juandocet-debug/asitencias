@@ -3,6 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { useUser } from './context/UserContext';
+import { clearClientSession } from './services/api';
 
 
 
@@ -34,8 +35,47 @@ const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 gap-4">
     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-upn-600"></div>
     <p className="text-slate-400 text-sm font-medium">Cargando...</p>
+    <EmergencyLogout />
   </div>
 );
+
+const EmergencyLogout = () => (
+  <button
+    type="button"
+    onClick={() => {
+      clearClientSession();
+      window.location.assign('/login');
+    }}
+    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-500 shadow-sm hover:text-red-500"
+  >
+    Cerrar sesión y volver al login
+  </button>
+);
+
+class AppErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#09051e] px-6 text-center text-white">
+        <div className="max-w-sm rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl">
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#ccff00]">AGON</p>
+          <h1 className="mt-2 text-2xl font-black">Sesión atascada</h1>
+          <p className="mt-2 text-sm text-slate-300">Limpia la sesión local y vuelve a iniciar sin pantalla blanca.</p>
+          <div className="mt-5 flex justify-center"><EmergencyLogout /></div>
+        </div>
+      </div>
+    );
+  }
+}
 
 // ── Ruta protegida ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
@@ -94,10 +134,11 @@ const ProtectedRoutes = () => {
 // ── App principal ─────────────────────────────────────────────────────────────
 function App() {
   return (
-    <UserProvider>
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+    <AppErrorBoundary>
+      <UserProvider>
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             {/* Ruta raíz */}
             <Route path="/" element={<RootRedirect />} />
 
@@ -120,10 +161,11 @@ function App() {
               {/* Las rutas hijas se renderizan via ProtectedRoutes que usa activeRole */}
               <Route path="/*" element={<ProtectedRoutes />} />
             </Route>
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </UserProvider>
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </UserProvider>
+    </AppErrorBoundary>
   );
 }
 
