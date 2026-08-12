@@ -32,7 +32,8 @@ export const formatDateShort = (dateStr) => {
 // Si el path ya es una URL completa (Cloudinary), la devuelve tal cual.
 export const getMediaUrl = (path) => {
     if (!path) return null;
-    if (path.startsWith('http')) return path;
+    if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) return path;
+    if (path.startsWith('//')) return `https:${path}`;
     const base = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace('/api', '');
     return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
 };

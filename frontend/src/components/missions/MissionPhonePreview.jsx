@@ -8,14 +8,14 @@ export default function MissionPhonePreview({ mission, form, fontSize }) {
   const subtitle = data?.hero_subtitle || 'Subtítulo de la campaña';
 
   return (
-    <div className="relative mx-auto w-full max-w-[30rem] overflow-hidden rounded-[3rem] border-4 border-[#ccff00]/45 bg-[#070919] p-4 font-['Montserrat'] text-white shadow-[0_0_80px_rgba(204,255,0,0.32)]">
-      <div className="absolute left-1/2 top-2 z-30 h-4 w-28 -translate-x-1/2 rounded-full border border-slate-700 bg-slate-800" />
+    <div className="relative mx-auto w-full max-w-none overflow-hidden rounded-[2rem] border border-white/10 bg-[#070919] p-3 font-['Montserrat'] text-white shadow-[0_0_45px_rgba(124,76,255,0.22)]">
+      <div className="absolute left-1/2 top-1 z-30 h-2.5 w-20 -translate-x-1/2 rounded-full border border-slate-700 bg-slate-800" />
 
-      <div className="relative mt-3 flex h-[22rem] flex-col justify-end overflow-hidden rounded-[2rem] border border-[#ccff00]/35 bg-slate-900 p-5 text-center shadow-xl">
+      <div className="relative mt-2 flex h-[14rem] flex-col justify-end overflow-hidden rounded-[1.6rem] border border-white/10 bg-slate-900 p-4 text-center shadow-xl">
         <PreviewImage value={data?.hero_image} fallback={<Sparkles className="text-[#ccff00]" size={72} />} />
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#070919] via-[#070919]/45 to-transparent" />
         <div className="relative z-20 space-y-2 pb-2">
-          <h2 className={`${fontSize === 'small' ? 'text-2xl' : 'text-3xl'} max-h-24 overflow-hidden break-words font-black uppercase leading-tight tracking-wider text-white drop-shadow-[0_4px_14px_rgba(0,0,0,1)]`}>
+          <h2 className={`${fontSize === 'small' ? 'text-xl' : 'text-2xl'} max-h-20 overflow-hidden break-words font-black uppercase leading-tight tracking-wider text-white drop-shadow-[0_4px_14px_rgba(0,0,0,1)]`}>
             {title}
           </h2>
           <p className="max-h-12 overflow-hidden break-words text-xs font-extrabold uppercase leading-snug tracking-widest text-[#ccff00]">
@@ -24,7 +24,7 @@ export default function MissionPhonePreview({ mission, form, fontSize }) {
         </div>
       </div>
 
-      <div className="relative mt-4 flex min-h-[20rem] flex-col justify-end overflow-hidden rounded-[2rem] border border-slate-800 bg-[#0a0d24] text-left shadow-inner">
+      <div className="relative mt-3 flex min-h-[13rem] flex-col justify-end overflow-hidden rounded-[1.6rem] border border-slate-800 bg-[#0a0d24] text-left shadow-inner">
         {data?.image && (
           <div className="absolute inset-0 z-0 h-full w-full">
             <img src={previewSrc(data.image)} alt="" className="h-full w-full object-cover" />
@@ -32,7 +32,7 @@ export default function MissionPhonePreview({ mission, form, fontSize }) {
             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d24] via-transparent to-transparent" />
           </div>
         )}
-        <div className="relative z-20 max-w-[74%] space-y-4 p-5">
+        <div className="relative z-20 max-w-[88%] space-y-3 p-4">
           <TextBlock title="Lore / Historia" text={data?.lore_text || 'Escribe la historia o introducción del desafío aquí...'} highlight />
           <TextBlock title="Epílogo" text={data?.description || 'Objetivos y reglas de la misión...'} />
         </div>

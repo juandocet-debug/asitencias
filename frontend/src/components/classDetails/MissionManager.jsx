@@ -48,7 +48,7 @@ export default function MissionManager({ courseId, showToast }) {
 
   return (
     <section className="rounded-[1.8rem] bg-transparent font-['Montserrat'] text-white">
-      <div className="grid items-start gap-7 xl:grid-cols-[0.75fr_1.25fr]">
+      <div className="grid items-start gap-7 xl:grid-cols-[0.62fr_1.38fr]">
         <div className="space-y-4 xl:sticky xl:top-4">
           <MissionCampaignEditor
             form={missionForm}
@@ -88,7 +88,7 @@ function missionPayload(form, courseId) {
 
 function MissionPreview({ mission }) {
   return (
-    <div className="mt-3 flex items-center gap-3 rounded-2xl border border-[#ccff00]/20 bg-[#ccff00]/10 p-2 pr-4">
+    <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-2 pr-4">
       <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl bg-[#ccff00]/10">
         {mission.image ? <img src={getMediaUrl(mission.image)} alt="" className="h-full w-full object-cover" /> : <Package size={24} />}
       </div>

@@ -16,10 +16,24 @@ export default function Missions() {
   const [toast, setToast] = useState(null);
 
   useEffect(() => { fetchCourses(); }, []);
+  useEffect(() => {
+    if (nodes.length) localStorage.setItem('agon_mission_nodes', JSON.stringify(nodes));
+  }, [nodes]);
 
   useEffect(() => {
     const courseId = params.get('course');
-    if (!courseId || !courses.length || nodes.length) return;
+    if (!courses.length) return;
+
+    if (!nodes.length) {
+      const savedNodes = loadSavedNodes(courses);
+      if (savedNodes.length) {
+        setNodes(savedNodes);
+        setActiveNode(savedNodes.find(node => String(node.courseId) === String(courseId)) || savedNodes[0]);
+        return;
+      }
+    }
+
+    if (!courseId || nodes.some(node => String(node.courseId) === String(courseId))) return;
     const course = courses.find(item => String(item.id) === String(courseId));
     if (course) addCampaignNode(course);
   }, [courses, params, nodes.length]);
@@ -220,6 +234,21 @@ function NodeConfigurator({ node, onClose, showToast }) {
       </div>
     </div>
   );
+}
+
+function loadSavedNodes(courses) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('agon_mission_nodes') || '[]');
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .map(node => {
+        const course = courses.find(item => String(item.id) === String(node.courseId));
+        return course ? { ...node, title: course.name, subtitle: `Código ${course.code}`, course } : null;
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function Connector() {
