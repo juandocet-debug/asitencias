@@ -43,7 +43,7 @@ export const refreshAccessToken = async () => {
 export const logoutSession = async () => {
     clearClientSession();
     try {
-        await axios.post(`${baseURL}/token/logout/`, {}, { withCredentials: true });
+        await axios.post(`${baseURL}/token/logout/`, {}, { timeout: 8000, withCredentials: true });
     } catch {
         // La sesión local queda cerrada aunque la red no responda.
     }
