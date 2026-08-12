@@ -4,14 +4,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Users, Edit2, X, User, Mail, Phone, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Edit2, X, User, Mail, Phone, Loader2, Gamepad2, Sparkles } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import { getMediaUrl } from '../utils/dateUtils';
 
 import Toast from '../components/ui/Toast';
 import ClassActionsBar from '../components/classDetails/ClassActionsBar';
-import MissionManager from '../components/classDetails/MissionManager';
 import StudentListSection from '../components/classDetails/StudentListSection';
 import StudentClassGameView from '../components/classDetails/StudentClassGameView';
 import AttendanceModal from '../components/AttendanceModal';
@@ -139,7 +138,29 @@ export default function ClassDetails() {
                 />
             )}
 
-            {!isStudent && <MissionManager courseId={id} showToast={showToast} />}
+            {!isStudent && (
+                <button
+                    type="button"
+                    onClick={() => navigate(`/missions?course=${id}`)}
+                    className="group w-full overflow-hidden rounded-[2rem] border border-[#ccff00]/25 bg-[#07051d] p-5 text-left text-white shadow-[0_0_38px_rgba(124,76,255,0.18)] transition hover:-translate-y-0.5 hover:border-[#ccff00]/70"
+                >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-center gap-4">
+                            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#ccff00] text-slate-950 shadow-[0_0_28px_rgba(204,255,0,0.38)]">
+                                <Gamepad2 size={26} />
+                            </span>
+                            <div>
+                                <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#ccff00]">Módulo independiente</p>
+                                <h3 className="text-2xl font-black">Configurar misiones, recursos e inventario</h3>
+                                <p className="text-sm font-semibold text-violet-100/65">Abre el centro gamer para esta clase y administra toda la experiencia.</p>
+                            </div>
+                        </div>
+                        <span className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950">
+                            Entrar <Sparkles size={16} className="text-[#7657f6]" />
+                        </span>
+                    </div>
+                </button>
+            )}
 
             {/* -- Vista estudiante: mis faltas -- */}
             {/* Vista profesor: lista de estudiantes */}

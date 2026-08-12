@@ -1,30 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Link2, Loader2, Plus, ShieldCheck, Youtube } from 'lucide-react';
+import { Package } from 'lucide-react';
 import api from '../../services/api';
 import { getMediaUrl } from '../../utils/dateUtils';
-
-const initialMission = {
-  name: '',
-  description: '',
-  group_size: 4,
-  inventory_name: '',
-  inventory_description: '',
-  image: null,
-};
-
-const initialResource = { title: '', resource_type: 'YOUTUBE', url: '', file: null };
+import MissionCampaignEditor from '../missions/MissionCampaignEditor';
+import MissionPhonePreview from '../missions/MissionPhonePreview';
+import { MissionList, ResourceForm } from '../missions/MissionResources';
+import { initialMission, initialResource, missionToForm } from '../missions/missionDefaults';
 
 export default function MissionManager({ courseId, showToast }) {
   const [missions, setMissions] = useState([]);
   const [missionForm, setMissionForm] = useState(initialMission);
   const [resourceForm, setResourceForm] = useState(initialResource);
   const [saving, setSaving] = useState(false);
+  const [fontSize, setFontSize] = useState('normal');
 
   const activeMission = useMemo(() => missions.find((mission) => mission.is_active) || missions[0], [missions]);
 
-  useEffect(() => {
-    fetchMissions();
-  }, [courseId]);
+  useEffect(() => { fetchMissions(); }, [courseId]);
+  useEffect(() => { setMissionForm(missionToForm(activeMission)); }, [activeMission]);
 
   const fetchMissions = async () => {
     try {
@@ -35,21 +28,21 @@ export default function MissionManager({ courseId, showToast }) {
     }
   };
 
-  const createMission = async (event) => {
+  const saveMission = async (event) => {
     event.preventDefault();
     setSaving(true);
     try {
-      const payload = new FormData();
-      payload.append('course', courseId);
-      Object.entries(missionForm).forEach(([key, value]) => {
-        if (value !== null && value !== '') payload.append(key, value);
-      });
-      await api.post('/academic/missions/', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setMissionForm(initialMission);
+      const payload = missionPayload(missionForm, courseId);
+      if (activeMission) {
+        await api.patch(`/academic/missions/${activeMission.id}/`, payload, formHeaders);
+        showToast?.('Campaña gamer actualizada', 'success');
+      } else {
+        await api.post('/academic/missions/', payload, formHeaders);
+        showToast?.('Campaña gamer creada', 'success');
+      }
       await fetchMissions();
-      showToast?.('Misión creada para la clase', 'success');
     } catch {
-      showToast?.('No se pudo crear la misión', 'error');
+      showToast?.('No se pudo guardar la campaña', 'error');
     } finally {
       setSaving(false);
     }
@@ -64,9 +57,7 @@ export default function MissionManager({ courseId, showToast }) {
       Object.entries(resourceForm).forEach(([key, value]) => {
         if (value !== null && value !== '') payload.append(key, value);
       });
-      await api.post(`/academic/missions/${activeMission.id}/resources/`, payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      await api.post(`/academic/missions/${activeMission.id}/resources/`, payload, formHeaders);
       setResourceForm(initialResource);
       await fetchMissions();
       showToast?.('Recurso agregado a la misión', 'success');
@@ -78,121 +69,58 @@ export default function MissionManager({ courseId, showToast }) {
   };
 
   return (
-    <section className="rounded-[2rem] border border-[#ccff00]/20 bg-[#08091d] p-5 text-white shadow-[0_0_45px_rgba(124,76,255,0.18)]">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#ccff00]">Control de misiones</p>
-          <h3 className="text-2xl font-black">Actividades, recursos e inventario</h3>
+    <section className="rounded-[1.8rem] bg-transparent font-['Montserrat'] text-white">
+      <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-4">
+          <MissionCampaignEditor
+            form={missionForm}
+            setForm={setMissionForm}
+            saving={saving}
+            onSubmit={saveMission}
+            fontSize={fontSize}
+            setFontSize={setFontSize}
+          />
+          <ResourceForm
+            disabled={!activeMission}
+            form={resourceForm}
+            mission={activeMission}
+            setForm={setResourceForm}
+            saving={saving}
+            onSubmit={addResource}
+          />
         </div>
-        {activeMission && <MissionPreview mission={activeMission} />}
-      </header>
-
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <MissionForm form={missionForm} setForm={setMissionForm} saving={saving} onSubmit={createMission} />
-        <ResourceForm
-          disabled={!activeMission}
-          form={resourceForm}
-          mission={activeMission}
-          setForm={setResourceForm}
-          saving={saving}
-          onSubmit={addResource}
-        />
+        <div className="sticky top-4">
+          <MissionPhonePreview mission={activeMission} form={missionForm} fontSize={fontSize} />
+          {activeMission && <MissionPreview mission={activeMission} />}
+        </div>
       </div>
+      <MissionList missions={missions} />
     </section>
   );
 }
 
+const formHeaders = { headers: { 'Content-Type': 'multipart/form-data' } };
+
+function missionPayload(form, courseId) {
+  const payload = new FormData();
+  payload.append('course', courseId);
+  Object.entries(form).forEach(([key, value]) => {
+    if (value instanceof File || value === '' || typeof value === 'number') payload.append(key, value);
+    else if (typeof value === 'string' && !value.startsWith('http')) payload.append(key, value);
+  });
+  return payload;
+}
+
 function MissionPreview({ mission }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2 pr-4">
+    <div className="mt-3 flex items-center gap-3 rounded-2xl border border-[#ccff00]/20 bg-[#ccff00]/10 p-2 pr-4">
       <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl bg-[#ccff00]/10">
-        {mission.image ? <img src={getMediaUrl(mission.image)} alt="" className="h-full w-full object-cover" /> : <ShieldCheck size={24} />}
+        {mission.image ? <img src={getMediaUrl(mission.image)} alt="" className="h-full w-full object-cover" /> : <Package size={24} />}
       </div>
       <div>
         <p className="text-sm font-black">{mission.name}</p>
-        <p className="text-xs text-slate-400">{mission.resources?.length || 0} recursos · grupos de {mission.group_size}</p>
+        <p className="text-xs text-violet-100/60">{mission.resources?.length || 0} recursos · grupos de {mission.group_size}</p>
       </div>
     </div>
-  );
-}
-
-function MissionForm({ form, setForm, saving, onSubmit }) {
-  return (
-    <form onSubmit={onSubmit} className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
-      <Field label="Nombre de misión" value={form.name} onChange={(value) => setForm({ ...form, name: value })} required />
-      <Field label="Descripción" value={form.description} onChange={(value) => setForm({ ...form, description: value })} textarea />
-      <div className="grid gap-3 md:grid-cols-2">
-        <Field label="Tamaño grupo" type="number" value={form.group_size} onChange={(value) => setForm({ ...form, group_size: value })} min="1" />
-        <FileField label="Imagen" icon={<Image size={16} />} onChange={(file) => setForm({ ...form, image: file })} />
-      </div>
-      <Field label="Inventario/recompensa" value={form.inventory_name} onChange={(value) => setForm({ ...form, inventory_name: value })} />
-      <Field label="Detalle inventario" value={form.inventory_description} onChange={(value) => setForm({ ...form, inventory_description: value })} textarea />
-      <SubmitButton saving={saving} label="Crear misión" />
-    </form>
-  );
-}
-
-function ResourceForm({ disabled, form, mission, setForm, saving, onSubmit }) {
-  return (
-    <form onSubmit={onSubmit} className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
-      <p className="text-sm font-black text-[#ccff00]">{mission ? `Recursos para ${mission.name}` : 'Crea una misión primero'}</p>
-      <Field label="Título recurso" value={form.title} onChange={(value) => setForm({ ...form, title: value })} required disabled={disabled} />
-      <select
-        value={form.resource_type}
-        disabled={disabled}
-        onChange={(event) => setForm({ ...form, resource_type: event.target.value })}
-        className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold outline-none focus:border-[#ccff00]"
-      >
-        <option value="YOUTUBE">YouTube</option>
-        <option value="READING">Lectura</option>
-        <option value="LINK">Enlace</option>
-        <option value="FILE">Archivo</option>
-      </select>
-      <Field label="URL" value={form.url} onChange={(value) => setForm({ ...form, url: value })} disabled={disabled} icon={<Youtube size={16} />} />
-      <FileField label="Archivo opcional" icon={<Link2 size={16} />} disabled={disabled} onChange={(file) => setForm({ ...form, file })} />
-      <SubmitButton saving={saving} disabled={disabled} label="Agregar recurso" />
-    </form>
-  );
-}
-
-function Field({ disabled, icon, label, textarea, onChange, ...props }) {
-  const Input = textarea ? 'textarea' : 'input';
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase text-slate-300">{label}</span>
-      <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 focus-within:border-[#ccff00]">
-        {icon}
-        <Input
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value)}
-          className="min-h-12 w-full bg-transparent py-3 text-sm font-bold outline-none disabled:opacity-50"
-          {...props}
-        />
-      </div>
-    </label>
-  );
-}
-
-function FileField({ disabled, icon, label, onChange }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase text-slate-300">{label}</span>
-      <span className="flex min-h-12 cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 text-sm font-bold">
-        {icon} Seleccionar
-        <input disabled={disabled} type="file" className="hidden" onChange={(event) => onChange(event.target.files?.[0] || null)} />
-      </span>
-    </label>
-  );
-}
-
-function SubmitButton({ disabled, saving, label }) {
-  return (
-    <button
-      disabled={disabled || saving}
-      className="flex w-full items-center justify-center gap-2 rounded-full bg-[#ccff00] px-5 py-3 text-sm font-black text-slate-950 shadow-[0_0_22px_rgba(204,255,0,0.35)] disabled:opacity-50"
-    >
-      {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-      {label}
-    </button>
   );
 }

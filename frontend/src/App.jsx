@@ -24,6 +24,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const MyAbsences = lazy(() => import('./pages/MyAbsences'));
 const TeacherReviews = lazy(() => import('./pages/TeacherReviews'));
 const ToolsPage = lazy(() => import('./pages/Tools'));
+const MissionsPage = lazy(() => import('./pages/Missions'));
 const PracticasPage = lazy(() => import('./pages/Practicas'));
 const PracticaDetalle = lazy(() => import('./pages/PracticaDetalle'));
 const MisPracticas = lazy(() => import('./pages/MisPracticas'));
@@ -105,6 +106,7 @@ const ProtectedRoutes = () => {
   const role = activeRole || user?.role;
   const isAdmin = role === 'ADMIN';
   const canSeeStudentReports = ['ADMIN', 'TEACHER', 'COORDINATOR'].includes(role);
+  const canManageMissions = ['ADMIN', 'TEACHER'].includes(role);
   return (
     <Routes>
       {/* key={activeRole} en Dashboard fuerza re-montaje al cambiar rol */}
@@ -115,6 +117,7 @@ const ProtectedRoutes = () => {
       <Route path="/users" element={isAdmin ? <UsersPage /> : <Navigate to="/dashboard" replace />} />
       <Route path="/students/:studentId" element={canSeeStudentReports ? <StudentOverview /> : <Navigate to="/dashboard" replace />} />
       <Route path="/tools" element={<ToolsPage />} />
+      <Route path="/missions" element={canManageMissions ? <MissionsPage /> : <Navigate to="/dashboard" replace />} />
       <Route path="/my-absences" element={<MyAbsences />} />
       <Route path="/reviews" element={<TeacherReviews />} />
       <Route path="/coordinator/practicas" element={<PracticasPage />} />

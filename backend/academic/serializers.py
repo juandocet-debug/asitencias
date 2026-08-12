@@ -66,8 +66,20 @@ class MissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mission
         fields = (
-            'id', 'course', 'course_name', 'name', 'description', 'image',
-            'group_size', 'inventory_name', 'inventory_description',
-            'is_active', 'resources', 'created_at', 'updated_at',
+            'id',
+            'course',
+            'course_name',
+            'name',
+            'hero_subtitle',
+            'description',
+            'lore_text',
+            'image',
+            'hero_image',
+            'group_size',
+            'inventory_name',
+            'inventory_description',
+            'is_active',
+            'created_at',
+            'resources',
         )
         read_only_fields = ('created_at', 'updated_at')

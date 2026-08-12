@@ -63,6 +63,9 @@ def validate_mission_payload(data, files=None):
     image = files.get('image')
     if image:
         validate_upload(image, IMAGE_EXTENSIONS, MAX_IMAGE_SIZE, IMAGE_TYPES)
+    hero_image = files.get('hero_image')
+    if hero_image:
+        validate_upload(hero_image, IMAGE_EXTENSIONS, MAX_IMAGE_SIZE, IMAGE_TYPES)
     resource_file = files.get('file')
     if resource_file:
         validate_upload(resource_file, RESOURCE_EXTENSIONS, MAX_RESOURCE_SIZE)
@@ -100,11 +103,44 @@ def present_students_for_course(course):
 
 
 def student_mission_summary(student):
-    missions = Mission.objects.filter(
+    missions = list(Mission.objects.filter(
         course__students=student,
         is_active=True,
-    ).select_related('course').prefetch_related('resources').order_by('-updated_at')
-    mission = missions.first()
+    ).select_related('course').prefetch_related('resources').order_by('-updated_at'))
+    mission = missions[0] if missions else None
     if not mission:
-        return {'mission': None, 'online': {'session_id': None, 'count': 0, 'students': []}}
-    return {'mission': mission, 'online': present_students_for_course(mission.course)}
+        return {
+            'mission': None,
+            'online': {'session_id': None, 'count': 0, 'students': []},
+            'completed': {'count': 0, 'total': 0, 'missions': []},
+            'inventory': {'count': 0, 'items': []},
+        }
+
+    attended_course_ids = set(Attendance.objects.filter(
+        student=student,
+        session__course_id__in=[item.course_id for item in missions],
+        status__in=['PRESENT', 'LATE'],
+    ).values_list('session__course_id', flat=True).distinct())
+
+    completed = [item for item in missions if item.course_id in attended_course_ids]
+    inventory = [
+        {
+            'id': item.id,
+            'name': item.inventory_name,
+            'description': item.inventory_description,
+            'mission_name': item.name,
+            'image': item.image.url if item.image else None,
+        }
+        for item in completed
+        if item.inventory_name
+    ]
+    return {
+        'mission': mission,
+        'online': present_students_for_course(mission.course),
+        'completed': {
+            'count': len(completed),
+            'total': len(missions),
+            'missions': [{'id': item.id, 'name': item.name, 'course': item.course.name} for item in completed],
+        },
+        'inventory': {'count': len(inventory), 'items': inventory},
+    }

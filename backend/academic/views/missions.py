@@ -82,7 +82,12 @@ class MissionViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Solo estudiantes'}, status=403)
         summary = student_mission_summary(request.user)
         mission_data = MissionSerializer(summary['mission'], context={'request': request}).data if summary['mission'] else None
-        return Response({'mission': mission_data, 'online': summary['online']})
+        return Response({
+            'mission': mission_data,
+            'online': summary['online'],
+            'completed': summary['completed'],
+            'inventory': summary['inventory'],
+        })
 
     def _get_course(self, course):
         if isinstance(course, Course):

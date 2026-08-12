@@ -30,6 +30,7 @@ export default function StudentDashboardView({ user, stats, checkins, onRefresh,
                     onOpenSquads={() => navigate('/classes')}
                     stats={data}
                     navigate={navigate}
+                    user={user}
                 />
 
                 <ProgressHud stats={data} history={stats.recent_attendance || []} />
