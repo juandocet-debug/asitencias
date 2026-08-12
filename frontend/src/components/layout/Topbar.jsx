@@ -8,6 +8,8 @@ export default function Topbar({ user, effectiveRole, allRoles, setActiveRole, h
     const [open, setOpen] = useState(false);
     const activeMeta = ROLE_META[effectiveRole] || { label: effectiveRole || 'Sin rol' };
 
+    if (effectiveRole === 'STUDENT') return null;
+
     return (
         <header className="sticky top-0 z-30 px-4 pt-4 md:px-8 md:pt-6">
             <div className="app-glass flex h-16 items-center justify-between rounded-[1.7rem] px-4 md:h-18 md:px-5">

@@ -11,6 +11,7 @@ import { getMediaUrl } from '../utils/dateUtils';
 
 import Toast from '../components/ui/Toast';
 import ClassActionsBar from '../components/classDetails/ClassActionsBar';
+import MissionManager from '../components/classDetails/MissionManager';
 import StudentListSection from '../components/classDetails/StudentListSection';
 import StudentClassGameView from '../components/classDetails/StudentClassGameView';
 import AttendanceModal from '../components/AttendanceModal';
@@ -137,6 +138,8 @@ export default function ClassDetails() {
                     onAttendance={() => setAttendanceOpen(true)}
                 />
             )}
+
+            {!isStudent && <MissionManager courseId={id} showToast={showToast} />}
 
             {/* -- Vista estudiante: mis faltas -- */}
             {/* Vista profesor: lista de estudiantes */}

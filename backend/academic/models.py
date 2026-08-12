@@ -97,3 +97,44 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.student} - {self.session} - {self.status}"
+
+
+class Mission(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='missions')
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to='missions/', null=True, blank=True)
+    group_size = models.PositiveSmallIntegerField(default=4)
+    inventory_name = models.CharField(max_length=120, blank=True)
+    inventory_description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f"{self.name} - {self.course}"
+
+
+class MissionResource(models.Model):
+    TYPE_CHOICES = (
+        ('READING', 'Lectura'),
+        ('YOUTUBE', 'YouTube'),
+        ('LINK', 'Enlace'),
+        ('FILE', 'Archivo'),
+    )
+
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name='resources')
+    title = models.CharField(max_length=120)
+    resource_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    url = models.URLField(blank=True)
+    file = models.FileField(upload_to='mission_resources/', null=True, blank=True)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ('order', 'id')
+
+    def __str__(self):
+        return f"{self.title} ({self.resource_type})"

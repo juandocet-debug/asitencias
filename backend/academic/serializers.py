@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Course, Session, Attendance
+from .models import Attendance, Course, Mission, MissionResource, Session
 
 User = get_user_model()
 
@@ -51,3 +51,23 @@ class AttendanceCreateSerializer(serializers.Serializer):
 class AttendanceSessionQuerySerializer(serializers.Serializer):
     course_id = serializers.IntegerField(min_value=1)
     date = serializers.DateField()
+
+
+class MissionResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MissionResource
+        fields = ('id', 'title', 'resource_type', 'url', 'file', 'order')
+
+
+class MissionSerializer(serializers.ModelSerializer):
+    resources = MissionResourceSerializer(many=True, read_only=True)
+    course_name = serializers.CharField(source='course.name', read_only=True)
+
+    class Meta:
+        model = Mission
+        fields = (
+            'id', 'course', 'course_name', 'name', 'description', 'image',
+            'group_size', 'inventory_name', 'inventory_description',
+            'is_active', 'resources', 'created_at', 'updated_at',
+        )
+        read_only_fields = ('created_at', 'updated_at')

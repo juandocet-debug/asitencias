@@ -9,10 +9,12 @@ from .courses import CourseViewSet
 from .sessions import SessionViewSet
 from .attendance import AttendanceViewSet
 from .dashboard import DashboardViewSet
+from .missions import MissionViewSet
 
 __all__ = [
     'CourseViewSet',
     'SessionViewSet',
     'AttendanceViewSet',
     'DashboardViewSet',
+    'MissionViewSet',
 ]
