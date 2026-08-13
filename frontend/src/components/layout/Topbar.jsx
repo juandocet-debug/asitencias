@@ -8,7 +8,25 @@ export default function Topbar({ user, effectiveRole, allRoles, setActiveRole, h
     const [open, setOpen] = useState(false);
     const activeMeta = ROLE_META[effectiveRole] || { label: effectiveRole || 'Sin rol' };
 
-    if (effectiveRole === 'STUDENT') return null;
+    if (effectiveRole === 'STUDENT') {
+        return (
+            <header className="sticky top-0 z-30 flex items-center justify-between px-4 pt-4 md:px-8 md:pt-6">
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#ccff00]">AGON</p>
+                    <p className="text-sm font-black text-white">Panel estudiante</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    title="Cerrar sesión"
+                    aria-label="Cerrar sesión"
+                    className="grid h-11 w-11 place-items-center rounded-full border border-red-400/40 bg-red-500 text-white shadow-[0_0_22px_rgba(239,68,68,0.38)] transition hover:bg-red-400 active:scale-95"
+                >
+                    <LogOut size={20} />
+                </button>
+            </header>
+        );
+    }
 
     return (
         <header className="sticky top-0 z-30 px-4 pt-4 md:px-8 md:pt-6">

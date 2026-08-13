@@ -1,9 +1,11 @@
 ﻿import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import api, { clearClientSession, refreshAccessToken } from '../services/api';
+import api, { clearClientSession, logoutSession, refreshAccessToken } from '../services/api';
 
 const UserContext = createContext();
 const MAX_ATTEMPTS = 2;
 const BASE_DELAY = 800;
+const STUDENT_IDLE_TIMEOUT_MS = 3 * 60 * 1000;
+const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
 
 export const useUser = () => {
     const context = useContext(UserContext);
@@ -121,6 +123,33 @@ export const UserProvider = ({ children }) => {
                 setLoading(false);
             });
     }, [fetchUser]);
+
+    useEffect(() => {
+        const effectiveRole = activeRole || user?.role;
+        if (!user || effectiveRole !== 'STUDENT') return undefined;
+
+        let timeoutId;
+        let closing = false;
+        const closeIdleSession = async () => {
+            if (closing) return;
+            closing = true;
+            clearClientSession();
+            setUser(null);
+            await logoutSession();
+            window.location.replace('/login');
+        };
+        const resetIdleTimer = () => {
+            window.clearTimeout(timeoutId);
+            timeoutId = window.setTimeout(closeIdleSession, STUDENT_IDLE_TIMEOUT_MS);
+        };
+
+        ACTIVITY_EVENTS.forEach(name => window.addEventListener(name, resetIdleTimer, { passive: true }));
+        resetIdleTimer();
+        return () => {
+            window.clearTimeout(timeoutId);
+            ACTIVITY_EVENTS.forEach(name => window.removeEventListener(name, resetIdleTimer));
+        };
+    }, [activeRole, user?.id, user?.role]);
 
     return (
         <UserContext.Provider value={{ user, setUser, updateUser, fetchUser, loading, activeRole, setActiveRole }}>

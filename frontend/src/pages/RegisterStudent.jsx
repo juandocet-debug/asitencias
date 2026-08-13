@@ -208,7 +208,7 @@ export default function RegisterStudent() {
     }
 
     return (
-        <div className="min-h-screen bg-[#eef0f8] flex flex-col md:flex-row shadow-2xl overflow-hidden">
+        <div className="min-h-screen overflow-hidden bg-[#0c0918] font-['Montserrat'] md:flex md:flex-row">
             {toast && <Toast {...toast} onClose={() => setToast(null)} />}
             {showSuccess && <SuccessModal onClose={() => { setShowSuccess(false); navigate('/login'); }} />}
 
@@ -216,33 +216,31 @@ export default function RegisterStudent() {
             <SidebarInfo step={step} />
 
             {/* Panel derecho — formulario */}
-            <div className="w-full md:w-7/12 flex flex-col bg-white md:h-screen md:overflow-y-auto">
+            <div className="relative flex w-full flex-col bg-[radial-gradient(circle_at_90%_0%,rgba(204,255,0,0.12),transparent_28%),linear-gradient(145deg,#171329,#0c0918)] md:h-screen md:w-7/12 md:overflow-y-auto">
                 <div className="w-full max-w-3xl mx-auto p-0 md:p-10 lg:p-12">
 
                     {/* Mobile header */}
-                    <div className="md:hidden bg-upn-700 p-6 rounded-b-[2.2rem] shadow-xl relative overflow-hidden text-center text-white mb-5">
+                    <div className="relative mb-5 overflow-hidden rounded-b-[2.2rem] border-b border-[#ccff00]/20 bg-[#1a1432] p-6 text-center text-white shadow-xl md:hidden">
                         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
                             <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl" />
                         </div>
                         <div className="relative z-10">
-                            <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-lg">
-                                <img src="/upn-logo.png" alt="Logo UPN Mobile" className="h-16 mx-auto object-contain" />
-                            </div>
-                            <h2 className="text-xl font-bold">Registro de Estudiantes</h2>
-                            <p className="text-blue-200 text-xs font-medium tracking-widest uppercase mt-2">Licenciatura en Recreación</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.38em] text-[#ccff00]">Nuevo jugador</p>
+                            <h2 className="mt-2 text-2xl font-black">Registro de Estudiantes</h2>
+                            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-violet-200/70">Licenciatura en Recreación</p>
                         </div>
                     </div>
 
                     <div className="px-4 pb-8 md:px-0">
-                        <Link to="/login" className="inline-flex items-center text-slate-400 hover:text-upn-700 mb-4 transition-colors group text-sm font-medium">
+                        <Link to="/login" className="group mb-4 inline-flex items-center text-sm font-bold text-violet-200/55 transition-colors hover:text-[#ccff00]">
                             <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Volver al Login
                         </Link>
 
-                        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                            Crear Cuenta
+                        <h2 className="mb-2 text-2xl font-black text-white md:text-3xl">
+                            Crear cuenta
                         </h2>
-                        <p className="text-slate-500 mb-5 text-sm md:text-base">
-                            Completa el formulario para registrarte en el sistema.
+                        <p className="mb-5 text-sm text-violet-200/55 md:text-base">
+                            Completa tu perfil y entra a la experiencia AGON.
                         </p>
 
                         {error && (
@@ -251,7 +249,7 @@ export default function RegisterStudent() {
                             </div>
                         )}
 
-                        <form onSubmit={e => e.preventDefault()} className="space-y-4 md:space-y-6">
+                        <form onSubmit={e => e.preventDefault()} className="space-y-4 rounded-[2rem] border border-white/10 bg-white/[0.96] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.35)] md:space-y-6 md:p-6">
                             <AnimatePresence mode="wait">
                                 {step === 1 && (
                                     <StepPersonalData
