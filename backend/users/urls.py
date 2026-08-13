@@ -4,7 +4,7 @@ from .views import (
     StudentRegisterView, UserViewSet, password_reset_request,
     password_reset_confirm, join_class, search_all_users, list_courses_for_ilinyx,
     FacultyViewSet, ProgramViewSet, coordinator_types,
-    import_directory, directory_history, directory_batch_detail, complete_onboarding,
+    complete_onboarding,
 )
 
 router = DefaultRouter()
@@ -22,9 +22,6 @@ urlpatterns = [
     path('password-reset/', password_reset_request, name='password-reset-request'),
     path('password-reset-confirm/', password_reset_confirm, name='password-reset-confirm'),
     path('join-class/', join_class, name='join-class'),
-    path('directory/import/', import_directory, name='directory-import'),
-    path('directory/imports/', directory_history, name='directory-history'),
-    path('directory/imports/<int:batch_id>/', directory_batch_detail, name='directory-batch-detail'),
     path('onboarding/complete/', complete_onboarding, name='onboarding-complete'),
     path('search/', search_all_users, name='users-search'),
     path('courses-for-ilinyx/', list_courses_for_ilinyx, name='courses-for-ilinyx'),

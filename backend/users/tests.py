@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
+from academic.models import Course
 
 
 User = get_user_model()
@@ -96,3 +97,44 @@ class AuthenticationContractTests(TestCase):
             response.json(),
             {"status": "ok", "database": "available"},
         )
+
+
+class StudentRegistrationContractTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.teacher = User.objects.create_user(
+            username='teacher-registration', password='safe-password', role='TEACHER'
+        )
+        self.course = Course.objects.create(
+            teacher=self.teacher, name='Registro QR', code='QR2026'
+        )
+        self.payload = {
+            'username': 'student@upn.edu.co',
+            'email': 'student@upn.edu.co',
+            'password': 'Safe-password!23',
+            'first_name': 'Ana',
+            'last_name': 'Estudiante',
+            'document_number': '12345001',
+            'class_code': 'qr2026',
+        }
+
+    def test_qr_registration_links_student_case_insensitively(self):
+        response = self.client.post('/api/users/register/student/', self.payload)
+
+        self.assertEqual(response.status_code, 201)
+        student = User.objects.get(username=self.payload['username'])
+        self.assertTrue(self.course.students.filter(pk=student.pk).exists())
+
+    def test_invalid_code_does_not_create_orphan_student(self):
+        self.payload['class_code'] = 'INVALID'
+        response = self.client.post('/api/users/register/student/', self.payload)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('class_code', response.json())
+        self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
+
+    def test_directory_import_endpoint_is_removed(self):
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.post('/api/users/directory/import/', {})
+
+        self.assertEqual(response.status_code, 404)

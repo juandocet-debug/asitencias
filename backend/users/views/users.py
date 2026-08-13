@@ -192,7 +192,8 @@ def join_class(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    if request.user.role != 'STUDENT':
+    roles = request.user.roles or [request.user.role]
+    if 'STUDENT' not in roles:
         return Response(
             {'error': 'Solo los estudiantes pueden unirse a clases'},
             status=status.HTTP_403_FORBIDDEN
@@ -200,7 +201,7 @@ def join_class(request):
 
     try:
         from academic.models import Course
-        course = Course.objects.get(code=class_code)
+        course = Course.objects.get(code__iexact=str(class_code).strip(), is_archived=False)
     except Course.DoesNotExist:
         return Response({'error': 'Código de clase inválido'}, status=status.HTTP_404_NOT_FOUND)
 

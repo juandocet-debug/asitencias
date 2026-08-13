@@ -71,13 +71,12 @@ export default function RegisterStudent() {
 
     // Leer código desde URL
     useEffect(() => {
-        const code = searchParams.get('code');
+        const code = searchParams.get('code')?.trim().toUpperCase();
         if (!code) return;
         setFormData(p => ({ ...p, class_code: code }));
         if (!user) {
-            showToast('Regístrate para unirte a la clase. Si ya tienes cuenta, inicia sesión primero.', 'info');
+            showToast('Completa el registro para quedar vinculado a esta clase.', 'info');
         }
-        showToast(`Código detectado: ${code}`, 'success');
     }, [searchParams, user]);
 
     const handleChange = (e) => {
@@ -131,6 +130,7 @@ export default function RegisterStudent() {
                 else if (d.username) msg = d.username[0]?.includes('already') ? 'Este correo institucional ya está registrado' : translateError('username', d.username[0]);
                 else if (d.email) msg = d.email[0]?.includes('already') ? 'Este correo ya está en uso' : 'El correo no es válido';
                 else if (d.document_number) msg = 'Este número de documento ya está registrado';
+                else if (d.class_code) msg = Array.isArray(d.class_code) ? d.class_code[0] : d.class_code;
                 else { const k = Object.keys(d)[0]; if (k) msg = translateError(k, d[k]); }
             }
             setError(msg); showToast(msg, 'error');

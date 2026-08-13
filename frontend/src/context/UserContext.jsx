@@ -1,11 +1,9 @@
 ﻿import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import api, { clearClientSession, logoutSession, refreshAccessToken } from '../services/api';
+import api, { clearClientSession, refreshAccessToken } from '../services/api';
 
 const UserContext = createContext();
-const MAX_ATTEMPTS = 8;
-const BASE_DELAY = 3000;
-const STUDENT_IDLE_TIMEOUT_MS = 4 * 60 * 1000;
-const ACTIVITY_EVENTS = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+const MAX_ATTEMPTS = 2;
+const BASE_DELAY = 800;
 
 export const useUser = () => {
     const context = useContext(UserContext);
@@ -18,13 +16,13 @@ const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
 const fetchUserWithRetry = async (onReconnect) => {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
-            const response = await api.get('/users/me/', { timeout: 20000 });
+            const response = await api.get('/users/me/', { timeout: 12000 });
             return response.data;
         } catch (error) {
             const status = error?.response?.status;
             if (status === 401 || status === 403 || attempt === MAX_ATTEMPTS) throw error;
             if (attempt >= 2 && onReconnect) onReconnect();
-            await wait(BASE_DELAY * Math.min(attempt, 3));
+            await wait(BASE_DELAY);
         }
     }
     return null;
@@ -123,41 +121,6 @@ export const UserProvider = ({ children }) => {
                 setLoading(false);
             });
     }, [fetchUser]);
-
-    useEffect(() => {
-        const effectiveRole = activeRole || user?.role;
-        if (!user || effectiveRole !== 'STUDENT') return undefined;
-
-        let timeoutId;
-        let closing = false;
-
-        const closeIdleSession = () => {
-            if (closing) return;
-            closing = true;
-            clearClientSession();
-            setUser(null);
-            logoutSession().finally(() => {
-                window.location.assign('/login?expired=1');
-            });
-        };
-
-        const resetIdleTimer = () => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(closeIdleSession, STUDENT_IDLE_TIMEOUT_MS);
-        };
-
-        ACTIVITY_EVENTS.forEach(eventName => {
-            window.addEventListener(eventName, resetIdleTimer, { passive: true });
-        });
-        resetIdleTimer();
-
-        return () => {
-            clearTimeout(timeoutId);
-            ACTIVITY_EVENTS.forEach(eventName => {
-                window.removeEventListener(eventName, resetIdleTimer);
-            });
-        };
-    }, [activeRole, user?.id, user?.role]);
 
     return (
         <UserContext.Provider value={{ user, setUser, updateUser, fetchUser, loading, activeRole, setActiveRole }}>

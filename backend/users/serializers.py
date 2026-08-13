@@ -203,6 +203,14 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
             'phone_number', 'faculty', 'program', 'photo', 'class_code'
         )
 
+    def validate_class_code(self, value):
+        code = str(value or '').strip().upper()
+        if not code:
+            return ''
+        if not Course.objects.filter(code__iexact=code, is_archived=False).exists():
+            raise serializers.ValidationError('El código de clase no existe o ya no está activo.')
+        return code
+
     def create(self, validated_data):
         class_code = validated_data.pop('class_code', None)
         password = validated_data.pop('password')
@@ -211,16 +219,11 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         validated_data['role'] = 'STUDENT'
         validated_data['roles'] = ['STUDENT']
 
-        user = User.objects.create(**validated_data)
-        user.set_password(password)
-        user.save()
+        user = User.objects.create_user(password=password, **validated_data)
 
         if class_code:
-            try:
-                course = Course.objects.get(code=class_code)
-                course.students.add(user)
-            except Course.DoesNotExist:
-                pass
+            course = Course.objects.get(code__iexact=class_code, is_archived=False)
+            course.students.add(user)
 
         return user
 
