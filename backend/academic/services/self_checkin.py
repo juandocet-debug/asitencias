@@ -43,7 +43,7 @@ def get_self_checkin_for_teacher(user, session_id):
 
 
 def list_open_checkins_for_student(user):
-    if user.role != 'STUDENT':
+    if not _has_role(user, 'STUDENT'):
         return []
 
     sessions = Session.objects.filter(
@@ -87,10 +87,15 @@ def mark_student_self_checkin(user, session_id, code):
 
 
 def _get_manageable_course(user, course_id):
-    courses = Course.objects.filter(id=course_id)
-    if not (getattr(user, 'is_superuser', False) or user.role == 'ADMIN'):
+    courses = Course.objects.filter(id=course_id, is_archived=False)
+    if not (getattr(user, 'is_superuser', False) or _has_role(user, 'ADMIN')):
         courses = courses.filter(teacher=user)
     return courses.get()
+
+
+def _has_role(user, role):
+    roles = getattr(user, 'roles', None) or [getattr(user, 'role', '')]
+    return role in roles
 
 
 def _is_open(session):

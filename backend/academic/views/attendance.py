@@ -102,7 +102,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         code = str(request.data.get('code') or '').strip().upper()
         session_id = request.data.get('session_id')
 
-        if request.user.role != 'STUDENT':
+        roles = getattr(request.user, 'roles', None) or [getattr(request.user, 'role', '')]
+        if 'STUDENT' not in roles:
             return Response({'error': 'Solo estudiantes'}, status=403)
         if not code or not session_id:
             return Response({'error': 'Código y sesión requeridos'}, status=400)
