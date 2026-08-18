@@ -2,10 +2,10 @@
 import api, { clearClientSession, logoutSession, refreshAccessToken } from '../services/api';
 
 const UserContext = createContext();
-const MAX_ATTEMPTS = 2;
-const BASE_DELAY = 800;
-const STUDENT_IDLE_TIMEOUT_MS = 3 * 60 * 1000;
-const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+const MAX_ATTEMPTS = 3;
+const BASE_DELAY = 1200;
+const STUDENT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
 
 export const useUser = () => {
     const context = useContext(UserContext);
@@ -18,13 +18,13 @@ const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
 const fetchUserWithRetry = async (onReconnect) => {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
-            const response = await api.get('/users/me/', { timeout: 12000 });
+            const response = await api.get('/users/me/', { timeout: 20000 });
             return response.data;
         } catch (error) {
             const status = error?.response?.status;
             if (status === 401 || status === 403 || attempt === MAX_ATTEMPTS) throw error;
             if (attempt >= 2 && onReconnect) onReconnect();
-            await wait(BASE_DELAY);
+            await wait(BASE_DELAY * attempt);
         }
     }
     return null;

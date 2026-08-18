@@ -29,7 +29,11 @@ export default function Login() {
             setAccessToken(response.data.access);
             localStorage.setItem('username', username);
             const userData = fetchUser ? await fetchUser() : null;
-            if (userData?.requires_onboarding) navigate('/complete-profile');
+            if (!userData) {
+                setError('Iniciaste sesión, pero no pudimos cargar tu perfil. Intenta de nuevo en unos segundos.');
+                return;
+            }
+            if (userData.requires_onboarding) navigate('/complete-profile');
             else navigate(classCode ? `/register?code=${classCode}` : '/dashboard');
         } catch (err) {
             const status = err?.response?.status;

@@ -63,6 +63,10 @@ class AppErrorBoundary extends React.Component {
     return { hasError: true };
   }
 
+  componentDidCatch(error, info) {
+    console.error('AppErrorBoundary capturó un error:', error, info?.componentStack);
+  }
+
   render() {
     if (!this.state.hasError) return this.props.children;
     return (

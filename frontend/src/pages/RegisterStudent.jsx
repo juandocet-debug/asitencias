@@ -127,9 +127,9 @@ export default function RegisterStudent() {
             if (d) {
                 if (typeof d === 'string') msg = d;
                 else if (d.detail) msg = d.detail;
-                else if (d.username) msg = d.username[0]?.includes('already') ? 'Este correo institucional ya está registrado' : translateError('username', d.username[0]);
-                else if (d.email) msg = d.email[0]?.includes('already') ? 'Este correo ya está en uso' : 'El correo no es válido';
-                else if (d.document_number) msg = 'Este número de documento ya está registrado';
+                else if (d.username) msg = d.username[0]?.includes('already') ? 'Este correo institucional ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.' : translateError('username', d.username[0]);
+                else if (d.email) msg = d.email[0]?.includes('already') ? 'Este correo ya está en uso. Inicia sesión en lugar de crear una cuenta nueva.' : 'El correo no es válido';
+                else if (d.document_number) msg = 'Este número de documento ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.';
                 else if (d.class_code) msg = Array.isArray(d.class_code) ? d.class_code[0] : d.class_code;
                 else { const k = Object.keys(d)[0]; if (k) msg = translateError(k, d[k]); }
             }
@@ -232,7 +232,7 @@ export default function RegisterStudent() {
                     </div>
 
                     <div className="px-4 pb-8 md:px-0">
-                        <Link to="/login" className="group mb-4 inline-flex items-center text-sm font-bold text-violet-200/55 transition-colors hover:text-[#ccff00]">
+                        <Link to={formData.class_code.trim() ? `/login?code=${formData.class_code.trim()}` : '/login'} className="group mb-4 inline-flex items-center text-sm font-bold text-violet-200/55 transition-colors hover:text-[#ccff00]">
                             <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Volver al Login
                         </Link>
 

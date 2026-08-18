@@ -48,6 +48,7 @@ export default function Dashboard() {
             }
         } catch (error) {
             console.error('Error fetching dashboard stats:', error);
+            setStats(null);
         } finally {
             setLoading(false);
         }
@@ -64,7 +65,7 @@ export default function Dashboard() {
     };
 
     if (loading) return isStudent ? <GameLoadingState /> : <LoadingState />;
-    if (!stats) return null;
+    if (!stats) return <LoadFailedState onRetry={fetchStats} isStudent={isStudent} />;
 
     if (isStudent) {
         return (
@@ -187,6 +188,24 @@ function EmptyToday({ canManage }) {
             <Calendar size={42} className="mx-auto mb-3 opacity-30" />
             <p className="font-bold">No hay clases programadas para hoy.</p>
             {canManage && <p className="mt-1 text-xs">Configura horarios desde tus cursos.</p>}
+        </div>
+    );
+}
+
+function LoadFailedState({ onRetry, isStudent }) {
+    return (
+        <div className={`grid min-h-[60vh] place-items-center px-6 text-center ${isStudent ? 'bg-[#050219] text-white' : 'text-slate-500'}`}>
+            <div>
+                <AlertCircle size={40} className="mx-auto mb-3 opacity-60" />
+                <p className="font-bold">No pudimos cargar tu panel.</p>
+                <p className="mt-1 text-sm opacity-70">Revisa tu conexión e intenta de nuevo.</p>
+                <button
+                    onClick={onRetry}
+                    className="mt-5 rounded-full bg-[#7657f6] px-5 py-2.5 text-sm font-black text-white shadow-lg"
+                >
+                    Reintentar
+                </button>
+            </div>
         </div>
     );
 }

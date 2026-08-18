@@ -82,7 +82,11 @@ export default function CompleteStudentProfile() {
         if (photo) data.append('photo', photo);
         try {
             await api.post('/users/onboarding/complete/', data, { headers: { 'Content-Type': 'multipart/form-data' } });
-            await fetchUser();
+            const updatedUser = await fetchUser();
+            if (!updatedUser) {
+                setError('Tu cuenta quedó activada, pero no pudimos cargar tu perfil. Vuelve a intentarlo en unos segundos.');
+                return;
+            }
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || 'No se pudo completar la activación.');
