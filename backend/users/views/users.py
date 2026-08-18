@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.filters import SearchFilter
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Count, Q
 from ..serializers import (
     StudentRegisterSerializer, UserSerializer, UserProfileSerializer,
     AdminUserCreateSerializer, AdminUserUpdateSerializer,
@@ -64,13 +64,13 @@ class UserViewSet(viewsets.ModelViewSet):
         return qs
 
     def _stats_for(self, qs):
-        return {
-            'total': qs.count(),
-            'students': qs.filter(role='STUDENT').count(),
-            'teachers': qs.filter(role='TEACHER').count(),
-            'coordinators': qs.filter(roles__contains=['COORDINATOR']).count(),
-            'admins': qs.filter(role='ADMIN').count(),
-        }
+        return qs.aggregate(
+            total=Count('id'),
+            students=Count('id', filter=Q(role='STUDENT')),
+            teachers=Count('id', filter=Q(role='TEACHER')),
+            coordinators=Count('id', filter=Q(roles__contains=['COORDINATOR'])),
+            admins=Count('id', filter=Q(role='ADMIN')),
+        )
 
     def get_queryset(self):
         search = self.request.query_params.get('search', '').strip()
@@ -79,13 +79,20 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Filtro de búsqueda adicional
         if search:
-            qs = qs.filter(
-                Q(first_name__icontains=search) |
-                Q(last_name__icontains=search)  |
-                Q(username__icontains=search)   |
-                Q(email__icontains=search)      |
-                Q(document_number__icontains=search)
-            )
+            if '@' in search or search.isdigit():
+                qs = qs.filter(
+                    Q(username=search) |
+                    Q(email=search) |
+                    Q(document_number=search)
+                )
+            else:
+                qs = qs.filter(
+                    Q(first_name__icontains=search) |
+                    Q(last_name__icontains=search)  |
+                    Q(username__icontains=search)   |
+                    Q(email__icontains=search)      |
+                    Q(document_number__icontains=search)
+                )
 
         if role and role != 'ALL':
             qs = qs.filter(
@@ -111,7 +118,8 @@ class UserViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(filtered_qs)
         serializer = self.get_serializer(page, many=True)
         response = self.get_paginated_response(serializer.data)
-        response.data['stats'] = self._stats_for(self._base_queryset())
+        if request.query_params.get('include_stats', '').lower() in ('1', 'true', 'yes'):
+            response.data['stats'] = self._stats_for(self._base_queryset())
         return response
 
     def create(self, request, *args, **kwargs):

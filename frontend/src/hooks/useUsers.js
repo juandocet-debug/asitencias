@@ -26,6 +26,7 @@ export function useUsers(initialRole = 'ALL') {
     const [toast, setToast] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const requestRef = useRef(null);
+    const statsLoadedRef = useRef(false);
 
     const showToast = useCallback((message, type = 'success') => {
         setToast({ message, type });
@@ -47,6 +48,7 @@ export function useUsers(initialRole = 'ALL') {
                     page_size: 25,
                     search: nextSearch || undefined,
                     role: nextRole !== 'ALL' ? nextRole : undefined,
+                    include_stats: statsLoadedRef.current ? undefined : true,
                 },
                 signal: requestRef.current.signal,
             });
@@ -57,7 +59,10 @@ export function useUsers(initialRole = 'ALL') {
                 next: Array.isArray(payload) ? null : payload.next,
                 previous: Array.isArray(payload) ? null : payload.previous,
             });
-            setStats(payload.stats || DEFAULT_STATS);
+            if (payload.stats) {
+                setStats(payload.stats);
+                statsLoadedRef.current = true;
+            }
         } catch (error) {
             if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') return;
             showToast('Error al cargar usuarios', 'error');
@@ -89,7 +94,7 @@ export function useUsers(initialRole = 'ALL') {
         if (!hasUsefulSearch) return;
         const timeout = setTimeout(() => {
             fetchUsers({ page, searchTerm, activeRole });
-        }, 550);
+        }, 250);
         return () => clearTimeout(timeout);
     }, [activeRole, fetchUsers, page, searchTerm]);
 
