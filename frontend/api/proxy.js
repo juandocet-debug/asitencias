@@ -37,10 +37,13 @@ export default async function handler(request, response) {
         }
 
         const method = request.method || 'GET';
+        const body = method === 'GET' || method === 'HEAD'
+            ? undefined
+            : requestBody(request);
         const upstream = await fetch(target, {
             method,
             headers,
-            body: method === 'GET' || method === 'HEAD' ? undefined : request,
+            body,
             duplex: 'half',
             redirect: 'manual',
         });
@@ -57,6 +60,12 @@ export default async function handler(request, response) {
     } catch {
         response.status(502).json({ error: 'El servicio no está disponible temporalmente.' });
     }
+}
+
+function requestBody(request) {
+    if (request.body === undefined || request.body === null) return request;
+    if (Buffer.isBuffer(request.body) || typeof request.body === 'string') return request.body;
+    return JSON.stringify(request.body);
 }
 
 function normalizePath(value) {
