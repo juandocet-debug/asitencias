@@ -4,8 +4,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/backend/:path*", "destination": "https://agon-backend-production-c5d2.up.railway.app/:path*" },
-    { "source": "/:path((?!backend(?:/|$)).*)", "destination": "/index.html" }
+    { "source": "/:path((?!api(?:/|$)).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
