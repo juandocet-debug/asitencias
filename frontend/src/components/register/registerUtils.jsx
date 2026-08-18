@@ -56,6 +56,7 @@ export function InputGroup({ label, icon, helper, className, ...props }) {
             <div className="relative group">
                 <input
                     {...props}
+                    onInput={props.onChange}
                     className={`block w-full rounded-xl border border-violet-400/20 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white placeholder-violet-200/32 outline-none transition focus:border-[#ccff00]/70 focus:ring-2 focus:ring-[#ccff00]/10 ${className || ''}`}
                 />
             </div>

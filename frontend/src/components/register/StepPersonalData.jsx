@@ -7,7 +7,7 @@ import {
 import { InputGroup } from './registerUtils';
 import api from '../../services/api';
 
-export default function StepPersonalData({ formData, onChange, onNext, loading = false }) {
+export default function StepPersonalData({ formData, onChange, onSyncPage, onPageChange, onNext, loading = false }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
     const [faculties, setFaculties] = useState([]);
@@ -29,8 +29,26 @@ export default function StepPersonalData({ formData, onChange, onNext, loading =
     }, [formData.faculty, programs]);
 
     const pageTitles = ['Identidad', 'Contacto', 'Programa', 'Seguridad'];
-    const back = () => setPage(current => Math.max(1, current - 1));
-    const next = () => setPage(current => Math.min(4, current + 1));
+    const readVisibleValues = (button) => {
+        const form = button?.form;
+        if (!form) return {};
+        return Object.fromEntries(
+            [...form.querySelectorAll('input[name], select[name]')]
+                .filter(field => !field.disabled)
+                .map(field => [field.name, field.value])
+        );
+    };
+
+    const moveTo = (targetPage, button) => {
+        const values = readVisibleValues(button);
+        onSyncPage?.(values);
+        setPage(targetPage);
+        onPageChange?.(targetPage);
+    };
+
+    const back = (event) => moveTo(Math.max(1, page - 1), event.currentTarget);
+    const next = (event) => moveTo(Math.min(4, page + 1), event.currentTarget);
+    const finish = (event) => onNext(readVisibleValues(event.currentTarget));
 
     return (
         <motion.div key="step1" className="space-y-4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
@@ -87,7 +105,7 @@ export default function StepPersonalData({ formData, onChange, onNext, loading =
                         Siguiente
                     </button>
                 ) : (
-                    <button type="button" onClick={onNext} disabled={loading} className="rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] py-3 font-bold text-white shadow-[0_12px_32px_rgba(118,87,246,0.32)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70">
+                    <button type="button" onClick={finish} disabled={loading} className="rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] py-3 font-bold text-white shadow-[0_12px_32px_rgba(118,87,246,0.32)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70">
                         <span className="flex items-center justify-center gap-3">
                             {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Validando</> : <>Foto <ArrowRight size={20} /></>}
                         </span>

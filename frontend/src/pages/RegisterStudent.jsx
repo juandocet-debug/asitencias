@@ -94,6 +94,7 @@ export default function RegisterStudent() {
     const [searchParams] = useSearchParams();
 
     const [step, setStep] = useState(1);
+    const [registrationPage, setRegistrationPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -121,6 +122,13 @@ export default function RegisterStudent() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(p => ({ ...p, [name]: value }));
+        setError(null);
+    };
+
+    const syncPageValues = (values) => {
+        if (!values || Object.keys(values).length === 0) return;
+        setFormData(current => ({ ...current, ...values }));
+        setError(null);
     };
 
     // ── Validación paso 1 ─────────────────────────────────
@@ -132,44 +140,49 @@ export default function RegisterStudent() {
         return true;
     };
 
-    const validateStep1 = () => {
-        if (!validateDocumentStep()) return false;
-        if (!formData.institutional_email.trim()) { showToast('El correo institucional es obligatorio', 'error'); return false; }
-        if (!INSTITUTIONAL_EMAIL_RE.test(formData.institutional_email)) { showToast('Correo institucional inválido. Usa tu correo @upn.edu.co', 'error'); return false; }
-        if (formData.email.trim() && !EMAIL_RE.test(formData.email)) { showToast('Correo personal inválido', 'error'); return false; }
-        if (!formData.password.trim()) { showToast('La contraseña es obligatoria', 'error'); return false; }
-        if (formData.password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return false; }
-        if (!SPECIAL_RE.test(formData.password)) { setError('La contraseña debe contener al menos un carácter especial (!@#$%^&*...)'); return false; }
-        if (formData.password !== formData.password_confirm) { showToast('Las contraseñas no coinciden', 'error'); return false; }
+    const validateStep1 = (data = formData) => {
+        if (!data.first_name.trim()) { showToast('El primer nombre es obligatorio', 'error'); return false; }
+        if (!data.last_name.trim()) { showToast('El primer apellido es obligatorio', 'error'); return false; }
+        if (!data.document_number.trim()) { showToast('El número de documento es obligatorio', 'error'); return false; }
+        if (!/^\d+$/.test(data.document_number)) { showToast('El documento debe contener solo números', 'error'); return false; }
+        if (!data.institutional_email.trim()) { showToast('El correo institucional es obligatorio', 'error'); return false; }
+        if (!INSTITUTIONAL_EMAIL_RE.test(data.institutional_email)) { showToast('Correo institucional inválido. Usa tu correo @upn.edu.co', 'error'); return false; }
+        if (data.email.trim() && !EMAIL_RE.test(data.email)) { showToast('Correo personal inválido', 'error'); return false; }
+        if (!data.password.trim()) { showToast('La contraseña es obligatoria', 'error'); return false; }
+        if (data.password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return false; }
+        if (!SPECIAL_RE.test(data.password)) { setError('La contraseña debe contener al menos un carácter especial (!@#$%^&*...)'); return false; }
+        if (data.password !== data.password_confirm) { showToast('Las contraseñas no coinciden', 'error'); return false; }
         return true;
     };
 
-    const buildRegistrationData = ({ dryRun = false, photo = null } = {}) => {
-        const institutionalEmail = formData.institutional_email.trim().toLowerCase();
+    const buildRegistrationData = ({ dryRun = false, photo = null, source = formData } = {}) => {
+        const institutionalEmail = source.institutional_email.trim().toLowerCase();
         const data = new FormData();
-        data.append('first_name', formData.first_name.trim());
-        data.append('second_name', formData.second_name.trim());
-        data.append('last_name', formData.last_name.trim());
-        data.append('second_lastname', formData.second_lastname.trim());
-        data.append('document_number', formData.document_number.trim());
-        data.append('personal_email', formData.email.trim());
+        data.append('first_name', source.first_name.trim());
+        data.append('second_name', source.second_name.trim());
+        data.append('last_name', source.last_name.trim());
+        data.append('second_lastname', source.second_lastname.trim());
+        data.append('document_number', source.document_number.trim());
+        data.append('personal_email', source.email.trim());
         data.append('username', institutionalEmail);
         data.append('email', institutionalEmail);
-        data.append('password', formData.password.trim());
-        data.append('phone_number', formData.phone_number.trim());
-        if (formData.faculty) data.append('faculty', formData.faculty);
-        if (formData.program) data.append('program', formData.program);
-        if (formData.class_code.trim()) data.append('class_code', formData.class_code.trim());
+        data.append('password', source.password.trim());
+        data.append('phone_number', source.phone_number.trim());
+        if (source.faculty) data.append('faculty', source.faculty);
+        if (source.program) data.append('program', source.program);
+        if (source.class_code.trim()) data.append('class_code', source.class_code.trim());
         if (dryRun) data.append('dry_run', 'true');
         if (photo) data.append('photo', photo);
         return data;
     };
 
-    const validateAndContinue = async () => {
-        if (!validateStep1()) return;
+    const validateAndContinue = async (visibleValues = {}) => {
+        const currentData = { ...formData, ...visibleValues };
+        syncPageValues(visibleValues);
+        if (!validateStep1(currentData)) return;
         setLoading(true); setError(null);
         try {
-            await api.post('/users/register/student/', buildRegistrationData({ dryRun: true }), { headers: { 'Content-Type': 'multipart/form-data' } });
+            await api.post('/users/register/student/', buildRegistrationData({ dryRun: true, source: currentData }), { headers: { 'Content-Type': 'multipart/form-data' } });
             setStep(2);
         } catch (err) {
             const msg = isDuplicateDocumentError(err)
@@ -275,7 +288,7 @@ export default function RegisterStudent() {
             {showSuccess && <SuccessModal onClose={() => { setShowSuccess(false); navigate('/login'); }} />}
 
             {/* Panel izquierdo */}
-            <SidebarInfo step={step} />
+            <SidebarInfo step={step === 2 ? 5 : registrationPage} />
 
             {/* Panel derecho — formulario */}
             <div className="relative z-10 flex w-full flex-col bg-[radial-gradient(circle_at_90%_0%,rgba(204,255,0,0.10),transparent_28%),linear-gradient(145deg,#100c22,#060713)] md:h-screen md:w-7/12 md:overflow-hidden">
@@ -313,6 +326,8 @@ export default function RegisterStudent() {
                                     <StepPersonalData
                                         formData={formData}
                                         onChange={handleChange}
+                                        onSyncPage={syncPageValues}
+                                        onPageChange={setRegistrationPage}
                                         onNext={validateAndContinue}
                                         loading={loading}
                                     />
