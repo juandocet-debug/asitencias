@@ -4,7 +4,7 @@ import { CheckCircle2 } from 'lucide-react';
 import fondoLogin from '../../assets/fondoLogin.png';
 import superiorLogo from '../../assets/superior.png';
 
-const STEPS = ['Datos personales', 'Foto y vinculación'];
+const STEPS = ['Identidad', 'Contacto', 'Programa', 'Seguridad', 'Foto'];
 
 export default function SidebarInfo({ step }) {
     return (
@@ -26,8 +26,8 @@ export default function SidebarInfo({ step }) {
                 <div className="mx-auto mt-9 max-w-xs space-y-3 text-left text-sm text-violet-100">
                     {STEPS.map((label, index) => {
                         const number = index + 1;
-                        const active = step === number;
-                        const done = step > number;
+                        const active = step === 1 ? number === 1 : number === 5;
+                        const done = step === 2 && number < 5;
                         return (
                             <div key={label} className={`rounded-xl border p-4 transition ${active ? 'border-[#ccff00]/45 bg-[#ccff00]/10 shadow-[0_0_20px_rgba(204,255,0,0.09)]' : 'border-violet-300/15 bg-white/[0.03] opacity-65'}`}>
                                 <div className="flex items-center gap-3">

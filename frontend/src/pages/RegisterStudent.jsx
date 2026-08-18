@@ -166,20 +166,15 @@ export default function RegisterStudent() {
     };
 
     const validateAndContinue = async () => {
-        if (!validateDocumentStep()) return;
+        if (!validateStep1()) return;
         setLoading(true); setError(null);
         try {
             await api.post('/users/register/student/', buildRegistrationData({ dryRun: true }), { headers: { 'Content-Type': 'multipart/form-data' } });
-            if (!validateStep1()) return;
             setStep(2);
         } catch (err) {
             const msg = isDuplicateDocumentError(err)
                 ? 'Este número de documento ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.'
-                : (!formData.institutional_email.trim()
-                    ? 'El correo institucional es obligatorio'
-                    : (!INSTITUTIONAL_EMAIL_RE.test(formData.institutional_email)
-                        ? 'Correo institucional inválido. Usa tu correo @upn.edu.co'
-                        : getRegistrationErrorMessage(err)));
+                : getRegistrationErrorMessage(err);
             setError(msg);
             showToast(msg, 'error');
             if (hasRegisteredConflict(err)) {
@@ -283,8 +278,8 @@ export default function RegisterStudent() {
             <SidebarInfo step={step} />
 
             {/* Panel derecho — formulario */}
-            <div className="relative z-10 flex w-full flex-col bg-[radial-gradient(circle_at_90%_0%,rgba(204,255,0,0.10),transparent_28%),linear-gradient(145deg,#100c22,#060713)] md:h-screen md:w-7/12 md:overflow-y-auto">
-                <div className="mx-auto w-full max-w-3xl p-0 md:p-8 lg:p-10">
+            <div className="relative z-10 flex w-full flex-col bg-[radial-gradient(circle_at_90%_0%,rgba(204,255,0,0.10),transparent_28%),linear-gradient(145deg,#100c22,#060713)] md:h-screen md:w-7/12 md:overflow-hidden">
+                <div className="mx-auto flex h-full w-full max-w-3xl flex-col p-0 md:p-6 lg:p-8">
 
                     {/* Mobile header */}
                     <div className="relative mb-5 overflow-hidden rounded-b-[2rem] border-b border-violet-400/25 bg-[#080716]/82 p-5 text-center text-white shadow-xl backdrop-blur-xl md:hidden">
@@ -292,7 +287,7 @@ export default function RegisterStudent() {
                         <p className="mt-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">Registro de estudiantes</p>
                     </div>
 
-                    <div className="px-4 pb-8 md:px-0">
+                    <div className="flex min-h-0 flex-1 flex-col px-4 pb-8 md:px-0 md:pb-0">
                         <Link to={formData.class_code.trim() ? `/login?code=${formData.class_code.trim()}` : '/login'} className="group mb-4 inline-flex items-center text-sm font-bold text-violet-200/55 transition-colors hover:text-[#ccff00]">
                             <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Volver al Login
                         </Link>
@@ -300,7 +295,7 @@ export default function RegisterStudent() {
                         <h2 className="mb-2 text-2xl font-black text-white md:text-3xl">
                             Crear cuenta
                         </h2>
-                        <p className="mb-5 text-sm text-violet-200/55 md:text-base">
+                        <p className="mb-4 text-sm text-violet-200/55 md:text-base">
                             Completa tu perfil y entra a la experiencia AGON.
                         </p>
 
@@ -310,7 +305,7 @@ export default function RegisterStudent() {
                             </div>
                         )}
 
-                        <form onSubmit={e => e.preventDefault()} className="relative space-y-4 overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/40 bg-[#080716]/82 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.58),0_0_48px_rgba(118,87,246,0.18)] backdrop-blur-xl md:space-y-5 md:p-5">
+                        <form onSubmit={e => e.preventDefault()} className="relative flex min-h-0 flex-1 flex-col justify-center space-y-4 overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/40 bg-[#080716]/82 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.58),0_0_48px_rgba(118,87,246,0.18)] backdrop-blur-xl md:space-y-5 md:p-5">
                             <span className="pointer-events-none absolute left-0 top-10 h-24 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
                             <span className="pointer-events-none absolute right-0 top-14 h-16 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
                             <AnimatePresence mode="wait">
