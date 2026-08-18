@@ -4,9 +4,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Eye, EyeOff, Lock, User } from 'lucide-react';
 import api, { setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
-import fondoHero from '../assets/FondoHero2.png';
+import fondoLogin from '../assets/fondoLogin.png';
 import avatarGamer from '../assets/gamer_avatar_1.png';
-import friendsSticker from '../assets/sticker_friends_neon.png';
 
 export default function Login() {
     const { fetchUser } = useUser();
@@ -47,13 +46,23 @@ export default function Login() {
     };
 
     return (
-        <div className="relative flex min-h-screen overflow-hidden bg-[#0c0918] font-['Montserrat'] text-white">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(118,87,246,0.42),transparent_30%),radial-gradient(circle_at_90%_10%,rgba(204,255,0,0.13),transparent_25%)]" />
-            <BrandPanel />
-            <main className="relative z-10 flex w-full items-center justify-center px-5 py-8 md:w-[55%] md:px-14 lg:px-20">
-                <div className="w-full max-w-[420px]">
-                    <MobileBrand />
-                    <motion.section initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="rounded-[2rem] border border-white/10 bg-[#171329]/90 p-6 shadow-[0_28px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-8">
+        <div className="relative min-h-screen overflow-hidden bg-[#050612] font-['Montserrat'] text-white">
+            <img src={fondoLogin} alt="" className="absolute inset-0 h-full w-full object-cover object-[62%_center]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(5,6,18,0.95)_0%,rgba(8,7,24,0.83)_28%,rgba(8,7,24,0.28)_52%,rgba(5,6,18,0.18)_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_17%_18%,rgba(118,87,246,0.28),transparent_28%),radial-gradient(circle_at_34%_68%,rgba(204,255,0,0.06),transparent_22%)]" />
+
+            <main className="relative z-10 flex min-h-screen w-full items-center px-4 py-6 sm:px-8 lg:px-16">
+                <div className="w-full max-w-[430px]">
+                    <motion.section initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} className="relative overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/55 bg-[#080716]/82 p-6 shadow-[0_0_0_1px_rgba(204,255,0,0.05),0_30px_90px_rgba(0,0,0,0.65),0_0_48px_rgba(118,87,246,0.28)] backdrop-blur-xl sm:p-8">
+                        <span className="pointer-events-none absolute left-0 top-10 h-24 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
+                        <span className="pointer-events-none absolute right-0 top-14 h-16 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
+                        <div className="mb-7 text-center">
+                            <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full border-2 border-[#ccff00] bg-[#150f27] shadow-[0_0_24px_rgba(204,255,0,0.5)]">
+                                <img src={avatarGamer} alt="Avatar AGON" className="h-full w-full object-cover" />
+                            </div>
+                            <h1 className="text-5xl font-black tracking-[0.12em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.45)]">AGON</h1>
+                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.24em] text-[#ccff00]">Tu experiencia académica evoluciona</p>
+                        </div>
                         <LoginHeader classCode={classCode} />
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <LoginField icon={User} label="Correo, usuario o cédula" value={username} onChange={setUsername} placeholder="correo@upn.edu.co o documento" autoComplete="username" />
@@ -66,7 +75,11 @@ export default function Login() {
                             <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] py-4 text-sm font-black text-white shadow-[0_12px_32px_rgba(118,87,246,0.38)] transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60">
                                 {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Conectando...</> : <>Entrar a AGON <ArrowRight size={17} /></>}
                             </button>
-                            <p className="text-center text-sm text-violet-200/55">¿Nuevo en la aventura?{' '}<Link to={classCode ? `/register?code=${classCode}` : '/register'} className="font-black text-[#ccff00] hover:underline">Crea tu perfil</Link></p>
+                            <div className="flex items-center gap-4 pt-1 text-center text-sm text-violet-200/55">
+                                <span className="h-px flex-1 bg-white/18" />
+                                <p>¿Nuevo en la aventura?{' '}<Link to={classCode ? `/register?code=${classCode}` : '/register'} className="font-black text-[#ccff00] hover:underline">Crea tu perfil</Link></p>
+                                <span className="h-px flex-1 bg-white/18" />
+                            </div>
                         </form>
                         <p className="mt-7 border-t border-white/10 pt-5 text-center text-[10px] font-semibold text-violet-200/35">UPN · Control de Gestión Académica · 2026</p>
                     </motion.section>
@@ -74,28 +87,6 @@ export default function Login() {
             </main>
         </div>
     );
-}
-
-function BrandPanel() {
-    return (
-        <aside className="relative z-10 hidden w-[45%] items-center justify-center overflow-hidden px-10 md:flex">
-            <img src={fondoHero} alt="" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60" />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#120b2b]/45 via-[#25104f]/70 to-[#090611]" />
-            <motion.div initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 text-center">
-                <div className="relative mx-auto flex h-64 w-64 items-center justify-center rounded-full border border-[#ccff00]/40 bg-[#140f27]/80 shadow-[0_0_70px_rgba(204,255,0,0.18)]">
-                    <img src={avatarGamer} alt="Avatar AGON" className="h-[112%] w-[112%] object-contain drop-shadow-[0_24px_35px_rgba(0,0,0,0.8)]" />
-                    <img src={friendsSticker} alt="" className="absolute -bottom-4 -right-10 h-24 w-24 object-contain drop-shadow-[0_12px_25px_rgba(204,255,0,0.35)]" />
-                </div>
-                <p className="mt-8 text-xs font-black uppercase tracking-[0.42em] text-[#ccff00]">Entra al juego</p>
-                <h1 className="mt-2 text-5xl font-black tracking-[0.12em]">AGON</h1>
-                <p className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-violet-200/70">Tu experiencia académica evoluciona</p>
-            </motion.div>
-        </aside>
-    );
-}
-
-function MobileBrand() {
-    return <div className="mb-5 md:hidden"><p className="text-xs font-black uppercase tracking-[0.35em] text-[#ccff00]">AGON</p><p className="mt-1 text-sm font-bold text-violet-200/60">Control de Gestión Académica</p></div>;
 }
 
 function LoginHeader({ classCode }) {
