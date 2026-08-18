@@ -54,7 +54,7 @@ export default function StepPersonalData({ formData, onChange, onNext, loading =
                 <PasswordField label="Confirmar contraseña" field="password_confirm" value={formData.password_confirm} onChange={onChange} show={showPasswordConfirm} toggle={() => setShowPasswordConfirm(p => !p)} />
             </RegisterSection>
 
-            <button type="button" onClick={onNext} disabled={loading} className="w-full rounded-xl bg-upn-700 py-4 font-bold text-white shadow-lg transition-all hover:bg-upn-800 disabled:cursor-not-allowed disabled:opacity-70">
+            <button type="button" onClick={onNext} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] py-4 font-bold text-white shadow-[0_12px_32px_rgba(118,87,246,0.32)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70">
                 <span className="flex items-center justify-center gap-3">
                     {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Validando datos</> : <>Continuar con foto <ArrowRight size={20} /></>}
                 </span>
@@ -65,8 +65,8 @@ export default function StepPersonalData({ formData, onChange, onNext, loading =
 
 function RegisterSection({ title, children }) {
     return (
-        <section className="rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-500">{title}</h3>
+        <section className="rounded-2xl border border-violet-400/18 bg-[#0e0b1d]/72 p-4 shadow-[0_14px_34px_rgba(0,0,0,0.24)]">
+            <h3 className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-[#ccff00]">{title}</h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
         </section>
     );
@@ -75,8 +75,8 @@ function RegisterSection({ title, children }) {
 function SelectField({ label, icon, options, placeholder, ...props }) {
     return (
         <div className="w-full space-y-1.5">
-            <label className="ml-1 flex items-center gap-2 text-sm font-semibold text-slate-700">{icon} {label}</label>
-            <select {...props} className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:border-upn-600 focus:outline-none focus:ring-2 focus:ring-upn-500/20 disabled:text-slate-400">
+            <label className="ml-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.12em] text-violet-100/75">{icon} {label}</label>
+            <select {...props} className="block w-full rounded-xl border border-violet-400/20 bg-[#151126] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-[#ccff00]/70 focus:ring-2 focus:ring-[#ccff00]/10 disabled:text-violet-200/35">
                 <option value="">{placeholder}</option>
                 {options.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
@@ -87,11 +87,11 @@ function SelectField({ label, icon, options, placeholder, ...props }) {
 function PasswordField({ label, field, value, onChange, show, toggle }) {
     return (
         <div className="space-y-1.5">
-            <label className="ml-1 text-sm font-semibold text-slate-700">{label}</label>
+            <label className="ml-1 text-[11px] font-black uppercase tracking-[0.12em] text-violet-100/75">{label}</label>
             <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input type={show ? 'text' : 'password'} name={field} value={value} onChange={onChange} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-10 focus:border-upn-500 focus:outline-none focus:ring-2 focus:ring-upn-500/20" placeholder={field === 'password' ? 'Mín. 6 + carácter especial' : 'Repite contraseña'} />
-                <button type="button" onClick={toggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">{show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-200/55" />
+                <input type={show ? 'text' : 'password'} name={field} value={value} onChange={onChange} required className="w-full rounded-xl border border-violet-400/20 bg-white/[0.06] py-3 pl-10 pr-10 text-sm font-semibold text-white placeholder-violet-200/32 outline-none transition focus:border-[#ccff00]/70 focus:ring-2 focus:ring-[#ccff00]/10" placeholder={field === 'password' ? 'Mín. 6 + carácter especial' : 'Repite contraseña'} />
+                <button type="button" onClick={toggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-violet-200/60">{show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
             </div>
         </div>
     );

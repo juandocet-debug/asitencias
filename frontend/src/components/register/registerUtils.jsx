@@ -50,16 +50,16 @@ export function SuccessModal({ onClose }) {
 export function InputGroup({ label, icon, helper, className, ...props }) {
     return (
         <div className="space-y-1.5 w-full">
-            <label className="text-sm font-semibold text-slate-700 ml-1 flex items-center gap-2">
+            <label className="ml-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.12em] text-violet-100/75">
                 {icon} {label}
             </label>
             <div className="relative group">
                 <input
                     {...props}
-                    className={`block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-600 transition-all font-medium ${className}`}
+                    className={`block w-full rounded-xl border border-violet-400/20 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white placeholder-violet-200/32 outline-none transition focus:border-[#ccff00]/70 focus:ring-2 focus:ring-[#ccff00]/10 ${className || ''}`}
                 />
             </div>
-            {helper && <p className="text-xs text-slate-500 ml-1">{helper}</p>}
+            {helper && <p className="ml-1 text-xs font-semibold text-violet-100/45">{helper}</p>}
         </div>
     );
 }

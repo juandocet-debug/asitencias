@@ -20,6 +20,8 @@ import SidebarInfo from '../components/register/SidebarInfo';
 import StepPersonalData from '../components/register/StepPersonalData';
 import StepPhoto from '../components/register/StepPhoto';
 import MobilePageFrame from '../components/mobile/MobilePageFrame';
+import fondoLogin from '../assets/fondoLogin.png';
+import superiorLogo from '../assets/superior.png';
 
 // ── Utilidades de validación y errores ───────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -259,7 +261,9 @@ export default function RegisterStudent() {
     }
 
     return (
-        <div className="min-h-screen overflow-hidden bg-[#0c0918] font-['Montserrat'] md:flex md:flex-row">
+        <div className="relative min-h-screen overflow-hidden bg-[#050612] font-['Montserrat'] md:flex md:flex-row">
+            <img src={fondoLogin} alt="" className="absolute inset-0 h-full w-full object-cover object-[62%_center] md:hidden" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(5,6,18,0.88),rgba(12,9,24,0.92))] md:hidden" />
             {toast && <Toast {...toast} onClose={() => setToast(null)} />}
             {showSuccess && <SuccessModal onClose={() => { setShowSuccess(false); navigate('/login'); }} />}
 
@@ -267,19 +271,13 @@ export default function RegisterStudent() {
             <SidebarInfo step={step} />
 
             {/* Panel derecho — formulario */}
-            <div className="relative flex w-full flex-col bg-[radial-gradient(circle_at_90%_0%,rgba(204,255,0,0.12),transparent_28%),linear-gradient(145deg,#171329,#0c0918)] md:h-screen md:w-7/12 md:overflow-y-auto">
-                <div className="w-full max-w-3xl mx-auto p-0 md:p-10 lg:p-12">
+            <div className="relative z-10 flex w-full flex-col bg-[radial-gradient(circle_at_90%_0%,rgba(204,255,0,0.10),transparent_28%),linear-gradient(145deg,#100c22,#060713)] md:h-screen md:w-7/12 md:overflow-y-auto">
+                <div className="mx-auto w-full max-w-3xl p-0 md:p-8 lg:p-10">
 
                     {/* Mobile header */}
-                    <div className="relative mb-5 overflow-hidden rounded-b-[2.2rem] border-b border-[#ccff00]/20 bg-[#1a1432] p-6 text-center text-white shadow-xl md:hidden">
-                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                            <div className="absolute top-[-50%] left-[-50%] w-[400px] h-[400px] rounded-full bg-white blur-3xl" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-[0.38em] text-[#ccff00]">Nuevo jugador</p>
-                            <h2 className="mt-2 text-2xl font-black">Registro de Estudiantes</h2>
-                            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-violet-200/70">Licenciatura en Recreación</p>
-                        </div>
+                    <div className="relative mb-5 overflow-hidden rounded-b-[2rem] border-b border-violet-400/25 bg-[#080716]/82 p-5 text-center text-white shadow-xl backdrop-blur-xl md:hidden">
+                        <img src={superiorLogo} alt="AGON" className="mx-auto w-full max-w-[260px] drop-shadow-[0_0_24px_rgba(118,87,246,0.45)]" />
+                        <p className="mt-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">Registro de estudiantes</p>
                     </div>
 
                     <div className="px-4 pb-8 md:px-0">
@@ -295,12 +293,14 @@ export default function RegisterStudent() {
                         </p>
 
                         {error && (
-                            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 flex items-start gap-3 text-sm">
+                            <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-400/25 bg-red-500/10 p-4 text-sm font-bold text-red-300">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" /><span>{error}</span>
                             </div>
                         )}
 
-                        <form onSubmit={e => e.preventDefault()} className="space-y-4 rounded-[2rem] border border-white/10 bg-white/[0.96] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.35)] md:space-y-6 md:p-6">
+                        <form onSubmit={e => e.preventDefault()} className="relative space-y-4 overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/40 bg-[#080716]/82 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.58),0_0_48px_rgba(118,87,246,0.18)] backdrop-blur-xl md:space-y-5 md:p-5">
+                            <span className="pointer-events-none absolute left-0 top-10 h-24 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
+                            <span className="pointer-events-none absolute right-0 top-14 h-16 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
                             <AnimatePresence mode="wait">
                                 {step === 1 && (
                                     <StepPersonalData

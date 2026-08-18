@@ -63,20 +63,20 @@ export default function StepPhoto({ formData, setFormData, onBack, onSubmit, loa
 
             {/* Vista de cámara / preview */}
             <div className="flex flex-col items-center gap-6 mb-8">
-                <div className="relative group w-full max-w-sm aspect-video bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 flex items-center justify-center hover:bg-slate-50 transition-colors">
+                <div className="relative group flex aspect-video w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-violet-400/30 bg-white/[0.06] transition-colors hover:bg-white/[0.08]">
                     {photoPreview ? (
                         <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : isCameraOpen ? (
                         <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
                     ) : (
                         <div className="text-center p-6">
-                            <Camera size={48} className="mx-auto text-slate-300 mb-2" />
-                            <p className="text-sm text-slate-500 font-medium">Toma o sube una foto</p>
+                            <Camera size={48} className="mx-auto mb-2 text-violet-200/35" />
+                            <p className="text-sm font-bold text-violet-100/60">Toma o sube una foto</p>
                         </div>
                     )}
                     {photoPreview && (
                         <button type="button" onClick={() => { setPhoto(null); setPhotoPreview(null); }}
-                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg transition-colors">
+                            className="absolute right-2 top-2 rounded-full bg-red-500 p-1.5 text-white shadow-lg transition-colors hover:bg-red-600">
                             <X size={16} />
                         </button>
                     )}
@@ -85,13 +85,13 @@ export default function StepPhoto({ formData, setFormData, onBack, onSubmit, loa
                 <div className="flex gap-4">
                     {isCameraOpen ? (
                         <>
-                            <button type="button" onClick={takePhoto} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-colors flex items-center gap-2"><Camera size={18} /> Capturar</button>
-                            <button type="button" onClick={stopCamera} className="px-6 py-2.5 bg-slate-500 hover:bg-slate-600 text-white rounded-lg font-bold transition-colors flex items-center gap-2"><X size={18} /> Cancelar</button>
+                            <button type="button" onClick={takePhoto} className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white transition-colors hover:bg-emerald-700"><Camera size={18} /> Capturar</button>
+                            <button type="button" onClick={stopCamera} className="flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-5 py-3 font-bold text-violet-100 transition-colors hover:bg-white/[0.1]"><X size={18} /> Cancelar</button>
                         </>
                     ) : (
                         <>
-                            <button type="button" onClick={startCamera} className="px-6 py-2.5 bg-upn-600 hover:bg-upn-700 text-white rounded-lg font-bold transition-colors flex items-center gap-2"><Camera size={18} /> Usar Cámara</button>
-                            <label className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-bold transition-colors flex items-center gap-2 cursor-pointer">
+                            <button type="button" onClick={startCamera} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] px-5 py-3 font-bold text-white shadow-[0_12px_32px_rgba(118,87,246,0.28)] transition hover:brightness-110"><Camera size={18} /> Usar Cámara</button>
+                            <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-5 py-3 font-bold text-violet-100 transition-colors hover:bg-white/[0.1]">
                                 <Upload size={18} /> Subir Foto
                                 <input type="file" className="hidden" accept="image/*" capture="user" onChange={handleFileUpload} />
                             </label>
@@ -101,31 +101,31 @@ export default function StepPhoto({ formData, setFormData, onBack, onSubmit, loa
             </div>
 
             {/* Código de clase (opcional) */}
-            <div className="bg-upn-50 p-6 rounded-xl border border-upn-100 mb-8">
+            <div className="mb-8 rounded-2xl border border-violet-400/18 bg-[#0e0b1d]/72 p-5 shadow-[0_14px_34px_rgba(0,0,0,0.24)]">
                 <InputGroup
                     label="Código de Clase (Opcional)"
                     name="class_code"
                     value={formData.class_code}
                     onChange={(e) => setFormData(prev => ({ ...prev, class_code: e.target.value.toUpperCase() }))}
                     placeholder="XXXXXX"
-                    className="font-mono text-center tracking-widest uppercase border-upn-200 focus:border-upn-500 bg-white text-lg"
+                    className="text-center font-mono text-lg uppercase tracking-widest"
                     helper="Si tienes un código de clase, ingrésalo aquí para unirte automáticamente."
                 />
             </div>
 
             {error && (
-                <div className="p-4 mb-6 rounded-xl bg-red-50 text-red-600 border border-red-100 font-medium text-sm flex items-start gap-3">
+                <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-400/25 bg-red-500/10 p-4 text-sm font-bold text-red-300">
                     <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />{error}
                 </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
                 <button type="button" onClick={() => { onBack(); stopCamera(); }}
-                    className="px-6 py-4 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors">
+                    className="rounded-xl border border-white/12 bg-white/[0.04] px-6 py-4 font-bold text-violet-100 transition-colors hover:bg-white/[0.08]">
                     Atrás
                 </button>
                 <button type="button" onClick={handleSubmit} disabled={loading}
-                    className="px-6 py-4 bg-upn-700 hover:bg-upn-800 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-70">
+                    className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] px-6 py-4 font-bold text-white shadow-[0_12px_32px_rgba(118,87,246,0.32)] transition hover:brightness-110 disabled:opacity-70">
                     {loading ? <><Loader2 size={20} className="animate-spin" /> Registrando...</> : <>Finalizar Registro <CheckCircle2 size={20} /></>}
                 </button>
             </div>
