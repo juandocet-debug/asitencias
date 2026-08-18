@@ -37,6 +37,9 @@ export const getMediaUrl = (path) => {
     if (!mediaPath) return null;
     if (mediaPath.startsWith('http') || mediaPath.startsWith('blob:') || mediaPath.startsWith('data:')) return mediaPath;
     if (mediaPath.startsWith('//')) return `https:${mediaPath}`;
-    const base = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace('/api', '');
+    const configured = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+    const base = configured.startsWith('http')
+        ? configured.replace(/\/api\/?$/, '')
+        : 'https://agon-backend-production-c5d2.up.railway.app';
     return `${base}${mediaPath.startsWith('/') ? '' : '/'}${mediaPath}`;
 };

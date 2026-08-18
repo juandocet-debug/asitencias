@@ -58,7 +58,11 @@ export default function TeacherReviews() {
     const getMediaUrl = (path) => {
         if (!path) return null;
         if (path.startsWith('http')) return path;
-        return `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${path}`;
+        const configured = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+        const origin = configured.startsWith('http')
+            ? configured.replace(/\/api\/?$/, '')
+            : 'https://agon-backend-production-c5d2.up.railway.app';
+        return `${origin}${path}`;
     };
 
     const formatDate = (dateStr) => {

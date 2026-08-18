@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const usesProxyFunction = baseURL === '/api/proxy';
 let accessToken = null;
 let refreshPromise = null;
 
@@ -27,7 +28,7 @@ export const clearClientSession = () => {
 export const refreshAccessToken = async () => {
     if (!refreshPromise) {
         refreshPromise = axios.post(
-            `${baseURL}/token/refresh/`,
+            endpointUrl('/token/refresh/'),
             {},
             { timeout: 15000, withCredentials: true },
         ).then((response) => {
@@ -43,16 +44,34 @@ export const refreshAccessToken = async () => {
 export const logoutSession = async () => {
     clearClientSession();
     try {
-        await axios.post(`${baseURL}/token/logout/`, {}, { timeout: 8000, withCredentials: true });
+        await axios.post(endpointUrl('/token/logout/'), {}, { timeout: 8000, withCredentials: true });
     } catch {
         // La sesión local queda cerrada aunque la red no responda.
     }
 };
 
 api.interceptors.request.use((config) => {
+    if (usesProxyFunction) {
+        const [pathname, rawQuery = ''] = String(config.url || '').split('?');
+        const params = new URLSearchParams(rawQuery);
+        params.set('path', pathname.replace(/^\/+|\/+$/g, ''));
+        Object.entries(config.params || {}).forEach(([key, value]) => {
+            for (const item of Array.isArray(value) ? value : [value]) {
+                if (item !== undefined && item !== null) params.append(key, item);
+            }
+        });
+        config.url = '';
+        config.params = params;
+    }
     if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
     return config;
 });
+
+function endpointUrl(path) {
+    if (!usesProxyFunction) return `${baseURL}${path}`;
+    const cleanPath = path.replace(/^\/+|\/+$/g, '');
+    return `${baseURL}?path=${encodeURIComponent(cleanPath)}`;
+}
 
 api.interceptors.response.use(
     (response) => response,
