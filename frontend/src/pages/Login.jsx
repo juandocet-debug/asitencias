@@ -5,7 +5,7 @@ import { ArrowRight, Eye, EyeOff, Lock, User } from 'lucide-react';
 import api, { setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 import fondoLogin from '../assets/fondoLogin.png';
-import avatarGamer from '../assets/gamer_avatar_1.png';
+import superiorLogo from '../assets/superior.png';
 
 export default function Login() {
     const { fetchUser } = useUser();
@@ -56,13 +56,14 @@ export default function Login() {
                     <motion.section initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} className="relative overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/55 bg-[#080716]/82 p-6 shadow-[0_0_0_1px_rgba(204,255,0,0.05),0_30px_90px_rgba(0,0,0,0.65),0_0_48px_rgba(118,87,246,0.28)] backdrop-blur-xl sm:p-8">
                         <span className="pointer-events-none absolute left-0 top-10 h-24 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
                         <span className="pointer-events-none absolute right-0 top-14 h-16 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
-                        <div className="mb-7 text-center">
-                            <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full border-2 border-[#ccff00] bg-[#150f27] shadow-[0_0_24px_rgba(204,255,0,0.5)]">
-                                <img src={avatarGamer} alt="Avatar AGON" className="h-full w-full object-cover" />
-                            </div>
-                            <h1 className="text-5xl font-black tracking-[0.12em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.45)]">AGON</h1>
-                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.24em] text-[#ccff00]">Tu experiencia académica evoluciona</p>
-                        </div>
+                        <motion.div
+                            className="mb-6 flex justify-center"
+                            initial={{ opacity: 0, y: -16, scale: 0.92 }}
+                            animate={{ opacity: 1, y: 0, scale: [1, 1.018, 1] }}
+                            transition={{ opacity: { duration: 0.45 }, y: { duration: 0.45 }, scale: { duration: 4.2, repeat: Infinity, ease: 'easeInOut' } }}
+                        >
+                            <img src={superiorLogo} alt="AGON" className="w-full max-w-[330px] drop-shadow-[0_0_30px_rgba(118,87,246,0.42)]" />
+                        </motion.div>
                         <LoginHeader classCode={classCode} />
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <LoginField icon={User} label="Correo, usuario o cédula" value={username} onChange={setUsername} placeholder="correo@upn.edu.co o documento" autoComplete="username" />
