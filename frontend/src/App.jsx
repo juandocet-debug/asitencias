@@ -47,8 +47,27 @@ class AppErrorBoundary extends React.Component {
     return { hasError: true };
   }
 
+  componentDidMount() {
+    this.recoveryTimer = window.setTimeout(
+      () => sessionStorage.removeItem('agon_chunk_recovery'),
+      5000,
+    );
+  }
+
   componentDidCatch(error, info) {
     console.error('AppErrorBoundary capturó un error:', error, info?.componentStack);
+    const message = String(error?.message || error || '');
+    const isStaleChunk = /Failed to fetch dynamically imported module|module script|ChunkLoadError/i.test(message);
+    if (isStaleChunk && !sessionStorage.getItem('agon_chunk_recovery')) {
+      sessionStorage.setItem('agon_chunk_recovery', '1');
+      const url = new URL(window.location.href);
+      url.searchParams.set('_actualizado', Date.now());
+      window.location.replace(url.toString());
+    }
+  }
+
+  componentWillUnmount() {
+    window.clearTimeout(this.recoveryTimer);
   }
 
   render() {
