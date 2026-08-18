@@ -29,7 +29,7 @@ export default async function handler(request, response) {
         }
     }
 
-        const target = `${BACKEND_ORIGIN}/api/${path}${query.size ? `?${query}` : ''}`;
+        const target = `${BACKEND_ORIGIN}/api/${path}${path ? '/' : ''}${query.size ? `?${query}` : ''}`;
         const headers = new Headers();
         for (const name of REQUEST_HEADERS) {
             const value = request.headers[name];
