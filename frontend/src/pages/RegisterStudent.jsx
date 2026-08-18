@@ -23,6 +23,7 @@ import MobilePageFrame from '../components/mobile/MobilePageFrame';
 
 // ── Utilidades de validación y errores ───────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INSTITUTIONAL_EMAIL_RE = /^[^\s@]+@upn\.edu\.co$/i;
 const SPECIAL_RE = /[!@#$%^&*(),.?":{}|<>]/;
 
 const ERR_MAP = {
@@ -46,6 +47,21 @@ function translateError(key, value) {
         if (text.includes(en)) { text = es; break; }
     }
     return `${FIELD_NAMES[key] || key}: ${text}`;
+}
+
+function getRegistrationErrorMessage(err) {
+    let msg = 'Error al conectar con el servidor.';
+    const d = err.response?.data;
+    if (d) {
+        if (typeof d === 'string') msg = d;
+        else if (d.detail) msg = d.detail;
+        else if (d.username) msg = d.username[0]?.includes('registrado') || d.username[0]?.includes('already') ? 'Este correo institucional ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.' : translateError('username', d.username[0]);
+        else if (d.email) msg = d.email[0]?.includes('registrado') || d.email[0]?.includes('already') ? 'Este correo institucional ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.' : (Array.isArray(d.email) ? d.email[0] : d.email);
+        else if (d.document_number) msg = 'Este número de documento ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.';
+        else if (d.class_code) msg = Array.isArray(d.class_code) ? d.class_code[0] : d.class_code;
+        else { const k = Object.keys(d)[0]; if (k) msg = translateError(k, d[k]); }
+    }
+    return msg;
 }
 
 // ════════════════════════════════════════════════════════
@@ -91,7 +107,7 @@ export default function RegisterStudent() {
         if (!formData.document_number.trim()) { showToast('El número de documento es obligatorio', 'error'); return false; }
         if (!/^\d+$/.test(formData.document_number)) { showToast('El documento debe contener solo números', 'error'); return false; }
         if (!formData.institutional_email.trim()) { showToast('El correo institucional es obligatorio', 'error'); return false; }
-        if (!EMAIL_RE.test(formData.institutional_email)) { showToast('Correo institucional inválido (ejemplo: usuario@upn.edu.co)', 'error'); return false; }
+        if (!INSTITUTIONAL_EMAIL_RE.test(formData.institutional_email)) { showToast('Correo institucional inválido. Usa tu correo @upn.edu.co', 'error'); return false; }
         if (formData.email.trim() && !EMAIL_RE.test(formData.email)) { showToast('Correo personal inválido', 'error'); return false; }
         if (!formData.password.trim()) { showToast('La contraseña es obligatoria', 'error'); return false; }
         if (formData.password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return false; }
@@ -100,9 +116,8 @@ export default function RegisterStudent() {
         return true;
     };
 
-    // ── Envío del formulario ──────────────────────────────
-    const handleSubmit = async (photo) => {
-        setLoading(true); setError(null);
+    const buildRegistrationData = ({ dryRun = false, photo = null } = {}) => {
+        const institutionalEmail = formData.institutional_email.trim().toLowerCase();
         const data = new FormData();
         data.append('first_name', formData.first_name.trim());
         data.append('second_name', formData.second_name.trim());
@@ -110,29 +125,44 @@ export default function RegisterStudent() {
         data.append('second_lastname', formData.second_lastname.trim());
         data.append('document_number', formData.document_number.trim());
         data.append('personal_email', formData.email.trim());
-        data.append('username', formData.institutional_email.trim());
-        data.append('email', formData.institutional_email.trim());
+        data.append('username', institutionalEmail);
+        data.append('email', institutionalEmail);
         data.append('password', formData.password.trim());
         data.append('phone_number', formData.phone_number.trim());
         if (formData.faculty) data.append('faculty', formData.faculty);
         if (formData.program) data.append('program', formData.program);
         if (formData.class_code.trim()) data.append('class_code', formData.class_code.trim());
+        if (dryRun) data.append('dry_run', 'true');
         if (photo) data.append('photo', photo);
+        return data;
+    };
+
+    const validateAndContinue = async () => {
+        if (!validateStep1()) return;
+        setLoading(true); setError(null);
         try {
-            await api.post('/users/register/student/', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+            await api.post('/users/register/student/', buildRegistrationData({ dryRun: true }), { headers: { 'Content-Type': 'multipart/form-data' } });
+            setStep(2);
+        } catch (err) {
+            const msg = getRegistrationErrorMessage(err);
+            setError(msg);
+            showToast(msg, 'error');
+            if (err.response?.data?.document_number || err.response?.data?.email || err.response?.data?.username) {
+                setTimeout(() => navigate(formData.class_code.trim() ? `/login?code=${formData.class_code.trim()}` : '/login'), 1800);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ── Envío del formulario ──────────────────────────────
+    const handleSubmit = async (photo) => {
+        setLoading(true); setError(null);
+        try {
+            await api.post('/users/register/student/', buildRegistrationData({ photo }), { headers: { 'Content-Type': 'multipart/form-data' } });
             setShowSuccess(true);
         } catch (err) {
-            let msg = 'Error al conectar con el servidor.';
-            const d = err.response?.data;
-            if (d) {
-                if (typeof d === 'string') msg = d;
-                else if (d.detail) msg = d.detail;
-                else if (d.username) msg = d.username[0]?.includes('already') ? 'Este correo institucional ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.' : translateError('username', d.username[0]);
-                else if (d.email) msg = d.email[0]?.includes('already') ? 'Este correo ya está en uso. Inicia sesión en lugar de crear una cuenta nueva.' : 'El correo no es válido';
-                else if (d.document_number) msg = 'Este número de documento ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.';
-                else if (d.class_code) msg = Array.isArray(d.class_code) ? d.class_code[0] : d.class_code;
-                else { const k = Object.keys(d)[0]; if (k) msg = translateError(k, d[k]); }
-            }
+            const msg = getRegistrationErrorMessage(err);
             setError(msg); showToast(msg, 'error');
         } finally { setLoading(false); }
     };
@@ -255,7 +285,8 @@ export default function RegisterStudent() {
                                     <StepPersonalData
                                         formData={formData}
                                         onChange={handleChange}
-                                        onNext={() => { if (validateStep1()) { setError(null); setStep(2); } }}
+                                        onNext={validateAndContinue}
+                                        loading={loading}
                                     />
                                 )}
                                 {step === 2 && (

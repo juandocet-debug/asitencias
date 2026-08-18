@@ -177,6 +177,8 @@ class StudentRegisterView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if str(request.data.get('dry_run', '')).lower() in ('1', 'true', 'yes'):
+            return Response({"ok": True}, status=status.HTTP_200_OK)
         user = serializer.save()
         return Response({
             "user": {

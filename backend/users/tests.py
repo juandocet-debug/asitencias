@@ -133,6 +133,38 @@ class StudentRegistrationContractTests(TestCase):
         self.assertIn('class_code', response.json())
         self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
 
+    def test_registration_dry_run_validates_without_creating_student(self):
+        self.payload['dry_run'] = 'true'
+        response = self.client.post('/api/users/register/student/', self.payload)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'ok': True})
+        self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
+
+    def test_registration_rejects_existing_document_before_creating_student(self):
+        User.objects.create_user(
+            username='registered@upn.edu.co',
+            email='registered@upn.edu.co',
+            password='Safe-password!23',
+            role='STUDENT',
+            document_number=self.payload['document_number'],
+        )
+        self.payload['dry_run'] = 'true'
+        response = self.client.post('/api/users/register/student/', self.payload)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('document_number', response.json())
+        self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
+
+    def test_registration_requires_institutional_email_domain(self):
+        self.payload['username'] = 'student@gmail.com'
+        self.payload['email'] = 'student@gmail.com'
+        response = self.client.post('/api/users/register/student/', self.payload)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('email', response.json())
+        self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
+
     def test_directory_import_endpoint_is_removed(self):
         self.client.force_authenticate(user=self.teacher)
         response = self.client.post('/api/users/directory/import/', {})

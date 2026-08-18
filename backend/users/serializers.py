@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.core.validators import validate_email
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from academic.models import Course
@@ -210,6 +211,42 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         if not Course.objects.filter(code__iexact=code, is_archived=False).exists():
             raise serializers.ValidationError('El código de clase no existe o ya no está activo.')
         return code
+
+    def validate_document_number(self, value):
+        document = str(value or '').strip()
+        if not document:
+            raise serializers.ValidationError('El número de documento es obligatorio.')
+        if not document.isdigit():
+            raise serializers.ValidationError('El documento debe contener solo números.')
+        if User.objects.filter(document_number=document).exists():
+            raise serializers.ValidationError('Este número de documento ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.')
+        return document
+
+    def validate_email(self, value):
+        email = str(value or '').strip().lower()
+        if not email:
+            raise serializers.ValidationError('El correo institucional es obligatorio.')
+        try:
+            validate_email(email)
+        except Exception:
+            raise serializers.ValidationError('Correo institucional inválido.')
+        if not email.endswith('@upn.edu.co'):
+            raise serializers.ValidationError('Usa tu correo institucional @upn.edu.co.')
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError('Este correo institucional ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.')
+        return email
+
+    def validate_username(self, value):
+        username = str(value or '').strip().lower()
+        if User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError('Este correo institucional ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.')
+        return username
+
+    def validate(self, attrs):
+        email = attrs.get('email', '').strip().lower()
+        attrs['email'] = email
+        attrs['username'] = email
+        return attrs
 
     def create(self, validated_data):
         class_code = validated_data.pop('class_code', None)

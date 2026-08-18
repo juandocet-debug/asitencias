@@ -2,12 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     ArrowRight, BookOpen, Building2, CreditCard, Eye,
-    EyeOff, Lock, Mail, Smartphone, User,
+    EyeOff, Loader2, Lock, Mail, Smartphone, User,
 } from 'lucide-react';
 import { InputGroup } from './registerUtils';
 import api from '../../services/api';
 
-export default function StepPersonalData({ formData, onChange, onNext }) {
+export default function StepPersonalData({ formData, onChange, onNext, loading = false }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
     const [faculties, setFaculties] = useState([]);
@@ -54,8 +54,10 @@ export default function StepPersonalData({ formData, onChange, onNext }) {
                 <PasswordField label="Confirmar contraseña" field="password_confirm" value={formData.password_confirm} onChange={onChange} show={showPasswordConfirm} toggle={() => setShowPasswordConfirm(p => !p)} />
             </RegisterSection>
 
-            <button type="button" onClick={onNext} className="w-full rounded-xl bg-upn-700 py-4 font-bold text-white shadow-lg transition-all hover:bg-upn-800">
-                <span className="flex items-center justify-center gap-3">Continuar con foto <ArrowRight size={20} /></span>
+            <button type="button" onClick={onNext} disabled={loading} className="w-full rounded-xl bg-upn-700 py-4 font-bold text-white shadow-lg transition-all hover:bg-upn-800 disabled:cursor-not-allowed disabled:opacity-70">
+                <span className="flex items-center justify-center gap-3">
+                    {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Validando datos</> : <>Continuar con foto <ArrowRight size={20} /></>}
+                </span>
             </button>
         </motion.div>
     );
