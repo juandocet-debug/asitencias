@@ -156,6 +156,26 @@ class StudentRegistrationContractTests(TestCase):
         self.assertIn('document_number', response.json())
         self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
 
+    def test_registration_dry_run_prioritizes_existing_document_over_missing_email(self):
+        User.objects.create_user(
+            username='registered@upn.edu.co',
+            email='registered@upn.edu.co',
+            password='Safe-password!23',
+            role='STUDENT',
+            document_number=self.payload['document_number'],
+        )
+        payload = {
+            'first_name': self.payload['first_name'],
+            'last_name': self.payload['last_name'],
+            'document_number': self.payload['document_number'],
+            'dry_run': 'true',
+        }
+        response = self.client.post('/api/users/register/student/', payload)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('document_number', response.json())
+        self.assertNotIn('email', response.json())
+
     def test_registration_requires_institutional_email_domain(self):
         self.payload['username'] = 'student@gmail.com'
         self.payload['email'] = 'student@gmail.com'

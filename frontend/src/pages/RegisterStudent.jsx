@@ -64,6 +64,21 @@ function getRegistrationErrorMessage(err) {
     return msg;
 }
 
+function hasRegisteredConflict(err) {
+    const d = err.response?.data;
+    if (!d || typeof d === 'string') return false;
+    const values = [];
+    for (const key of ['document_number', 'email', 'username']) {
+        const value = d[key];
+        if (Array.isArray(value)) values.push(...value);
+        else if (value) values.push(value);
+    }
+    return values.some(value => {
+        const text = String(value).toLowerCase();
+        return text.includes('registrado') || text.includes('already exists') || text.includes('already registered');
+    });
+}
+
 // ════════════════════════════════════════════════════════
 export default function RegisterStudent() {
     const { user } = useUser();
@@ -101,11 +116,16 @@ export default function RegisterStudent() {
     };
 
     // ── Validación paso 1 ─────────────────────────────────
-    const validateStep1 = () => {
+    const validateDocumentStep = () => {
         if (!formData.first_name.trim()) { showToast('El primer nombre es obligatorio', 'error'); return false; }
         if (!formData.last_name.trim()) { showToast('El primer apellido es obligatorio', 'error'); return false; }
         if (!formData.document_number.trim()) { showToast('El número de documento es obligatorio', 'error'); return false; }
         if (!/^\d+$/.test(formData.document_number)) { showToast('El documento debe contener solo números', 'error'); return false; }
+        return true;
+    };
+
+    const validateStep1 = () => {
+        if (!validateDocumentStep()) return false;
         if (!formData.institutional_email.trim()) { showToast('El correo institucional es obligatorio', 'error'); return false; }
         if (!INSTITUTIONAL_EMAIL_RE.test(formData.institutional_email)) { showToast('Correo institucional inválido. Usa tu correo @upn.edu.co', 'error'); return false; }
         if (formData.email.trim() && !EMAIL_RE.test(formData.email)) { showToast('Correo personal inválido', 'error'); return false; }
@@ -138,16 +158,17 @@ export default function RegisterStudent() {
     };
 
     const validateAndContinue = async () => {
-        if (!validateStep1()) return;
+        if (!validateDocumentStep()) return;
         setLoading(true); setError(null);
         try {
             await api.post('/users/register/student/', buildRegistrationData({ dryRun: true }), { headers: { 'Content-Type': 'multipart/form-data' } });
+            if (!validateStep1()) return;
             setStep(2);
         } catch (err) {
             const msg = getRegistrationErrorMessage(err);
             setError(msg);
             showToast(msg, 'error');
-            if (err.response?.data?.document_number || err.response?.data?.email || err.response?.data?.username) {
+            if (hasRegisteredConflict(err)) {
                 setTimeout(() => navigate(formData.class_code.trim() ? `/login?code=${formData.class_code.trim()}` : '/login'), 1800);
             }
         } finally {

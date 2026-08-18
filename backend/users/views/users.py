@@ -175,6 +175,13 @@ class StudentRegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
+        if str(request.data.get('dry_run', '')).lower() in ('1', 'true', 'yes'):
+            document = str(request.data.get('document_number', '')).strip()
+            if document and User.objects.filter(document_number=document).exists():
+                return Response({
+                    "document_number": ["Este número de documento ya está registrado. Inicia sesión en lugar de crear una cuenta nueva."]
+                }, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if str(request.data.get('dry_run', '')).lower() in ('1', 'true', 'yes'):
