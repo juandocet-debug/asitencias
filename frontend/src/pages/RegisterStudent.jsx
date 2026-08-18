@@ -81,6 +81,12 @@ function hasRegisteredConflict(err) {
     });
 }
 
+function isDuplicateDocumentError(err) {
+    const value = err.response?.data?.document_number;
+    const text = Array.isArray(value) ? value.join(' ') : String(value || '');
+    return text.toLowerCase().includes('registrado') || text.toLowerCase().includes('already');
+}
+
 // ════════════════════════════════════════════════════════
 export default function RegisterStudent() {
     const { user } = useUser();
@@ -167,7 +173,13 @@ export default function RegisterStudent() {
             if (!validateStep1()) return;
             setStep(2);
         } catch (err) {
-            const msg = getRegistrationErrorMessage(err);
+            const msg = isDuplicateDocumentError(err)
+                ? 'Este número de documento ya está registrado. Inicia sesión en lugar de crear una cuenta nueva.'
+                : (!formData.institutional_email.trim()
+                    ? 'El correo institucional es obligatorio'
+                    : (!INSTITUTIONAL_EMAIL_RE.test(formData.institutional_email)
+                        ? 'Correo institucional inválido. Usa tu correo @upn.edu.co'
+                        : getRegistrationErrorMessage(err)));
             setError(msg);
             showToast(msg, 'error');
             if (hasRegisteredConflict(err)) {
