@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     ArrowRight, BookOpen, Building2, CreditCard, Eye,
@@ -13,6 +13,11 @@ export default function StepPersonalData({ formData, onChange, onSyncPage, onPag
     const [faculties, setFaculties] = useState([]);
     const [programs, setPrograms] = useState([]);
     const [page, setPage] = useState(1);
+    const draftRef = useRef({ ...formData });
+
+    useEffect(() => {
+        draftRef.current = { ...draftRef.current, ...formData };
+    }, [formData]);
 
     useEffect(() => {
         Promise.all([api.get('/users/faculties/'), api.get('/users/programs/')])
@@ -41,6 +46,7 @@ export default function StepPersonalData({ formData, onChange, onSyncPage, onPag
 
     const moveTo = (targetPage, button) => {
         const values = readVisibleValues(button);
+        draftRef.current = { ...draftRef.current, ...values };
         onSyncPage?.(values);
         setPage(targetPage);
         onPageChange?.(targetPage);
@@ -51,7 +57,8 @@ export default function StepPersonalData({ formData, onChange, onSyncPage, onPag
         const button = event.currentTarget;
         if (page === 1 && onDocumentNext) {
             const values = readVisibleValues(button);
-            const allowed = await onDocumentNext(values);
+            draftRef.current = { ...draftRef.current, ...values };
+            const allowed = await onDocumentNext(draftRef.current);
             if (!allowed) return;
             onSyncPage?.(values);
             setPage(2);
@@ -60,7 +67,11 @@ export default function StepPersonalData({ formData, onChange, onSyncPage, onPag
         }
         moveTo(Math.min(4, page + 1), button);
     };
-    const finish = (event) => onNext(readVisibleValues(event.currentTarget));
+    const finish = (event) => {
+        const values = readVisibleValues(event.currentTarget);
+        draftRef.current = { ...draftRef.current, ...values };
+        onNext(draftRef.current);
+    };
 
     return (
         <motion.div key="step1" className="space-y-4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
