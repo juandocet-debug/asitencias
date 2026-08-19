@@ -1,4 +1,5 @@
 const BACKEND_ORIGIN = 'https://agon-backend-production-c5d2.up.railway.app';
+
 const REQUEST_HEADERS = [
     'accept',
     'accept-language',

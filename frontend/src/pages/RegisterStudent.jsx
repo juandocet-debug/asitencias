@@ -10,6 +10,7 @@
  *   SuccessModal     → components/register/registerUtils.jsx
  */
 import React, { useState, useCallback, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft, AlertCircle, CheckCircle2, BookOpen, Loader2 } from 'lucide-react';
@@ -27,6 +28,8 @@ import superiorLogo from '../assets/superior.png';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const INSTITUTIONAL_EMAIL_RE = /^[^\s@]+@upn\.edu\.co$/i;
 const SPECIAL_RE = /[!@#$%^&*(),.?":{}|<>]/;
+const REGISTRATION_API_URL = import.meta.env.VITE_REGISTRATION_API_URL
+    || 'https://agon-backend-production-c5d2.up.railway.app/api/users/register/student/';
 
 const ERR_MAP = {
     'Enter a valid email address.': 'Ingresa un correo electrónico válido',
@@ -182,7 +185,7 @@ export default function RegisterStudent() {
         if (!validateStep1(currentData)) return;
         setLoading(true); setError(null);
         try {
-            await api.post('/users/register/student/', buildRegistrationData({ dryRun: true, source: currentData }), { headers: { 'Content-Type': 'multipart/form-data' } });
+            await axios.post(REGISTRATION_API_URL, buildRegistrationData({ dryRun: true, source: currentData }));
             setStep(2);
         } catch (err) {
             const msg = isDuplicateDocumentError(err)
@@ -202,7 +205,7 @@ export default function RegisterStudent() {
     const handleSubmit = async (photo) => {
         setLoading(true); setError(null);
         try {
-            await api.post('/users/register/student/', buildRegistrationData({ photo }), { headers: { 'Content-Type': 'multipart/form-data' } });
+            await axios.post(REGISTRATION_API_URL, buildRegistrationData({ photo }));
             setShowSuccess(true);
         } catch (err) {
             const msg = getRegistrationErrorMessage(err);
