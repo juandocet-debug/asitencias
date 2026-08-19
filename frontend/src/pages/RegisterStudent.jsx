@@ -150,10 +150,16 @@ export default function RegisterStudent() {
         setLoading(true);
         setError(null);
         try {
-            await axios.post(REGISTRATION_API_URL, {
-                document_number: currentData.document_number.trim(),
-                document_check: true,
-            });
+            const checkId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+            const checkData = new FormData();
+            checkData.append('first_name', currentData.first_name.trim());
+            checkData.append('last_name', currentData.last_name.trim());
+            checkData.append('document_number', currentData.document_number.trim());
+            checkData.append('username', `document-check-${checkId}@upn.edu.co`);
+            checkData.append('email', `document-check-${checkId}@upn.edu.co`);
+            checkData.append('password', 'DocumentCheck@2026!');
+            checkData.append('dry_run', 'true');
+            await axios.post(REGISTRATION_API_URL, checkData);
             return true;
         } catch (err) {
             const duplicate = err.response?.status === 409 || isDuplicateDocumentError(err);
