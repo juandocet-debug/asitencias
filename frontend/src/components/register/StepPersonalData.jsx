@@ -7,7 +7,7 @@ import {
 import { InputGroup } from './registerUtils';
 import api from '../../services/api';
 
-export default function StepPersonalData({ formData, onChange, onSyncPage, onPageChange, onNext, loading = false }) {
+export default function StepPersonalData({ formData, onChange, onSyncPage, onPageChange, onDocumentNext, onNext, loading = false }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
     const [faculties, setFaculties] = useState([]);
@@ -47,7 +47,19 @@ export default function StepPersonalData({ formData, onChange, onSyncPage, onPag
     };
 
     const back = (event) => moveTo(Math.max(1, page - 1), event.currentTarget);
-    const next = (event) => moveTo(Math.min(4, page + 1), event.currentTarget);
+    const next = async (event) => {
+        const button = event.currentTarget;
+        if (page === 1 && onDocumentNext) {
+            const values = readVisibleValues(button);
+            const allowed = await onDocumentNext(values);
+            if (!allowed) return;
+            onSyncPage?.(values);
+            setPage(2);
+            onPageChange?.(2);
+            return;
+        }
+        moveTo(Math.min(4, page + 1), button);
+    };
     const finish = (event) => onNext(readVisibleValues(event.currentTarget));
 
     return (

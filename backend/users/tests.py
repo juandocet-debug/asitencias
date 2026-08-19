@@ -141,6 +141,31 @@ class StudentRegistrationContractTests(TestCase):
         self.assertEqual(response.json(), {'ok': True})
         self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
 
+    def test_document_check_allows_available_document_without_other_fields(self):
+        response = self.client.post('/api/users/register/student/', {
+            'document_number': '99880011',
+            'document_check': 'true',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'available': True})
+
+    def test_document_check_rejects_existing_document_without_exposing_user(self):
+        User.objects.create_user(
+            username='existing-document@upn.edu.co',
+            email='existing-document@upn.edu.co',
+            password='Safe-password!23',
+            role='STUDENT',
+            document_number='99880012',
+        )
+        response = self.client.post('/api/users/register/student/', {
+            'document_number': '99880012',
+            'document_check': 'true',
+        })
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(list(response.json().keys()), ['document_number'])
+
     def test_registration_rejects_existing_document_before_creating_student(self):
         User.objects.create_user(
             username='registered@upn.edu.co',

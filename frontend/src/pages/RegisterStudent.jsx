@@ -135,12 +135,40 @@ export default function RegisterStudent() {
     };
 
     // ── Validación paso 1 ─────────────────────────────────
-    const validateDocumentStep = () => {
-        if (!formData.first_name.trim()) { showToast('El primer nombre es obligatorio', 'error'); return false; }
-        if (!formData.last_name.trim()) { showToast('El primer apellido es obligatorio', 'error'); return false; }
-        if (!formData.document_number.trim()) { showToast('El número de documento es obligatorio', 'error'); return false; }
-        if (!/^\d+$/.test(formData.document_number)) { showToast('El documento debe contener solo números', 'error'); return false; }
+    const validateDocumentStep = (data = formData) => {
+        if (!data.first_name.trim()) { showToast('El primer nombre es obligatorio', 'error'); return false; }
+        if (!data.last_name.trim()) { showToast('El primer apellido es obligatorio', 'error'); return false; }
+        if (!data.document_number.trim()) { showToast('El número de documento es obligatorio', 'error'); return false; }
+        if (!/^\d+$/.test(data.document_number)) { showToast('El documento debe contener solo números', 'error'); return false; }
         return true;
+    };
+
+    const validateDocumentAndContinue = async (visibleValues = {}) => {
+        const currentData = { ...formData, ...visibleValues };
+        syncPageValues(visibleValues);
+        if (!validateDocumentStep(currentData)) return false;
+        setLoading(true);
+        setError(null);
+        try {
+            await axios.post(REGISTRATION_API_URL, {
+                document_number: currentData.document_number.trim(),
+                document_check: true,
+            });
+            return true;
+        } catch (err) {
+            const duplicate = err.response?.status === 409 || isDuplicateDocumentError(err);
+            const msg = duplicate
+                ? 'No se puede continuar con este documento. Si ya tienes cuenta, inicia sesión.'
+                : getRegistrationErrorMessage(err);
+            setError(msg);
+            showToast(msg, 'error');
+            if (duplicate) {
+                setTimeout(() => navigate(currentData.class_code.trim() ? `/login?code=${currentData.class_code.trim()}` : '/login'), 1800);
+            }
+            return false;
+        } finally {
+            setLoading(false);
+        }
     };
 
     const validateStep1 = (data = formData) => {
@@ -331,6 +359,7 @@ export default function RegisterStudent() {
                                         onChange={handleChange}
                                         onSyncPage={syncPageValues}
                                         onPageChange={setRegistrationPage}
+                                        onDocumentNext={validateDocumentAndContinue}
                                         onNext={validateAndContinue}
                                         loading={loading}
                                     />

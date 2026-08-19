@@ -120,6 +120,7 @@ REST_FRAMEWORK = {
     # Rate limiting — máximo 10 intentos de login por minuto por IP
     'DEFAULT_THROTTLE_RATES': {
         'login': '10/min',
+        'student_registration': '20/min',
     },
 }
 

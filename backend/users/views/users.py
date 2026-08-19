@@ -7,6 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.filters import SearchFilter
+from rest_framework.throttling import ScopedRateThrottle
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from ..serializers import (
@@ -173,8 +174,22 @@ class StudentRegisterView(generics.CreateAPIView):
     """Registro público de estudiantes (sin autenticación previa)."""
     serializer_class   = StudentRegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes   = [ScopedRateThrottle]
+    throttle_scope     = 'student_registration'
 
     def create(self, request, *args, **kwargs):
+        if str(request.data.get('document_check', '')).lower() in ('1', 'true', 'yes'):
+            document = str(request.data.get('document_number', '')).strip()
+            if not document or not document.isdigit():
+                return Response({
+                    "document_number": ["Ingresa un número de documento válido."]
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if User.objects.filter(document_number=document).exists():
+                return Response({
+                    "document_number": ["No se puede continuar con este documento. Si ya tienes cuenta, inicia sesión."]
+                }, status=status.HTTP_409_CONFLICT)
+            return Response({"available": True}, status=status.HTTP_200_OK)
+
         if str(request.data.get('dry_run', '')).lower() in ('1', 'true', 'yes'):
             document = str(request.data.get('document_number', '')).strip()
             if document and User.objects.filter(document_number=document).exists():
