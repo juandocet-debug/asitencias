@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, Plus, Loader2 } from 'lucide-react';
 
 import { useUsers } from '../hooks/useUsers';
 import Toast from '../components/ui/Toast';
@@ -10,6 +10,7 @@ import UserStatsBar from '../components/users/UserStatsBar';
 import UserFilterBar from '../components/users/UserFilterBar';
 import UserTable from '../components/users/UserTable';
 import UserFormModal from '../components/users/UserFormModal';
+import DirectoryImportModal from '../components/users/DirectoryImportModal';
 import MobilePageFrame from '../components/mobile/MobilePageFrame';
 import MobileHero from '../components/mobile/MobileHero';
 import SoftCard from '../components/mobile/SoftCard';
@@ -17,6 +18,7 @@ import SoftCard from '../components/mobile/SoftCard';
 export default function UsersPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
 
     const {
@@ -73,9 +75,12 @@ export default function UsersPage() {
                 subtitle="Gestiona perfiles, roles, fotos y programas con carga optimizada."
                 action={(
                     <div className="flex flex-wrap gap-2">
-                    <button onClick={openCreateModal} className="bg-upn-600 hover:bg-upn-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-upn-600/20">
-                        <Plus size={18} /> Nuevo Usuario
-                    </button>
+                        <button onClick={() => setIsDirectoryModalOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-emerald-600/20">
+                            <FileSpreadsheet size={18} /> Directorio autorizado
+                        </button>
+                        <button onClick={openCreateModal} className="bg-upn-600 hover:bg-upn-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-upn-600/20">
+                            <Plus size={18} /> Nuevo Usuario
+                        </button>
                     </div>
                 )}
             />
@@ -131,6 +136,16 @@ export default function UsersPage() {
                     }}
                     faculties={faculties}
                     allPrograms={allPrograms}
+                />
+            )}
+
+            {isDirectoryModalOpen && (
+                <DirectoryImportModal
+                    onClose={() => setIsDirectoryModalOpen(false)}
+                    onImported={() => {
+                        fetchUsers();
+                        showToast('Directorio autorizado actualizado.', 'success');
+                    }}
                 />
             )}
 

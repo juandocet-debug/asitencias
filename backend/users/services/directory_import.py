@@ -25,6 +25,11 @@ HEADER_MAP = {
     'correo electronico': 'email',
     'correo electrónico': 'email',
     'email': 'email',
+    'correo personal': 'personal_email',
+    'personal email': 'personal_email',
+    'celular': 'phone_number',
+    'telefono': 'phone_number',
+    'teléfono': 'phone_number',
 }
 
 RESTORE_FIELDS = [
@@ -74,11 +79,11 @@ def parse_rows(file_obj):
 
 
 def validate_row(item):
-    required = ['first_name', 'last_name', 'document_number', 'email']
+    required = ['document_number']
     missing = [field for field in required if not item.get(field)]
     if missing:
         return f"Fila {item['_row']}: faltan {', '.join(missing)}"
-    if '@' not in item['email']:
+    if item.get('email') and '@' not in item['email']:
         return f"Fila {item['_row']}: correo inválido"
     if not item['document_number'].isdigit():
         return f"Fila {item['_row']}: documento debe ser numérico"
@@ -117,31 +122,31 @@ def import_student_directory(file_obj, created_by=None):
 
 
 def upsert_student(item, batch):
-    email = item['email'].lower()
+    email = item.get('email', '').lower()
     document = item['document_number']
-    user = User.objects.filter(email__iexact=email).first()
     document_owner = User.objects.filter(document_number=document).first()
+    user = document_owner or (User.objects.filter(email__iexact=email).first() if email else None)
     error = validate_user_match(item, user, document_owner)
     if error:
         return error
     previous = snapshot_user(user) if user else {}
     if not user:
-        user = User(username=email, email=email)
+        user = User(username=f'dir-{document}', email=email)
+        user.set_unusable_password()
         state = 'created'
     else:
         state = 'updated'
     assign_directory_data(user, item, batch)
-    user.set_password(document)
     user.save()
     create_entry(batch, item, state, user=user, previous_data=previous)
     return state
 
 
 def validate_user_match(item, user, document_owner):
-    if document_owner and user and document_owner.id != user.id:
+    email = item.get('email', '').lower()
+    email_owner = User.objects.filter(email__iexact=email).first() if email else None
+    if document_owner and email_owner and document_owner.id != email_owner.id:
         return f"Fila {item['_row']}: documento pertenece a otro correo"
-    if document_owner and not user:
-        return f"Fila {item['_row']}: documento ya existe con otro correo"
     if user and user.role not in ('STUDENT', 'ESTUDIANTE') and 'STUDENT' not in (user.roles or []):
         return f"Fila {item['_row']}: el correo pertenece a un usuario no estudiante"
     return None
@@ -154,12 +159,24 @@ def snapshot_user(user):
 
 
 def assign_directory_data(user, item, batch):
-    user.first_name = item['first_name']
-    user.last_name = item['last_name']
-    user.second_lastname = item.get('second_lastname', '')
+    if item.get('first_name'):
+        user.first_name = item['first_name']
+    if item.get('last_name'):
+        user.last_name = item['last_name']
+    if item.get('second_name'):
+        user.second_name = item['second_name']
+    if item.get('second_lastname'):
+        user.second_lastname = item.get('second_lastname', '')
     user.document_number = item['document_number']
-    user.username = item['email'].lower()
-    user.email = item['email'].lower()
+    if item.get('email'):
+        user.username = item['email'].lower()
+        user.email = item['email'].lower()
+    elif not user.username:
+        user.username = f"dir-{item['document_number']}"
+    if item.get('personal_email'):
+        user.personal_email = item['personal_email'].lower()
+    if item.get('phone_number'):
+        user.phone_number = item['phone_number']
     user.role = 'STUDENT'
     user.roles = ['STUDENT']
     user.is_active = True

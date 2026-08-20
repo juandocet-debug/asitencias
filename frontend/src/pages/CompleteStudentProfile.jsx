@@ -39,6 +39,7 @@ export default function CompleteStudentProfile() {
     const [showPassword, setShowPassword] = useState(false);
     const [cameraActive, setCameraActive] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [checkingDocument, setCheckingDocument] = useState(false);
     const [error, setError] = useState('');
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -99,6 +100,21 @@ export default function CompleteStudentProfile() {
         if (stepName === 'Seguridad') return validatePassword();
         if (stepName === 'Foto' && googleUser && !photo && !user?.photo) return 'Toma o sube tu foto de perfil.';
         return '';
+    };
+
+    const validateDirectoryDocument = async () => {
+        if (!googleUser || currentStepName !== 'Identidad') return '';
+        setCheckingDocument(true);
+        try {
+            await api.post('/users/directory/check-document/', {
+                document_number: documentNumber.trim(),
+            });
+            return '';
+        } catch (err) {
+            return err.response?.data?.error || 'Cédula no encontrada en el directorio autorizado.';
+        } finally {
+            setCheckingDocument(false);
+        }
     };
 
     const validate = () => {
@@ -201,10 +217,12 @@ export default function CompleteStudentProfile() {
         }
     };
 
-    const nextStep = (event) => {
+    const nextStep = async (event) => {
         event.preventDefault();
         const validation = validateStep();
         if (validation) return setError(validation);
+        const directoryValidation = await validateDirectoryDocument();
+        if (directoryValidation) return setError(directoryValidation);
         setError('');
         setStep(value => Math.min(value + 1, totalSteps));
     };
@@ -286,9 +304,9 @@ export default function CompleteStudentProfile() {
                                 <button type="button" onClick={previousStep} disabled={step === 1 || loading} className="flex items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/[0.03] px-5 py-4 text-sm font-black text-white transition hover:bg-white/[0.08] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35">
                                     <ArrowLeft size={17} /> Atrás
                                 </button>
-                                <button disabled={loading} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] px-5 py-4 text-sm font-black text-white shadow-[0_12px_32px_rgba(118,87,246,0.38)] transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60">
-                                    {loading ? <Loader2 className="animate-spin" /> : step === totalSteps ? <CheckCircle2 size={20} /> : null}
-                                    {step === totalSteps ? 'Completar' : 'Siguiente'}
+                                <button disabled={loading || checkingDocument} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] px-5 py-4 text-sm font-black text-white shadow-[0_12px_32px_rgba(118,87,246,0.38)] transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60">
+                                    {loading || checkingDocument ? <Loader2 className="animate-spin" /> : step === totalSteps ? <CheckCircle2 size={20} /> : null}
+                                    {checkingDocument ? 'Validando...' : step === totalSteps ? 'Completar' : 'Siguiente'}
                                     <ArrowRight size={17} />
                                 </button>
                             </div>

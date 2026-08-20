@@ -213,11 +213,11 @@ class StudentRegistrationContractTests(TestCase):
         self.assertIn('email', response.json())
         self.assertFalse(User.objects.filter(username=self.payload['username']).exists())
 
-    def test_directory_import_endpoint_is_removed(self):
+    def test_directory_import_endpoint_requires_admin(self):
         self.client.force_authenticate(user=self.teacher)
         response = self.client.post('/api/users/directory/import/', {})
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
 
 class UserDirectoryContractTests(TestCase):
@@ -249,6 +249,33 @@ class UserDirectoryContractTests(TestCase):
         self.assertEqual(by_personal_email.status_code, 200)
         self.assertIn(student.id, [item['id'] for item in by_document.json()['results']])
         self.assertIn(student.id, [item['id'] for item in by_personal_email.json()['results']])
+
+    def test_admin_can_authorize_document_manually_and_student_can_check_it(self):
+        add_response = self.client.post('/api/users/directory/add/', {
+            'document_number': '77700123',
+            'first_name': 'Directorio',
+            'last_name': 'Activo',
+        }, format='json')
+
+        self.assertEqual(add_response.status_code, 201)
+        directory_user = User.objects.get(document_number='77700123')
+        self.assertTrue(directory_user.is_directory_imported)
+        self.assertTrue(directory_user.requires_onboarding)
+
+        check_response = self.client.post('/api/users/directory/check-document/', {
+            'document_number': '77700123',
+        }, format='json')
+
+        self.assertEqual(check_response.status_code, 200)
+        self.assertEqual(check_response.json(), {'authorized': True})
+
+    def test_directory_check_rejects_unknown_document_without_exposing_data(self):
+        response = self.client.post('/api/users/directory/check-document/', {
+            'document_number': '00099988',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(set(response.json().keys()), {'authorized', 'error'})
 
 
 @override_settings(
@@ -381,6 +408,73 @@ class GoogleAuthenticationContractTests(TestCase):
         self.assertEqual(existing.google_sub, 'google-personal-123')
         self.assertFalse(existing.requires_onboarding)
         self.assertFalse(User.objects.filter(pk=provisional.pk).exists())
+
+    def test_google_onboarding_claims_authorized_directory_document_without_contact_match(self):
+        faculty = Faculty.objects.create(name='Ciencias', code='CI')
+        program = Program.objects.create(name='Licenciatura', code='LC', faculty=faculty)
+        directory_user = User.objects.create_user(
+            username='dir-30303030',
+            role='STUDENT',
+            roles=['STUDENT'],
+            document_number='30303030',
+            photo='profile_photos/directory.jpg',
+            is_directory_imported=True,
+            requires_onboarding=True,
+        )
+        directory_user.set_unusable_password()
+        directory_user.save()
+        provisional = User.objects.create_user(
+            username='google.student@gmail.com',
+            email='google.student@gmail.com',
+            role='STUDENT',
+            google_sub='google-directory-123',
+            requires_onboarding=True,
+        )
+        provisional.set_unusable_password()
+        provisional.save()
+        self.client.force_authenticate(user=provisional)
+
+        response = self.client.post('/api/users/onboarding/complete/', {
+            'first_name': 'Google',
+            'last_name': 'Student',
+            'personal_email': 'google.student@gmail.com',
+            'document_number': '30303030',
+            'phone_number': '3009990000',
+            'faculty': faculty.id,
+            'program': program.id,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        directory_user.refresh_from_db()
+        self.assertEqual(directory_user.google_sub, 'google-directory-123')
+        self.assertFalse(directory_user.requires_onboarding)
+        self.assertFalse(User.objects.filter(pk=provisional.pk).exists())
+
+    def test_google_onboarding_rejects_document_outside_authorized_directory(self):
+        faculty = Faculty.objects.create(name='Artes', code='AR')
+        program = Program.objects.create(name='Danza', code='DA', faculty=faculty)
+        provisional = User.objects.create_user(
+            username='unknown.student@gmail.com',
+            email='unknown.student@gmail.com',
+            role='STUDENT',
+            google_sub='google-unknown-123',
+            requires_onboarding=True,
+        )
+        provisional.set_unusable_password()
+        provisional.save()
+        self.client.force_authenticate(user=provisional)
+
+        response = self.client.post('/api/users/onboarding/complete/', {
+            'first_name': 'Unknown',
+            'last_name': 'Student',
+            'document_number': '90909090',
+            'phone_number': '3009990000',
+            'faculty': faculty.id,
+            'program': program.id,
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Cédula no encontrada', str(response.json()))
 
     def test_google_onboarding_rejects_existing_document_without_contact_match(self):
         faculty = Faculty.objects.create(name='Educación física', code='EF')

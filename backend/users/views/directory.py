@@ -2,9 +2,12 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 
 from users.models import DirectoryImportBatch
 from users.services.directory_import import import_student_directory, revert_directory_batch
+
+User = get_user_model()
 
 
 def is_admin(user):
@@ -42,6 +45,72 @@ def import_directory(request):
         'skipped': result.skipped,
         'errors': result.errors,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def check_directory_document(request):
+    document = str(request.data.get('document_number', '')).strip()
+    if not document or not document.isdigit():
+        return Response({'authorized': False, 'error': 'Ingresa un número de documento válido.'}, status=400)
+    exists = User.objects.filter(
+        document_number=document,
+        is_active=True,
+        role='STUDENT',
+    ).exists()
+    if not exists:
+        return Response(
+            {'authorized': False, 'error': 'Cédula no encontrada en el directorio autorizado.'},
+            status=404,
+        )
+    return Response({'authorized': True})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_directory_document(request):
+    denied = require_admin(request.user)
+    if denied:
+        return denied
+    document = str(request.data.get('document_number', '')).strip()
+    if not document or not document.isdigit():
+        return Response({'document_number': 'Ingresa un número de documento válido.'}, status=400)
+
+    user = User.objects.filter(document_number=document).first()
+    if user and user.role not in ('STUDENT', 'ESTUDIANTE') and 'STUDENT' not in (user.roles or []):
+        return Response({'error': 'Ese documento pertenece a un usuario que no es estudiante.'}, status=409)
+
+    created = False
+    if not user:
+        user = User(username=f'dir-{document}', document_number=document, role='STUDENT', roles=['STUDENT'])
+        user.set_unusable_password()
+        created = True
+
+    optional_fields = {
+        'first_name': request.data.get('first_name'),
+        'second_name': request.data.get('second_name'),
+        'last_name': request.data.get('last_name'),
+        'second_lastname': request.data.get('second_lastname'),
+        'personal_email': request.data.get('personal_email'),
+        'phone_number': request.data.get('phone_number'),
+    }
+    for field, value in optional_fields.items():
+        clean_value = str(value or '').strip()
+        if clean_value:
+            setattr(user, field, clean_value.lower() if field == 'personal_email' else clean_value)
+
+    user.role = 'STUDENT'
+    user.roles = ['STUDENT']
+    user.is_active = True
+    user.is_directory_imported = True
+    user.requires_onboarding = True
+    user.save()
+
+    return Response({
+        'created': created,
+        'document_number': document,
+        'message': 'Cédula agregada al directorio autorizado.' if created else 'Cédula autorizada actualizada.',
+    }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 @api_view(['GET'])

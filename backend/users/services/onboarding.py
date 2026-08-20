@@ -55,6 +55,9 @@ def complete_student_onboarding(
         document = str(document_number or '').strip()
         if not document.isdigit():
             raise serializers.ValidationError('Ingresa un número de documento válido.')
+        authorized = User.objects.filter(document_number=document, is_active=True, role='STUDENT').exists()
+        if not authorized:
+            raise serializers.ValidationError('Cédula no encontrada en el directorio autorizado.')
         try:
             faculty = Faculty.objects.get(pk=faculty_id)
             program = Program.objects.get(pk=program_id, faculty=faculty)
@@ -64,7 +67,8 @@ def complete_student_onboarding(
         if existing:
             if existing.google_sub and existing.google_sub != user.google_sub:
                 raise serializers.ValidationError('Este documento ya tiene un acceso de Google vinculado.')
-            if not _matches_existing_contact(existing, phone_number, personal, user.email):
+            is_claimable_directory_record = existing.is_directory_imported and existing.requires_onboarding
+            if not is_claimable_directory_record and not _matches_existing_contact(existing, phone_number, personal, user.email):
                 raise serializers.ValidationError(
                     'Para proteger tu cuenta, el celular o correo personal debe coincidir con el registro existente.'
                 )

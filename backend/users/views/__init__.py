@@ -22,7 +22,13 @@ from .users import (
     coordinator_types,
 )
 
-from .directory import import_directory, directory_history, directory_batch_detail
+from .directory import (
+    import_directory,
+    directory_history,
+    directory_batch_detail,
+    check_directory_document,
+    add_directory_document,
+)
 from .onboarding import complete_onboarding
 
 from .ilinyx import (

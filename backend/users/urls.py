@@ -6,6 +6,8 @@ from .views import (
     FacultyViewSet, ProgramViewSet, coordinator_types,
     complete_onboarding,
     google_login,
+    import_directory, directory_history, directory_batch_detail,
+    check_directory_document, add_directory_document,
 )
 
 router = DefaultRouter()
@@ -25,6 +27,11 @@ urlpatterns = [
     path('password-reset-confirm/', password_reset_confirm, name='password-reset-confirm'),
     path('join-class/', join_class, name='join-class'),
     path('onboarding/complete/', complete_onboarding, name='onboarding-complete'),
+    path('directory/check-document/', check_directory_document, name='directory-check-document'),
+    path('directory/add/', add_directory_document, name='directory-add-document'),
+    path('directory/import/', import_directory, name='directory-import'),
+    path('directory/imports/', directory_history, name='directory-history'),
+    path('directory/imports/<int:batch_id>/', directory_batch_detail, name='directory-batch-detail'),
     path('search/', search_all_users, name='users-search'),
     path('courses-for-ilinyx/', list_courses_for_ilinyx, name='courses-for-ilinyx'),
     # Catálogos académicos
