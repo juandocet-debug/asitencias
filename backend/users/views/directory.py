@@ -2,12 +2,15 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
 from django.contrib.auth import get_user_model
 
 from users.models import DirectoryImportBatch
 from users.services.directory_import import import_student_directory, revert_directory_batch
 
 User = get_user_model()
+REFRESH_COOKIE_PATH = '/api/'
 
 
 def is_admin(user):
@@ -20,6 +23,21 @@ def require_admin(user):
         {'error': 'Solo administradores pueden gestionar directorios.'},
         status=403,
     )
+
+
+def _token_response(user):
+    refresh = RefreshToken.for_user(user)
+    response = Response({'access': str(refresh.access_token)})
+    response.set_cookie(
+        'refresh_token',
+        str(refresh),
+        httponly=True,
+        secure=not settings.DEBUG,
+        samesite='Lax' if settings.DEBUG else 'None',
+        path=REFRESH_COOKIE_PATH,
+        max_age=7 * 24 * 60 * 60,
+    )
+    return response
 
 
 @api_view(['POST'])
@@ -64,6 +82,53 @@ def check_directory_document(request):
             status=404,
         )
     return Response({'authorized': True})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def claim_google_document(request):
+    current = request.user
+    document = str(request.data.get('document_number', '')).strip()
+    if not current.google_sub:
+        return Response({'error': 'Este flujo solo aplica para acceso con Google.'}, status=400)
+    if current.role != 'STUDENT':
+        return Response({'error': 'Solo estudiantes pueden reclamar una cédula.'}, status=403)
+    if not document or not document.isdigit():
+        return Response({'error': 'Ingresa un número de documento válido.'}, status=400)
+
+    try:
+        target = User.objects.get(document_number=document, is_active=True, role='STUDENT')
+    except User.DoesNotExist:
+        return Response({'error': 'Cédula no encontrada en el directorio autorizado.'}, status=404)
+
+    if target.pk == current.pk:
+        return Response({'claimed': False, 'requires_onboarding': True})
+
+    if target.google_sub and target.google_sub != current.google_sub:
+        return Response({'error': 'Esta cédula ya tiene un acceso de Google vinculado.'}, status=409)
+
+    is_directory_placeholder = target.is_directory_imported and target.requires_onboarding
+    if is_directory_placeholder:
+        return Response({'claimed': False, 'requires_onboarding': True})
+
+    google_sub = current.google_sub
+    google_email = str(current.email or '').strip().lower()
+    current.google_sub = None
+    current.save(update_fields=['google_sub'])
+
+    target.google_sub = google_sub
+    if google_email and not target.personal_email:
+        target.personal_email = google_email
+    target.requires_onboarding = False
+    target.save(update_fields=['google_sub', 'personal_email', 'requires_onboarding'])
+    current.delete()
+
+    response = _token_response(target)
+    response.data.update({
+        'claimed': True,
+        'requires_onboarding': False,
+    })
+    return response
 
 
 @api_view(['POST'])

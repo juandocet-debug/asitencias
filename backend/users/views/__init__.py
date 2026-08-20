@@ -28,6 +28,7 @@ from .directory import (
     directory_batch_detail,
     check_directory_document,
     add_directory_document,
+    claim_google_document,
 )
 from .onboarding import complete_onboarding
 

@@ -7,7 +7,7 @@ from .views import (
     complete_onboarding,
     google_login,
     import_directory, directory_history, directory_batch_detail,
-    check_directory_document, add_directory_document,
+    check_directory_document, add_directory_document, claim_google_document,
 )
 
 router = DefaultRouter()
@@ -28,6 +28,7 @@ urlpatterns = [
     path('join-class/', join_class, name='join-class'),
     path('onboarding/complete/', complete_onboarding, name='onboarding-complete'),
     path('directory/check-document/', check_directory_document, name='directory-check-document'),
+    path('directory/claim-google-document/', claim_google_document, name='directory-claim-google-document'),
     path('directory/add/', add_directory_document, name='directory-add-document'),
     path('directory/import/', import_directory, name='directory-import'),
     path('directory/imports/', directory_history, name='directory-history'),

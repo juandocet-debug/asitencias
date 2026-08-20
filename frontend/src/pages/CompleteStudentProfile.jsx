@@ -106,9 +106,23 @@ export default function CompleteStudentProfile() {
         if (!googleUser || currentStepName !== 'Identidad') return '';
         setCheckingDocument(true);
         try {
-            await api.post('/users/directory/check-document/', {
+            const response = await api.post('/users/directory/claim-google-document/', {
                 document_number: documentNumber.trim(),
             });
+            if (response.data?.access) setAccessToken(response.data.access);
+            if (response.data?.claimed) {
+                const updatedUser = await fetchUser();
+                if (!updatedUser) return 'Tu cuenta fue vinculada, pero no pudimos cargar tu perfil. Vuelve a intentarlo.';
+                if (classCode) {
+                    try {
+                        await api.post('/users/join-class/', { class_code: classCode });
+                    } catch (joinError) {
+                        if (!String(joinError?.response?.data?.error || '').includes('inscrito')) throw joinError;
+                    }
+                }
+                navigate('/dashboard');
+                return 'CLAIMED';
+            }
             return '';
         } catch (err) {
             return err.response?.data?.error || 'Cédula no encontrada en el directorio autorizado.';
@@ -222,6 +236,7 @@ export default function CompleteStudentProfile() {
         const validation = validateStep();
         if (validation) return setError(validation);
         const directoryValidation = await validateDirectoryDocument();
+        if (directoryValidation === 'CLAIMED') return;
         if (directoryValidation) return setError(directoryValidation);
         setError('');
         setStep(value => Math.min(value + 1, totalSteps));

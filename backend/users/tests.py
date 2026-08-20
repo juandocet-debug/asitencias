@@ -277,6 +277,66 @@ class UserDirectoryContractTests(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(set(response.json().keys()), {'authorized', 'error'})
 
+    def test_google_document_claim_links_old_student_once(self):
+        old_student = User.objects.create_user(
+            username='old-student@upn.edu.co',
+            email='old-student@upn.edu.co',
+            first_name='Old',
+            last_name='Student',
+            role='STUDENT',
+            roles=['STUDENT'],
+            document_number='55500123',
+        )
+        provisional = User.objects.create_user(
+            username='personal-old@gmail.com',
+            email='personal-old@gmail.com',
+            role='STUDENT',
+            roles=['STUDENT'],
+            google_sub='google-old-claim',
+            requires_onboarding=True,
+        )
+        provisional.set_unusable_password()
+        provisional.save()
+        self.client.force_authenticate(user=provisional)
+
+        response = self.client.post('/api/users/directory/claim-google-document/', {
+            'document_number': '55500123',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['claimed'])
+        self.assertIn('access', response.json())
+        self.assertEqual(response.cookies['refresh_token']['path'], '/api/')
+        old_student.refresh_from_db()
+        self.assertEqual(old_student.google_sub, 'google-old-claim')
+        self.assertEqual(old_student.personal_email, 'personal-old@gmail.com')
+        self.assertFalse(User.objects.filter(pk=provisional.pk).exists())
+
+    def test_google_document_claim_does_not_take_already_linked_document(self):
+        User.objects.create_user(
+            username='linked-student@upn.edu.co',
+            email='linked-student@upn.edu.co',
+            role='STUDENT',
+            roles=['STUDENT'],
+            document_number='55500124',
+            google_sub='other-google-sub',
+        )
+        provisional = User.objects.create_user(
+            username='attacker@gmail.com',
+            email='attacker@gmail.com',
+            role='STUDENT',
+            roles=['STUDENT'],
+            google_sub='google-attacker',
+            requires_onboarding=True,
+        )
+        self.client.force_authenticate(user=provisional)
+
+        response = self.client.post('/api/users/directory/claim-google-document/', {
+            'document_number': '55500124',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 409)
+
 
 @override_settings(
     GOOGLE_OAUTH_CLIENT_ID='agon-client.apps.googleusercontent.com',
