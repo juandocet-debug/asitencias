@@ -140,7 +140,6 @@ const ProtectedRoutes = () => {
       <Route path="/coordinator/investigacion" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Investigación</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
       <Route path="/coordinator/extension" element={<div className="p-8"><h2 className="text-2xl font-bold text-slate-800 mb-2">Coordinación de Extensión</h2><p className="text-slate-500">Módulo en construcción.</p></div>} />
       <Route path="/profile" element={<Profile />} />
-      <Route path="/complete-profile" element={<CompleteStudentProfile />} />
       <Route path="/badges" element={<div className="p-4">Módulo de Insignias: En Construcción</div>} />
       <Route path="/settings" element={<div className="p-4">Configuración: En Construcción</div>} />
     </Routes>
@@ -163,6 +162,14 @@ function App() {
             <Route path="/register" element={<RegisterStudent />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route
+              path="/complete-profile"
+              element={
+                <ProtectedRoute>
+                  <CompleteStudentProfile />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rutas protegidas — dentro del layout del dashboard */}
             <Route
