@@ -288,6 +288,28 @@ class GoogleAuthenticationContractTests(TestCase):
         self.assertTrue(user.requires_onboarding)
         self.assertEqual(user.google_sub, 'personal-789')
 
+    @patch('google.oauth2.id_token.verify_oauth2_token')
+    def test_non_institutional_google_account_reuses_same_email(self, verify_token):
+        User.objects.create_user(
+            username='student@gmail.com',
+            email='student@gmail.com',
+            role='STUDENT',
+            google_sub='personal-789',
+            requires_onboarding=True,
+        )
+        verify_token.return_value = {
+            'sub': 'personal-789',
+            'email': 'student@gmail.com',
+            'email_verified': True,
+            'hd': '',
+        }
+
+        response = self.client.post('/api/users/auth/google/', {'credential': 'signed-token'}, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('access', response.json())
+        self.assertEqual(User.objects.filter(email='student@gmail.com').count(), 1)
+
     def test_google_onboarding_links_existing_document_with_matching_phone(self):
         faculty = Faculty.objects.create(name='Educación física', code='EF')
         program = Program.objects.create(name='Licenciatura en recreación', code='LR', faculty=faculty)

@@ -105,10 +105,10 @@ def google_login(request):
     with transaction.atomic():
         user = User.objects.select_for_update().filter(google_sub=google_sub).first()
         if user is None:
-            user = User.objects.select_for_update().filter(email__iexact=email).first() if is_institutional else None
+            user = User.objects.select_for_update().filter(email__iexact=email).first()
             if user and user.google_sub and user.google_sub != google_sub:
                 return Response(
-                    {'detail': 'Esta cuenta institucional ya está vinculada a otro acceso de Google.'},
+                    {'detail': 'Esta cuenta ya está vinculada a otro acceso de Google.'},
                     status=409,
                 )
             if user:
