@@ -2,9 +2,31 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
 
 from users.serializers import UserProfileSerializer
 from users.services.onboarding import complete_student_onboarding
+
+
+def _profile_response(user, request):
+    serializer = UserProfileSerializer(user, context={'request': request})
+    data = serializer.data
+    if user.pk != request.user.pk:
+        refresh = RefreshToken.for_user(user)
+        data['access'] = str(refresh.access_token)
+        response = Response(data, status=status.HTTP_200_OK)
+        response.set_cookie(
+            'refresh_token',
+            str(refresh),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite='Lax' if settings.DEBUG else 'None',
+            path='/api/token/',
+            max_age=7 * 24 * 60 * 60,
+        )
+        return response
+    return Response(data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -35,5 +57,4 @@ def complete_onboarding(request):
         )
     except Exception as exc:
         return Response({'error': str(exc)}, status=400)
-    serializer = UserProfileSerializer(user, context={'request': request})
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return _profile_response(user, request)

@@ -109,7 +109,7 @@ export default function Login() {
                         {GOOGLE_CLIENT_ID && (
                             <div className="space-y-3">
                                 <GoogleSignInButton clientId={GOOGLE_CLIENT_ID} onCredential={handleGoogleCredential} disabled={loading} />
-                                <p className="text-center text-[11px] font-bold text-violet-200/45">Usa tu cuenta institucional @upn.edu.co</p>
+                                <p className="text-center text-[11px] font-bold text-violet-200/45">Puedes usar Google institucional o personal. El documento valida la cuenta.</p>
                                 {error && <div className="rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm font-bold text-red-300">{error}</div>}
                                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-violet-200/35">
                                     <span className="h-px flex-1 bg-white/12" /> o <span className="h-px flex-1 bg-white/12" />
@@ -149,7 +149,7 @@ function LoginHeader({ classCode }) {
         <header className="mb-7">
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">{classCode ? 'Continuar con Google' : 'Acceso de jugador'}</p>
             <h2 className="mt-2 text-[2rem] font-black leading-tight">Iniciar sesión</h2>
-            {classCode ? <div className="mt-3 rounded-xl border border-[#ccff00]/25 bg-[#ccff00]/10 px-4 py-2 text-sm font-bold text-lime-100">Clase: {classCode}. Usa tu correo institucional para unirte.</div> : <p className="mt-1 text-sm font-semibold text-violet-200/50">Continúa tus clases, misiones y logros.</p>}
+            {classCode ? <div className="mt-3 rounded-xl border border-[#ccff00]/25 bg-[#ccff00]/10 px-4 py-2 text-sm font-bold text-lime-100">Clase: {classCode}. Continúa con Google para unirte.</div> : <p className="mt-1 text-sm font-semibold text-violet-200/50">Continúa tus clases, misiones y logros.</p>}
         </header>
     );
 }

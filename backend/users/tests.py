@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 from academic.models import Course
+from users.models import Faculty, Program
 
 
 User = get_user_model()
@@ -271,7 +272,7 @@ class GoogleAuthenticationContractTests(TestCase):
         self.assertEqual(user.roles, ['STUDENT'])
 
     @patch('google.oauth2.id_token.verify_oauth2_token')
-    def test_non_institutional_google_account_is_rejected(self, verify_token):
+    def test_non_institutional_google_account_starts_onboarding(self, verify_token):
         verify_token.return_value = {
             'sub': 'personal-789',
             'email': 'student@gmail.com',
@@ -281,5 +282,86 @@ class GoogleAuthenticationContractTests(TestCase):
 
         response = self.client.post('/api/users/auth/google/', {'credential': 'signed-token'}, format='json')
 
-        self.assertEqual(response.status_code, 403)
-        self.assertFalse(User.objects.filter(email='student@gmail.com').exists())
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('access', response.json())
+        user = User.objects.get(email='student@gmail.com')
+        self.assertTrue(user.requires_onboarding)
+        self.assertEqual(user.google_sub, 'personal-789')
+
+    def test_google_onboarding_links_existing_document_with_matching_phone(self):
+        faculty = Faculty.objects.create(name='Educación física', code='EF')
+        program = Program.objects.create(name='Licenciatura en recreación', code='LR', faculty=faculty)
+        existing = User.objects.create_user(
+            username='old.student@upn.edu.co',
+            email='old.student@upn.edu.co',
+            password='Safe-password!23',
+            role='STUDENT',
+            document_number='10101010',
+            phone_number='3001234567',
+            photo='profile_photos/old.jpg',
+        )
+        provisional = User.objects.create_user(
+            username='personal.student@gmail.com',
+            email='personal.student@gmail.com',
+            role='STUDENT',
+            google_sub='google-personal-123',
+            requires_onboarding=True,
+        )
+        provisional.set_unusable_password()
+        provisional.save()
+        self.client.force_authenticate(user=provisional)
+
+        response = self.client.post('/api/users/onboarding/complete/', {
+            'first_name': 'Juan',
+            'last_name': 'Ramirez',
+            'document_number': '10101010',
+            'phone_number': '3001234567',
+            'faculty': faculty.id,
+            'program': program.id,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('access', response.json())
+        existing.refresh_from_db()
+        self.assertEqual(existing.google_sub, 'google-personal-123')
+        self.assertFalse(existing.requires_onboarding)
+        self.assertFalse(User.objects.filter(pk=provisional.pk).exists())
+
+    def test_google_onboarding_rejects_existing_document_without_contact_match(self):
+        faculty = Faculty.objects.create(name='Educación física', code='EF')
+        program = Program.objects.create(name='Licenciatura en recreación', code='LR', faculty=faculty)
+        existing = User.objects.create_user(
+            username='protected.student@upn.edu.co',
+            email='protected.student@upn.edu.co',
+            password='Safe-password!23',
+            role='STUDENT',
+            document_number='20202020',
+            phone_number='3001234567',
+            personal_email='protected@gmail.com',
+            photo='profile_photos/old.jpg',
+        )
+        provisional = User.objects.create_user(
+            username='other.student@gmail.com',
+            email='other.student@gmail.com',
+            role='STUDENT',
+            google_sub='google-personal-456',
+            requires_onboarding=True,
+        )
+        provisional.set_unusable_password()
+        provisional.save()
+        self.client.force_authenticate(user=provisional)
+
+        response = self.client.post('/api/users/onboarding/complete/', {
+            'first_name': 'Otro',
+            'last_name': 'Estudiante',
+            'personal_email': 'other@gmail.com',
+            'document_number': '20202020',
+            'phone_number': '3009999999',
+            'faculty': faculty.id,
+            'program': program.id,
+        })
+
+        self.assertEqual(response.status_code, 400)
+        existing.refresh_from_db()
+        self.assertIsNone(existing.google_sub)
+        self.assertTrue(User.objects.filter(pk=provisional.pk).exists())

@@ -55,23 +55,49 @@ def complete_student_onboarding(
         document = str(document_number or '').strip()
         if not document.isdigit():
             raise serializers.ValidationError('Ingresa un número de documento válido.')
-        if User.objects.exclude(pk=user.pk).filter(document_number=document).exists():
-            raise serializers.ValidationError('Este documento ya está vinculado a otra cuenta.')
-        if not photo and not user.photo:
-            raise serializers.ValidationError('La foto de perfil es obligatoria.')
         try:
             faculty = Faculty.objects.get(pk=faculty_id)
             program = Program.objects.get(pk=program_id, faculty=faculty)
         except (Faculty.DoesNotExist, Program.DoesNotExist, TypeError, ValueError):
             raise serializers.ValidationError('Selecciona una facultad y un programa válidos.')
+        existing = User.objects.exclude(pk=user.pk).filter(document_number=document).first()
+        if existing:
+            if existing.google_sub and existing.google_sub != user.google_sub:
+                raise serializers.ValidationError('Este documento ya tiene un acceso de Google vinculado.')
+            if not _matches_existing_contact(existing, phone_number, personal, user.email):
+                raise serializers.ValidationError(
+                    'Para proteger tu cuenta, el celular o correo personal debe coincidir con el registro existente.'
+                )
+            google_sub = user.google_sub
+            user.google_sub = None
+            user.save(update_fields=['google_sub'])
+            target = existing
+            target.google_sub = google_sub
+        else:
+            target = user
+        if not photo and not target.photo:
+            raise serializers.ValidationError('La foto de perfil es obligatoria.')
         user.document_number = document
-        user.first_name = first
-        user.second_name = str(second_name or '').strip()
-        user.last_name = last
-        user.second_lastname = str(second_lastname or '').strip()
-        user.personal_email = personal or None
-        user.faculty = faculty
-        user.program = program
+        target.document_number = document
+        target.first_name = first
+        target.second_name = str(second_name or '').strip()
+        target.last_name = last
+        target.second_lastname = str(second_lastname or '').strip()
+        target.personal_email = personal or target.personal_email
+        target.phone_number = phone_number
+        target.faculty = faculty
+        target.program = program
+        if photo:
+            target.photo = photo
+        target.requires_onboarding = False
+        target.save(update_fields=[
+            'google_sub', 'first_name', 'second_name', 'last_name', 'second_lastname',
+            'personal_email', 'phone_number', 'document_number', 'faculty', 'program',
+            'photo', 'requires_onboarding',
+        ])
+        if existing:
+            user.delete()
+        return target
     else:
         validate_student_password(password)
         user.set_password(password)
@@ -86,3 +112,21 @@ def complete_student_onboarding(
         update_fields.append('password')
     user.save(update_fields=update_fields)
     return user
+
+
+def _matches_existing_contact(existing, phone_number, personal_email, google_email):
+    submitted_phone = _digits(phone_number)
+    existing_phone = _digits(existing.phone_number)
+    if submitted_phone and existing_phone and submitted_phone == existing_phone:
+        return True
+
+    submitted_emails = {
+        str(personal_email or '').strip().lower(),
+        str(google_email or '').strip().lower(),
+    }
+    existing_personal = str(existing.personal_email or '').strip().lower()
+    return bool(existing_personal and existing_personal in submitted_emails)
+
+
+def _digits(value):
+    return re.sub(r'\D+', '', str(value or ''))

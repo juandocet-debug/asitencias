@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Camera, CheckCircle2, Eye, EyeOff, Loader2, Upload, X } from 'lucide-react';
-import api, { getAccessToken } from '../services/api';
+import api, { getAccessToken, setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 
 const SPECIAL_RE = /[^A-Za-z0-9]/;
@@ -130,9 +130,10 @@ export default function CompleteStudentProfile() {
         }
         if (photo) data.append('photo', photo);
         try {
-            await axios.post(ONBOARDING_API_URL, data, {
+            const response = await axios.post(ONBOARDING_API_URL, data, {
                 headers: { Authorization: `Bearer ${getAccessToken()}` },
             });
+            if (response.data?.access) setAccessToken(response.data.access);
             const updatedUser = await fetchUser();
             if (!updatedUser) {
                 setError('Tu cuenta quedó activada, pero no pudimos cargar tu perfil. Vuelve a intentarlo en unos segundos.');

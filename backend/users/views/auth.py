@@ -75,7 +75,7 @@ class GoogleLoginRateThrottle(AnonRateThrottle):
 @permission_classes([permissions.AllowAny])
 @throttle_classes([GoogleLoginRateThrottle])
 def google_login(request):
-    """Valida Google en servidor y vincula por correo institucional verificado."""
+    """Valida Google en servidor. UPN vincula por correo; Gmail completa perfil por documento."""
     client_id = settings.GOOGLE_OAUTH_CLIENT_ID
     credential = str(request.data.get('credential', '')).strip()
     if not client_id:
@@ -98,15 +98,14 @@ def google_login(request):
     google_sub = str(payload.get('sub', '')).strip()
     allowed_domain = settings.GOOGLE_ALLOWED_DOMAIN
     hosted_domain = str(payload.get('hd', '')).strip().lower()
+    is_institutional = email.endswith(f'@{allowed_domain}') and hosted_domain == allowed_domain
     if not payload.get('email_verified') or not google_sub:
         return Response({'detail': 'Google no confirmó este correo.'}, status=403)
-    if not email.endswith(f'@{allowed_domain}') or hosted_domain != allowed_domain:
-        return Response({'detail': f'Usa tu cuenta institucional @{allowed_domain}.'}, status=403)
 
     with transaction.atomic():
         user = User.objects.select_for_update().filter(google_sub=google_sub).first()
         if user is None:
-            user = User.objects.select_for_update().filter(email__iexact=email).first()
+            user = User.objects.select_for_update().filter(email__iexact=email).first() if is_institutional else None
             if user and user.google_sub and user.google_sub != google_sub:
                 return Response(
                     {'detail': 'Esta cuenta institucional ya está vinculada a otro acceso de Google.'},
