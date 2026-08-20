@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Camera, CheckCircle2, Eye, EyeOff, Loader2, Upload, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Eye, EyeOff, Loader2, Upload, X } from 'lucide-react';
 import api, { getAccessToken, setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 import fondoLogin from '../assets/fondoLogin.png';
 import superiorLogo from '../assets/superior.png';
 
 const SPECIAL_RE = /[^A-Za-z0-9]/;
+const UPN_EMAIL_RE = /@upn\.edu\.co$/i;
 const ONBOARDING_API_URL = import.meta.env.VITE_ONBOARDING_API_URL
     || 'https://agon-backend-production-c5d2.up.railway.app/api/users/onboarding/complete/';
 
@@ -18,6 +19,8 @@ export default function CompleteStudentProfile() {
     const [searchParams] = useSearchParams();
     const classCode = searchParams.get('code')?.trim().toUpperCase() || '';
     const googleUser = Boolean(user?.google_connected);
+    const googleEmailAsPersonal = googleUser && user?.email && !UPN_EMAIL_RE.test(user.email) ? user.email : '';
+    const [step, setStep] = useState(1);
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [phone, setPhone] = useState(user?.phone_number || '');
@@ -25,7 +28,7 @@ export default function CompleteStudentProfile() {
     const [secondName, setSecondName] = useState(user?.second_name || '');
     const [lastName, setLastName] = useState(user?.last_name || '');
     const [secondLastname, setSecondLastname] = useState(user?.second_lastname || '');
-    const [personalEmail, setPersonalEmail] = useState(user?.personal_email || '');
+    const [personalEmail, setPersonalEmail] = useState(user?.personal_email || googleEmailAsPersonal);
     const [documentNumber, setDocumentNumber] = useState(user?.document_number || '');
     const [faculty, setFaculty] = useState(user?.faculty || '');
     const [program, setProgram] = useState(user?.program || '');
@@ -40,6 +43,13 @@ export default function CompleteStudentProfile() {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
+    const steps = googleUser
+        ? ['Identidad', 'Contacto', 'Programa', 'Foto']
+        : ['Seguridad', 'Contacto', 'Foto'];
+
+    const totalSteps = steps.length;
+    const currentStepName = steps[step - 1];
+
     useEffect(() => {
         if (!googleUser) return;
         Promise.all([api.get('/users/faculties/'), api.get('/users/programs/')])
@@ -50,25 +60,55 @@ export default function CompleteStudentProfile() {
             .catch(() => setError('No pudimos cargar facultades y programas.'));
     }, [googleUser]);
 
+    useEffect(() => {
+        if (!user) return;
+        setPhone(value => value || user.phone_number || '');
+        setFirstName(value => value || user.first_name || '');
+        setSecondName(value => value || user.second_name || '');
+        setLastName(value => value || user.last_name || '');
+        setSecondLastname(value => value || user.second_lastname || '');
+        setDocumentNumber(value => value || user.document_number || '');
+        setFaculty(value => value || user.faculty || '');
+        setProgram(value => value || user.program || '');
+        setPersonalEmail(value => value || user.personal_email || googleEmailAsPersonal || '');
+        setPreview(value => value || user.photo || null);
+    }, [user, googleEmailAsPersonal]);
+
     const filteredPrograms = useMemo(
         () => programs.filter(item => String(item.faculty) === String(faculty)),
         [faculty, programs],
     );
 
-    const validate = () => {
-        if (!googleUser) {
-            if (!password || password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
-            if (!/[A-Z]/.test(password)) return 'La contraseña debe tener una mayúscula.';
-            if (!/[a-z]/.test(password)) return 'La contraseña debe tener una minúscula.';
-            if (!SPECIAL_RE.test(password)) return 'La contraseña debe tener un carácter especial.';
-            if (password !== passwordConfirm) return 'Las contraseñas no coinciden.';
+    const validatePassword = () => {
+        if (!password || password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+        if (!/[A-Z]/.test(password)) return 'La contraseña debe tener una mayúscula.';
+        if (!/[a-z]/.test(password)) return 'La contraseña debe tener una minúscula.';
+        if (!SPECIAL_RE.test(password)) return 'La contraseña debe tener un carácter especial.';
+        if (password !== passwordConfirm) return 'Las contraseñas no coinciden.';
+        return '';
+    };
+
+    const validateStep = (stepName = currentStepName) => {
+        if (stepName === 'Identidad') {
+            if (!firstName.trim()) return 'El primer nombre es obligatorio.';
+            if (!lastName.trim()) return 'El primer apellido es obligatorio.';
+            if (!/^\d+$/.test(documentNumber.trim())) return 'Ingresa un número de documento válido.';
         }
-        if (googleUser && !firstName.trim()) return 'El primer nombre es obligatorio.';
-        if (googleUser && !lastName.trim()) return 'El primer apellido es obligatorio.';
-        if (!phone.trim()) return 'El número de celular es obligatorio.';
-        if (googleUser && !/^\d+$/.test(documentNumber.trim())) return 'Ingresa un número de documento válido.';
-        if (googleUser && (!faculty || !program)) return 'Selecciona tu facultad y programa.';
-        if (googleUser && !photo && !user?.photo) return 'Toma o sube tu foto de perfil.';
+        if (stepName === 'Contacto' && !phone.trim()) return 'El número de celular es obligatorio.';
+        if (stepName === 'Programa' && (!faculty || !program)) return 'Selecciona tu facultad y programa.';
+        if (stepName === 'Seguridad') return validatePassword();
+        if (stepName === 'Foto' && googleUser && !photo && !user?.photo) return 'Toma o sube tu foto de perfil.';
+        return '';
+    };
+
+    const validate = () => {
+        const validations = googleUser
+            ? ['Identidad', 'Contacto', 'Programa', 'Foto']
+            : ['Seguridad', 'Contacto', 'Foto'];
+        for (const item of validations) {
+            const validation = validateStep(item);
+            if (validation) return validation;
+        }
         return '';
     };
 
@@ -114,7 +154,11 @@ export default function CompleteStudentProfile() {
     const submit = async (event) => {
         event.preventDefault();
         const validation = validate();
-        if (validation) return setError(validation);
+        if (validation) {
+            const invalidIndex = steps.findIndex(item => validateStep(item) === validation);
+            if (invalidIndex >= 0) setStep(invalidIndex + 1);
+            return setError(validation);
+        }
         setLoading(true);
         setError('');
         const data = new FormData();
@@ -157,6 +201,35 @@ export default function CompleteStudentProfile() {
         }
     };
 
+    const nextStep = (event) => {
+        event.preventDefault();
+        const validation = validateStep();
+        if (validation) return setError(validation);
+        setError('');
+        setStep(value => Math.min(value + 1, totalSteps));
+    };
+
+    const previousStep = () => {
+        setError('');
+        setStep(value => Math.max(value - 1, 1));
+    };
+
+    const renderCurrentStep = () => {
+        if (currentStepName === 'Identidad') {
+            return <IdentityFields firstName={firstName} setFirstName={setFirstName} secondName={secondName} setSecondName={setSecondName} lastName={lastName} setLastName={setLastName} secondLastname={secondLastname} setSecondLastname={setSecondLastname} documentNumber={documentNumber} setDocumentNumber={setDocumentNumber} />;
+        }
+        if (currentStepName === 'Contacto') {
+            return <ContactFields personalEmail={personalEmail} setPersonalEmail={setPersonalEmail} phone={phone} setPhone={setPhone} googleUser={googleUser} />;
+        }
+        if (currentStepName === 'Programa') {
+            return <ProgramFields faculty={faculty} setFaculty={value => { setFaculty(value); setProgram(''); }} program={program} setProgram={setProgram} faculties={faculties} programs={filteredPrograms} />;
+        }
+        if (currentStepName === 'Seguridad') {
+            return <PasswordFields password={password} setPassword={setPassword} passwordConfirm={passwordConfirm} setPasswordConfirm={setPasswordConfirm} showPassword={showPassword} setShowPassword={setShowPassword} />;
+        }
+        return <PhotoBox preview={preview} cameraActive={cameraActive} videoRef={videoRef} onStart={startCamera} onTake={takePhoto} onStop={stopCamera} onFile={handleFile} onClear={() => { setPreview(null); setPhoto(null); }} />;
+    };
+
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#050612] font-['Montserrat'] text-white">
             <img src={fondoLogin} alt="" className="absolute inset-0 h-full w-full object-cover object-[58%_center]" />
@@ -164,7 +237,7 @@ export default function CompleteStudentProfile() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(118,87,246,0.30),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(204,255,0,0.10),transparent_22%)]" />
 
             <main className="relative z-10 flex min-h-screen items-center px-4 py-6 sm:px-8 lg:px-14">
-                <form onSubmit={submit} className="grid w-full gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
+                <form onSubmit={step === totalSteps ? submit : nextStep} className="grid w-full gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
                     <motion.aside initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} className="mx-auto w-full max-w-[430px] text-center lg:max-w-[460px]">
                         <motion.img
                             src={superiorLogo}
@@ -177,27 +250,48 @@ export default function CompleteStudentProfile() {
                         <p className="mt-3 text-[11px] font-black uppercase tracking-[0.38em] text-[#ccff00]">Perfil de jugador</p>
                         <h1 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Activa tu cuenta</h1>
                         <p className="mx-auto mt-3 max-w-sm text-sm font-semibold text-violet-100/60">Completa tus datos, toma tu foto y entra a la experiencia AGON.</p>
-                        <ReadOnlyData user={user} />
+                        <StepTrail steps={steps} currentStep={step} />
                     </motion.aside>
 
                     <motion.section initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/45 bg-[#080716]/86 p-4 shadow-[0_0_0_1px_rgba(204,255,0,0.05),0_30px_90px_rgba(0,0,0,0.65),0_0_48px_rgba(118,87,246,0.22)] backdrop-blur-xl sm:p-6">
                         <span className="pointer-events-none absolute left-0 top-12 h-28 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
                         <span className="pointer-events-none absolute right-0 top-16 h-20 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
                         <header className="mb-5">
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">Completa la misión</p>
-                            <h2 className="mt-2 text-2xl font-black">Datos finales</h2>
-                            <p className="mt-1 text-sm font-semibold text-violet-200/50">{googleUser ? 'Puedes corregir los nombres que trajo Google antes de guardar.' : 'Asigna tu contraseña y confirma tu perfil.'}</p>
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">Paso {step} de {totalSteps}</p>
+                                    <h2 className="mt-2 text-2xl font-black">{currentStepName}</h2>
+                                </div>
+                                <div className="h-2 w-28 overflow-hidden rounded-full bg-white/10">
+                                    <div className="h-full rounded-full bg-[#ccff00] transition-all" style={{ width: `${(step / totalSteps) * 100}%` }} />
+                                </div>
+                            </div>
+                            <p className="mt-2 text-sm font-semibold text-violet-200/50">{googleUser ? 'Puedes corregir lo que trajo Google antes de guardar.' : 'Asigna tu contraseña y confirma tu perfil.'}</p>
                         </header>
 
                         <div className="space-y-5">
-                            <PhotoBox preview={preview} cameraActive={cameraActive} videoRef={videoRef} onStart={startCamera} onTake={takePhoto} onStop={stopCamera} onFile={handleFile} onClear={() => { setPreview(null); setPhoto(null); }} />
-                            {googleUser && <GoogleProfileFields firstName={firstName} setFirstName={setFirstName} secondName={secondName} setSecondName={setSecondName} lastName={lastName} setLastName={setLastName} secondLastname={secondLastname} setSecondLastname={setSecondLastname} personalEmail={personalEmail} setPersonalEmail={setPersonalEmail} documentNumber={documentNumber} setDocumentNumber={setDocumentNumber} faculty={faculty} setFaculty={value => { setFaculty(value); setProgram(''); }} program={program} setProgram={setProgram} faculties={faculties} programs={filteredPrograms} />}
-                            {!googleUser && <PasswordFields password={password} setPassword={setPassword} passwordConfirm={passwordConfirm} setPasswordConfirm={setPasswordConfirm} showPassword={showPassword} setShowPassword={setShowPassword} />}
-                            <Field label="Número de celular"><input value={phone} onChange={event => setPhone(event.target.value)} className={fieldClass()} /></Field>
+                            <motion.div
+                                key={currentStepName}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.22 }}
+                                className="rounded-2xl border border-white/70 bg-black/10 p-4 sm:p-5"
+                            >
+                                {renderCurrentStep()}
+                            </motion.div>
+
                             {error && <div className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">{error}</div>}
-                            <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] px-5 py-4 text-sm font-black text-white shadow-[0_12px_32px_rgba(118,87,246,0.38)] transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60">
-                                {loading ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={20} />} Completar activación <ArrowRight size={17} />
-                            </button>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button type="button" onClick={previousStep} disabled={step === 1 || loading} className="flex items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/[0.03] px-5 py-4 text-sm font-black text-white transition hover:bg-white/[0.08] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35">
+                                    <ArrowLeft size={17} /> Atrás
+                                </button>
+                                <button disabled={loading} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] px-5 py-4 text-sm font-black text-white shadow-[0_12px_32px_rgba(118,87,246,0.38)] transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60">
+                                    {loading ? <Loader2 className="animate-spin" /> : step === totalSteps ? <CheckCircle2 size={20} /> : null}
+                                    {step === totalSteps ? 'Completar' : 'Siguiente'}
+                                    <ArrowRight size={17} />
+                                </button>
+                            </div>
                         </div>
                     </motion.section>
                     <canvas ref={canvasRef} className="hidden" />
@@ -215,20 +309,35 @@ function labelClass() {
     return 'text-xs font-black uppercase tracking-wider text-violet-200/65';
 }
 
-function ReadOnlyData({ user }) {
-    const rows = [
-        ['Primer nombre', user?.first_name],
-        ['Primer apellido', user?.last_name],
-        ['Documento', user?.document_number],
-        ['Correo', user?.email],
-    ];
-    return <div className="mx-auto mt-6 grid max-w-sm gap-2 text-left sm:grid-cols-2">{rows.map(([label, value]) => <div key={label} className="rounded-xl border border-violet-300/15 bg-white/[0.04] px-4 py-3"><p className="text-[10px] font-black uppercase tracking-wide text-violet-200/40">{label}</p><p className="truncate text-sm font-black text-violet-50">{value || '—'}</p></div>)}</div>;
+function StepTrail({ steps, currentStep }) {
+    return (
+        <div className="mx-auto mt-7 grid max-w-sm gap-3 text-left">
+            {steps.map((item, index) => {
+                const number = index + 1;
+                const active = number === currentStep;
+                const done = number < currentStep;
+                return (
+                    <button
+                        key={item}
+                        type="button"
+                        className={`flex items-center gap-4 rounded-xl border px-4 py-3 text-sm font-black transition ${active ? 'border-[#ccff00]/80 bg-[#ccff00]/10 text-white shadow-[0_0_28px_rgba(204,255,0,0.12)]' : 'border-white/10 bg-white/[0.035] text-violet-100/55'}`}
+                        aria-current={active ? 'step' : undefined}
+                        tabIndex={-1}
+                    >
+                        <span className={`grid h-8 w-8 place-items-center rounded-full text-xs ${active || done ? 'bg-[#ccff00] text-slate-950' : 'bg-white/12 text-white/55'}`}>{done ? '✓' : number}</span>
+                        {item}
+                    </button>
+                );
+            })}
+        </div>
+    );
 }
 
 function PhotoBox({ preview, cameraActive, videoRef, onStart, onTake, onStop, onFile, onClear }) {
     return (
         <div className="space-y-3">
-            <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl border border-dashed border-[#ccff00]/35 bg-white/[0.04]">
+            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[#ccff00]">Foto de perfil</h3>
+            <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-[#ccff00]/35 bg-white/[0.04] sm:h-72">
                 {preview ? <img src={preview} alt="Foto" className="h-full w-full object-cover" /> : <video ref={videoRef} autoPlay playsInline muted className={`h-full w-full object-cover ${cameraActive ? '' : 'hidden'}`} />}
                 {!preview && !cameraActive && <div className="px-4 text-center text-sm font-bold text-violet-200/45">Toma o sube tu foto de perfil</div>}
                 {preview && <button type="button" onClick={onClear} className="absolute right-3 top-3 rounded-full bg-red-500 p-2 text-white"><X size={16} /></button>}
@@ -241,17 +350,35 @@ function PhotoBox({ preview, cameraActive, videoRef, onStart, onTake, onStop, on
     );
 }
 
-function GoogleProfileFields({ firstName, setFirstName, secondName, setSecondName, lastName, setLastName, secondLastname, setSecondLastname, personalEmail, setPersonalEmail, documentNumber, setDocumentNumber, faculty, setFaculty, program, setProgram, faculties, programs }) {
+function IdentityFields({ firstName, setFirstName, secondName, setSecondName, lastName, setLastName, secondLastname, setSecondLastname, documentNumber, setDocumentNumber }) {
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[#ccff00]">Identidad</h3>
             <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Primer nombre"><input value={firstName} onChange={event => setFirstName(event.target.value)} className={fieldClass()} /></Field>
-                <Field label="Segundo nombre"><input value={secondName} onChange={event => setSecondName(event.target.value)} className={fieldClass()} /></Field>
+                <Field label="Segundo nombre"><input value={secondName} onChange={event => setSecondName(event.target.value)} placeholder="Si tienes" className={fieldClass()} /></Field>
                 <Field label="Primer apellido"><input value={lastName} onChange={event => setLastName(event.target.value)} className={fieldClass()} /></Field>
-                <Field label="Segundo apellido"><input value={secondLastname} onChange={event => setSecondLastname(event.target.value)} className={fieldClass()} /></Field>
+                <Field label="Segundo apellido"><input value={secondLastname} onChange={event => setSecondLastname(event.target.value)} placeholder="Si tienes" className={fieldClass()} /></Field>
             </div>
-            <Field label="Correo personal"><input type="email" value={personalEmail} onChange={event => setPersonalEmail(event.target.value)} placeholder="opcional" className={fieldClass()} /></Field>
             <Field label="Número de documento"><input inputMode="numeric" value={documentNumber} onChange={event => setDocumentNumber(event.target.value.replace(/\D/g, ''))} className={fieldClass()} /></Field>
+        </div>
+    );
+}
+
+function ContactFields({ personalEmail, setPersonalEmail, phone, setPhone, googleUser }) {
+    return (
+        <div className="space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[#ccff00]">Contacto</h3>
+            {googleUser && <Field label="Correo personal"><input type="email" value={personalEmail} onChange={event => setPersonalEmail(event.target.value)} placeholder="opcional" className={fieldClass()} /></Field>}
+            <Field label="Número de celular"><input inputMode="tel" value={phone} onChange={event => setPhone(event.target.value)} placeholder="300 123 4567" className={fieldClass()} /></Field>
+        </div>
+    );
+}
+
+function ProgramFields({ faculty, setFaculty, program, setProgram, faculties, programs }) {
+    return (
+        <div className="space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[#ccff00]">Programa académico</h3>
             <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Facultad">
                     <select value={faculty} onChange={event => setFaculty(event.target.value)} className={fieldClass()}>
@@ -278,6 +405,7 @@ function PasswordFields({ password, setPassword, passwordConfirm, setPasswordCon
     const type = showPassword ? 'text' : 'password';
     return (
         <div className="space-y-3">
+            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[#ccff00]">Seguridad</h3>
             <Field label="Nueva contraseña"><input type={type} value={password} onChange={event => setPassword(event.target.value)} className={fieldClass()} /></Field>
             <Field label="Confirmar contraseña"><input type={type} value={passwordConfirm} onChange={event => setPasswordConfirm(event.target.value)} className={fieldClass()} /></Field>
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="flex items-center gap-2 text-xs font-black text-[#ccff00]">{showPassword ? <EyeOff size={14} /> : <Eye size={14} />} {showPassword ? 'Ocultar' : 'Ver'} contraseña</button>
