@@ -45,7 +45,7 @@ export default function CompleteStudentProfile() {
     const canvasRef = useRef(null);
 
     const steps = googleUser
-        ? ['Identidad', 'Contacto', 'Programa', 'Foto']
+        ? ['Documento', 'Identidad', 'Contacto', 'Programa', 'Foto']
         : ['Seguridad', 'Contacto', 'Foto'];
 
     const totalSteps = steps.length;
@@ -90,10 +90,12 @@ export default function CompleteStudentProfile() {
     };
 
     const validateStep = (stepName = currentStepName) => {
+        if (stepName === 'Documento') {
+            if (!/^\d+$/.test(documentNumber.trim())) return 'Ingresa un número de documento válido.';
+        }
         if (stepName === 'Identidad') {
             if (!firstName.trim()) return 'El primer nombre es obligatorio.';
             if (!lastName.trim()) return 'El primer apellido es obligatorio.';
-            if (!/^\d+$/.test(documentNumber.trim())) return 'Ingresa un número de documento válido.';
         }
         if (stepName === 'Contacto' && !phone.trim()) return 'El número de celular es obligatorio.';
         if (stepName === 'Programa' && (!faculty || !program)) return 'Selecciona tu facultad y programa.';
@@ -103,7 +105,7 @@ export default function CompleteStudentProfile() {
     };
 
     const validateDirectoryDocument = async () => {
-        if (!googleUser || currentStepName !== 'Identidad') return '';
+        if (!googleUser || currentStepName !== 'Documento') return '';
         setCheckingDocument(true);
         try {
             const response = await api.post('/users/directory/claim-google-document/', {
@@ -133,7 +135,7 @@ export default function CompleteStudentProfile() {
 
     const validate = () => {
         const validations = googleUser
-            ? ['Identidad', 'Contacto', 'Programa', 'Foto']
+            ? ['Documento', 'Identidad', 'Contacto', 'Programa', 'Foto']
             : ['Seguridad', 'Contacto', 'Foto'];
         for (const item of validations) {
             const validation = validateStep(item);
@@ -248,8 +250,11 @@ export default function CompleteStudentProfile() {
     };
 
     const renderCurrentStep = () => {
+        if (currentStepName === 'Documento') {
+            return <DocumentGate documentNumber={documentNumber} setDocumentNumber={setDocumentNumber} googleEmail={user?.email} />;
+        }
         if (currentStepName === 'Identidad') {
-            return <IdentityFields firstName={firstName} setFirstName={setFirstName} secondName={secondName} setSecondName={setSecondName} lastName={lastName} setLastName={setLastName} secondLastname={secondLastname} setSecondLastname={setSecondLastname} documentNumber={documentNumber} setDocumentNumber={setDocumentNumber} />;
+            return <IdentityFields firstName={firstName} setFirstName={setFirstName} secondName={secondName} setSecondName={setSecondName} lastName={lastName} setLastName={setLastName} secondLastname={secondLastname} setSecondLastname={setSecondLastname} />;
         }
         if (currentStepName === 'Contacto') {
             return <ContactFields personalEmail={personalEmail} setPersonalEmail={setPersonalEmail} phone={phone} setPhone={setPhone} googleUser={googleUser} />;
@@ -299,7 +304,7 @@ export default function CompleteStudentProfile() {
                                     <div className="h-full rounded-full bg-[#ccff00] transition-all" style={{ width: `${(step / totalSteps) * 100}%` }} />
                                 </div>
                             </div>
-                            <p className="mt-2 text-sm font-semibold text-violet-200/50">{googleUser ? 'Puedes corregir lo que trajo Google antes de guardar.' : 'Asigna tu contraseña y confirma tu perfil.'}</p>
+                            <p className="mt-2 text-sm font-semibold text-violet-200/50">{currentStepName === 'Documento' ? 'Primero validamos tu cédula. Si ya tienes cuenta antigua, entras de una vez.' : googleUser ? 'Puedes corregir lo que trajo Google antes de guardar.' : 'Asigna tu contraseña y confirma tu perfil.'}</p>
                         </header>
 
                         <div className="space-y-5">
@@ -383,7 +388,30 @@ function PhotoBox({ preview, cameraActive, videoRef, onStart, onTake, onStop, on
     );
 }
 
-function IdentityFields({ firstName, setFirstName, secondName, setSecondName, lastName, setLastName, secondLastname, setSecondLastname, documentNumber, setDocumentNumber }) {
+function DocumentGate({ documentNumber, setDocumentNumber, googleEmail }) {
+    return (
+        <div className="space-y-5">
+            <div className="rounded-2xl border border-[#ccff00]/25 bg-[#ccff00]/10 px-4 py-3 text-sm font-bold text-[#e8ff9a]">
+                Estás entrando con {googleEmail || 'Google'}. Escribe tu cédula para validar si ya tienes cuenta antigua o si estás en el directorio autorizado.
+            </div>
+            <Field label="Número de documento">
+                <input
+                    autoFocus
+                    inputMode="numeric"
+                    value={documentNumber}
+                    onChange={event => setDocumentNumber(event.target.value.replace(/\D/g, ''))}
+                    placeholder="Ej: 1013098347"
+                    className={`${fieldClass()} text-lg tracking-wide`}
+                />
+            </Field>
+            <p className="text-xs font-semibold text-violet-200/45">
+                Si la cédula pertenece a una cuenta antigua, vincularemos este Gmail una sola vez y entrarás directamente.
+            </p>
+        </div>
+    );
+}
+
+function IdentityFields({ firstName, setFirstName, secondName, setSecondName, lastName, setLastName, secondLastname, setSecondLastname }) {
     return (
         <div className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[#ccff00]">Identidad</h3>
@@ -393,7 +421,6 @@ function IdentityFields({ firstName, setFirstName, secondName, setSecondName, la
                 <Field label="Primer apellido"><input value={lastName} onChange={event => setLastName(event.target.value)} className={fieldClass()} /></Field>
                 <Field label="Segundo apellido"><input value={secondLastname} onChange={event => setSecondLastname(event.target.value)} placeholder="Si tienes" className={fieldClass()} /></Field>
             </div>
-            <Field label="Número de documento"><input inputMode="numeric" value={documentNumber} onChange={event => setDocumentNumber(event.target.value.replace(/\D/g, ''))} className={fieldClass()} /></Field>
         </div>
     );
 }
