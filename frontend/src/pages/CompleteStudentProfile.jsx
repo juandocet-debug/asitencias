@@ -18,6 +18,11 @@ export default function CompleteStudentProfile() {
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [phone, setPhone] = useState(user?.phone_number || '');
+    const [firstName, setFirstName] = useState(user?.first_name || '');
+    const [secondName, setSecondName] = useState(user?.second_name || '');
+    const [lastName, setLastName] = useState(user?.last_name || '');
+    const [secondLastname, setSecondLastname] = useState(user?.second_lastname || '');
+    const [personalEmail, setPersonalEmail] = useState(user?.personal_email || '');
     const [documentNumber, setDocumentNumber] = useState(user?.document_number || '');
     const [faculty, setFaculty] = useState(user?.faculty || '');
     const [program, setProgram] = useState(user?.program || '');
@@ -55,6 +60,8 @@ export default function CompleteStudentProfile() {
             if (!SPECIAL_RE.test(password)) return 'La contraseña debe tener un carácter especial.';
             if (password !== passwordConfirm) return 'Las contraseñas no coinciden.';
         }
+        if (googleUser && !firstName.trim()) return 'El primer nombre es obligatorio.';
+        if (googleUser && !lastName.trim()) return 'El primer apellido es obligatorio.';
         if (!phone.trim()) return 'El número de celular es obligatorio.';
         if (googleUser && !/^\d+$/.test(documentNumber.trim())) return 'Ingresa un número de documento válido.';
         if (googleUser && (!faculty || !program)) return 'Selecciona tu facultad y programa.';
@@ -112,6 +119,11 @@ export default function CompleteStudentProfile() {
         data.append('password_confirm', passwordConfirm);
         data.append('phone_number', phone.trim());
         if (googleUser) {
+            data.append('first_name', firstName.trim());
+            data.append('second_name', secondName.trim());
+            data.append('last_name', lastName.trim());
+            data.append('second_lastname', secondLastname.trim());
+            data.append('personal_email', personalEmail.trim());
             data.append('document_number', documentNumber.trim());
             data.append('faculty', faculty);
             data.append('program', program);
@@ -153,7 +165,7 @@ export default function CompleteStudentProfile() {
                     <ReadOnlyData user={user} />
                     <div className="space-y-5">
                         <PhotoBox preview={preview} cameraActive={cameraActive} videoRef={videoRef} onStart={startCamera} onTake={takePhoto} onStop={stopCamera} onFile={handleFile} onClear={() => { setPreview(null); setPhoto(null); }} />
-                        {googleUser && <GoogleProfileFields documentNumber={documentNumber} setDocumentNumber={setDocumentNumber} faculty={faculty} setFaculty={value => { setFaculty(value); setProgram(''); }} program={program} setProgram={setProgram} faculties={faculties} programs={filteredPrograms} />}
+                        {googleUser && <GoogleProfileFields firstName={firstName} setFirstName={setFirstName} secondName={secondName} setSecondName={setSecondName} lastName={lastName} setLastName={setLastName} secondLastname={secondLastname} setSecondLastname={setSecondLastname} personalEmail={personalEmail} setPersonalEmail={setPersonalEmail} documentNumber={documentNumber} setDocumentNumber={setDocumentNumber} faculty={faculty} setFaculty={value => { setFaculty(value); setProgram(''); }} program={program} setProgram={setProgram} faculties={faculties} programs={filteredPrograms} />}
                         {!googleUser && <PasswordFields password={password} setPassword={setPassword} passwordConfirm={passwordConfirm} setPasswordConfirm={setPasswordConfirm} showPassword={showPassword} setShowPassword={setShowPassword} />}
                         <label className="block space-y-2">
                             <span className="text-sm font-black text-slate-600">Número de celular</span>
@@ -199,10 +211,32 @@ function PhotoBox({ preview, cameraActive, videoRef, onStart, onTake, onStop, on
     );
 }
 
-function GoogleProfileFields({ documentNumber, setDocumentNumber, faculty, setFaculty, program, setProgram, faculties, programs }) {
+function GoogleProfileFields({ firstName, setFirstName, secondName, setSecondName, lastName, setLastName, secondLastname, setSecondLastname, personalEmail, setPersonalEmail, documentNumber, setDocumentNumber, faculty, setFaculty, program, setProgram, faculties, programs }) {
     const fieldClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold outline-none focus:border-blue-500';
     return (
         <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block space-y-2">
+                    <span className="text-sm font-black text-slate-600">Primer nombre</span>
+                    <input value={firstName} onChange={event => setFirstName(event.target.value)} className={fieldClass} />
+                </label>
+                <label className="block space-y-2">
+                    <span className="text-sm font-black text-slate-600">Segundo nombre</span>
+                    <input value={secondName} onChange={event => setSecondName(event.target.value)} className={fieldClass} />
+                </label>
+                <label className="block space-y-2">
+                    <span className="text-sm font-black text-slate-600">Primer apellido</span>
+                    <input value={lastName} onChange={event => setLastName(event.target.value)} className={fieldClass} />
+                </label>
+                <label className="block space-y-2">
+                    <span className="text-sm font-black text-slate-600">Segundo apellido</span>
+                    <input value={secondLastname} onChange={event => setSecondLastname(event.target.value)} className={fieldClass} />
+                </label>
+            </div>
+            <label className="block space-y-2">
+                <span className="text-sm font-black text-slate-600">Correo personal</span>
+                <input type="email" value={personalEmail} onChange={event => setPersonalEmail(event.target.value)} placeholder="opcional" className={fieldClass} />
+            </label>
             <label className="block space-y-2">
                 <span className="text-sm font-black text-slate-600">Número de documento</span>
                 <input inputMode="numeric" value={documentNumber} onChange={event => setDocumentNumber(event.target.value.replace(/\D/g, ''))} className={fieldClass} />

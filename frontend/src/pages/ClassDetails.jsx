@@ -173,10 +173,10 @@ export default function ClassDetails() {
                         <button onClick={() => setQrOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={24} /></button>
                         <h3 className="text-xl font-bold text-slate-800 mb-6">Código de Acceso</h3>
                         <div className="bg-white p-6 rounded-2xl mb-6 shadow-inner inline-block border-4 border-slate-900">
-                            <QRCodeSVG value={`${window.location.origin}/register?code=${course.code}`} size={200} level="H" includeMargin={false} />
+                            <QRCodeSVG value={`${window.location.origin}/login?code=${course.code}`} size={200} level="H" includeMargin={false} />
                         </div>
                         <div className="bg-upn-50 py-3 px-6 rounded-xl font-mono text-3xl font-black text-upn-900 tracking-widest border border-upn-100">{course.code}</div>
-                        <p className="mt-4 text-slate-500 text-sm">Escanea o comparte este código para unirse a la clase.</p>
+                        <p className="mt-4 text-slate-500 text-sm">Escanea el QR y continúa con Google para unirte a la clase.</p>
                     </div>
                 </div>
             )}

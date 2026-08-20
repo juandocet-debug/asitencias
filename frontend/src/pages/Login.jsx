@@ -24,6 +24,18 @@ export default function Login() {
     const [searchParams] = useSearchParams();
     const classCode = searchParams.get('code');
 
+    const joinClassFromCode = useCallback(async () => {
+        if (!classCode) return null;
+        try {
+            const response = await api.post('/users/join-class/', { class_code: classCode });
+            return response.data?.course || null;
+        } catch (joinError) {
+            const message = String(joinError?.response?.data?.error || joinError?.response?.data?.detail || '');
+            if (message.toLowerCase().includes('inscrito')) return null;
+            throw new Error(message || 'No pudimos unirte a esta clase.');
+        }
+    }, [classCode]);
+
     const finishLogin = useCallback(async (access, savedUsername = '') => {
         setAccessToken(access);
         if (savedUsername) localStorage.setItem('username', savedUsername);
@@ -32,9 +44,10 @@ export default function Login() {
         if (userData.requires_onboarding) {
             navigate(classCode ? `/complete-profile?code=${encodeURIComponent(classCode)}` : '/complete-profile');
         } else {
-            navigate(classCode ? `/register?code=${encodeURIComponent(classCode)}` : '/dashboard');
+            const course = await joinClassFromCode();
+            navigate(course?.id ? `/classes/${course.id}` : '/dashboard');
         }
-    }, [classCode, fetchUser, navigate]);
+    }, [classCode, fetchUser, joinClassFromCode, navigate]);
 
     const handleGoogleCredential = useCallback(async credential => {
         if (!credential) return;
@@ -97,6 +110,7 @@ export default function Login() {
                             <div className="space-y-3">
                                 <GoogleSignInButton clientId={GOOGLE_CLIENT_ID} onCredential={handleGoogleCredential} disabled={loading} />
                                 <p className="text-center text-[11px] font-bold text-violet-200/45">Usa tu cuenta institucional @upn.edu.co</p>
+                                {error && <div className="rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm font-bold text-red-300">{error}</div>}
                                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-violet-200/35">
                                     <span className="h-px flex-1 bg-white/12" /> o <span className="h-px flex-1 bg-white/12" />
                                 </div>
@@ -112,7 +126,7 @@ export default function Login() {
                                 <span className="text-xs font-bold text-violet-200/45">Acceso seguro AGON</span>
                                 <Link to="/forgot-password" className="text-xs font-black text-[#ccff00] hover:text-lime-200">¿Olvidaste tu contraseña?</Link>
                             </div>
-                            {error && <div className="rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm font-bold text-red-300">{error}</div>}
+                            {error && !GOOGLE_CLIENT_ID && <div className="rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm font-bold text-red-300">{error}</div>}
                             <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7657f6] to-[#9a6dff] py-4 text-sm font-black text-white shadow-[0_12px_32px_rgba(118,87,246,0.38)] transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60">
                                 {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Conectando...</> : <>Entrar a AGON <ArrowRight size={17} /></>}
                             </button>
@@ -133,9 +147,9 @@ export default function Login() {
 function LoginHeader({ classCode }) {
     return (
         <header className="mb-7">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">Acceso de jugador</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">{classCode ? 'Continuar con Google' : 'Acceso de jugador'}</p>
             <h2 className="mt-2 text-[2rem] font-black leading-tight">Iniciar sesión</h2>
-            {classCode ? <div className="mt-3 rounded-xl border border-amber-300/20 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-200">Clase: {classCode}</div> : <p className="mt-1 text-sm font-semibold text-violet-200/50">Continúa tus clases, misiones y logros.</p>}
+            {classCode ? <div className="mt-3 rounded-xl border border-[#ccff00]/25 bg-[#ccff00]/10 px-4 py-2 text-sm font-bold text-lime-100">Clase: {classCode}. Usa tu correo institucional para unirte.</div> : <p className="mt-1 text-sm font-semibold text-violet-200/50">Continúa tus clases, misiones y logros.</p>}
         </header>
     );
 }

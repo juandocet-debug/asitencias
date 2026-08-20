@@ -1,6 +1,7 @@
 import re
 
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import validate_email
 from rest_framework import serializers
 
 from users.models import Faculty, Program, User
@@ -26,6 +27,11 @@ def complete_student_onboarding(
     password,
     phone_number,
     photo=None,
+    first_name='',
+    second_name='',
+    last_name='',
+    second_lastname='',
+    personal_email='',
     document_number='',
     faculty_id=None,
     program_id=None,
@@ -34,6 +40,18 @@ def complete_student_onboarding(
         raise serializers.ValidationError('Solo estudiantes pueden completar este flujo.')
     google_user = bool(user.google_sub)
     if google_user:
+        first = str(first_name or '').strip()
+        last = str(last_name or '').strip()
+        personal = str(personal_email or '').strip().lower()
+        if not first:
+            raise serializers.ValidationError('El primer nombre es obligatorio.')
+        if not last:
+            raise serializers.ValidationError('El primer apellido es obligatorio.')
+        if personal:
+            try:
+                validate_email(personal)
+            except Exception:
+                raise serializers.ValidationError('Ingresa un correo personal válido.')
         document = str(document_number or '').strip()
         if not document.isdigit():
             raise serializers.ValidationError('Ingresa un número de documento válido.')
@@ -47,6 +65,11 @@ def complete_student_onboarding(
         except (Faculty.DoesNotExist, Program.DoesNotExist, TypeError, ValueError):
             raise serializers.ValidationError('Selecciona una facultad y un programa válidos.')
         user.document_number = document
+        user.first_name = first
+        user.second_name = str(second_name or '').strip()
+        user.last_name = last
+        user.second_lastname = str(second_lastname or '').strip()
+        user.personal_email = personal or None
         user.faculty = faculty
         user.program = program
     else:
@@ -58,7 +81,7 @@ def complete_student_onboarding(
     user.requires_onboarding = False
     update_fields = ['phone_number', 'photo', 'requires_onboarding']
     if google_user:
-        update_fields.extend(['document_number', 'faculty', 'program'])
+        update_fields.extend(['first_name', 'second_name', 'last_name', 'second_lastname', 'personal_email', 'document_number', 'faculty', 'program'])
     else:
         update_fields.append('password')
     user.save(update_fields=update_fields)
