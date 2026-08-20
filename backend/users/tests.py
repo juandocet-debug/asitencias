@@ -45,6 +45,7 @@ class AuthenticationContractTests(TestCase):
         self.assertIn("access", by_username.json())
         self.assertNotIn("refresh", by_username.json())
         self.assertTrue(by_username.cookies["refresh_token"]["httponly"])
+        self.assertEqual(by_username.cookies["refresh_token"]["path"], "/api/")
         self.assertEqual(by_document.status_code, 200)
         self.assertIn("access", by_document.json())
 
@@ -59,6 +60,7 @@ class AuthenticationContractTests(TestCase):
         logout = self.client.post("/api/token/logout/", {}, format="json")
         self.assertEqual(logout.status_code, 204)
         self.assertEqual(logout.cookies["refresh_token"].value, "")
+        self.assertEqual(logout.cookies["refresh_token"]["path"], "/api/")
 
     def test_login_rejects_missing_and_invalid_credentials(self):
         missing = self.login("", "")
@@ -216,6 +218,37 @@ class StudentRegistrationContractTests(TestCase):
         response = self.client.post('/api/users/directory/import/', {})
 
         self.assertEqual(response.status_code, 404)
+
+
+class UserDirectoryContractTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_superuser(
+            username='admin-directory',
+            email='admin-directory@example.com',
+            password='safe-password',
+        )
+        self.client.force_authenticate(user=self.admin)
+
+    def test_user_search_matches_partial_document_and_personal_email(self):
+        student = User.objects.create_user(
+            username='student-directory@upn.edu.co',
+            email='student-directory@upn.edu.co',
+            first_name='Juan',
+            last_name='Ramirez',
+            personal_email='juan.personal@gmail.com',
+            document_number='1013098347',
+            role='STUDENT',
+            roles=['STUDENT'],
+        )
+
+        by_document = self.client.get('/api/users/', {'search': '1013'})
+        by_personal_email = self.client.get('/api/users/', {'search': 'personal@gmail'})
+
+        self.assertEqual(by_document.status_code, 200)
+        self.assertEqual(by_personal_email.status_code, 200)
+        self.assertIn(student.id, [item['id'] for item in by_document.json()['results']])
+        self.assertIn(student.id, [item['id'] for item in by_personal_email.json()['results']])
 
 
 @override_settings(

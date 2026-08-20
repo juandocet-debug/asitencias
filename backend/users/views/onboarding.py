@@ -8,6 +8,8 @@ from django.conf import settings
 from users.serializers import UserProfileSerializer
 from users.services.onboarding import complete_student_onboarding
 
+REFRESH_COOKIE_PATH = '/api/'
+
 
 def _profile_response(user, request):
     serializer = UserProfileSerializer(user, context={'request': request})
@@ -22,7 +24,7 @@ def _profile_response(user, request):
             httponly=True,
             secure=not settings.DEBUG,
             samesite='Lax' if settings.DEBUG else 'None',
-            path='/api/token/',
+            path=REFRESH_COOKIE_PATH,
             max_age=7 * 24 * 60 * 60,
         )
         return response

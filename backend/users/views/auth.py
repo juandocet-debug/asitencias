@@ -17,6 +17,7 @@ from django.db import transaction
 from ..models import PasswordResetToken
 
 User = get_user_model()
+REFRESH_COOKIE_PATH = '/api/'
 
 
 def _set_refresh_cookie(response, token):
@@ -26,7 +27,7 @@ def _set_refresh_cookie(response, token):
         httponly=True,
         secure=not settings.DEBUG,
         samesite='Lax' if settings.DEBUG else 'None',
-        path='/api/token/',
+        path=REFRESH_COOKIE_PATH,
         max_age=7 * 24 * 60 * 60,
     )
     return response
@@ -57,7 +58,7 @@ class CookieTokenRefreshView(TokenRefreshView):
 @permission_classes([permissions.AllowAny])
 def logout_view(request):
     response = Response(status=status.HTTP_204_NO_CONTENT)
-    response.delete_cookie('refresh_token', path='/api/token/', samesite='None')
+    response.delete_cookie('refresh_token', path=REFRESH_COOKIE_PATH, samesite='None')
     return response
 
 

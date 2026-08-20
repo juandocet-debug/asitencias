@@ -78,20 +78,25 @@ class UserViewSet(viewsets.ModelViewSet):
         role = self.request.query_params.get('role', '').strip()
         qs = self._base_queryset()
 
-        # Filtro de búsqueda adicional
+        # Filtro de búsqueda adicional.
+        # La búsqueda por documento debe ser parcial: en operación real suelen
+        # escribir solo los primeros dígitos de la cédula.
         if search:
-            if '@' in search or search.isdigit():
+            if '@' in search:
                 qs = qs.filter(
-                    Q(username=search) |
-                    Q(email=search) |
-                    Q(document_number=search)
+                    Q(username__icontains=search) |
+                    Q(email__icontains=search) |
+                    Q(personal_email__icontains=search)
                 )
             else:
                 qs = qs.filter(
                     Q(first_name__icontains=search) |
+                    Q(second_name__icontains=search) |
                     Q(last_name__icontains=search)  |
+                    Q(second_lastname__icontains=search)  |
                     Q(username__icontains=search)   |
                     Q(email__icontains=search)      |
+                    Q(personal_email__icontains=search) |
                     Q(document_number__icontains=search)
                 )
 
