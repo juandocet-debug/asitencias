@@ -46,6 +46,7 @@ class UserSerializer(serializers.ModelSerializer):
     coordinator_profiles = CoordinatorProfileSerializer(many=True, read_only=True)
     faculty_name = serializers.CharField(source='faculty.name', read_only=True, default=None)
     program_name = serializers.CharField(source='program.name', read_only=True, default=None)
+    google_connected = serializers.SerializerMethodField()
     # SerializerMethodField evita que DRF serialice el CloudinaryField directamente
     # (que llamaría .url sin try/except). get_photo maneja todos los casos con seguridad.
     photo = serializers.SerializerMethodField()
@@ -58,13 +59,17 @@ class UserSerializer(serializers.ModelSerializer):
         except Exception:
             return None
 
+    def get_google_connected(self, instance):
+        return bool(instance.google_sub)
+
     class Meta:
         model = User
         fields = (
             'id', 'username', 'first_name', 'last_name', 'email', 'role', 'roles',
             'document_number', 'second_name', 'second_lastname',
-            'personal_email', 'phone_number', 'photo',
+            'personal_email', 'google_email', 'phone_number', 'photo',
             'is_directory_imported', 'requires_onboarding',
+            'google_connected',
             'faculty', 'faculty_name', 'program', 'program_name',
             'coordinator_profiles',
         )
@@ -302,7 +307,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'first_name', 'last_name', 'email', 'role', 'roles',
             'document_number', 'photo', 'phone_number', 'personal_email',
-            'second_name', 'second_lastname',
+            'google_email', 'second_name', 'second_lastname',
             'is_directory_imported', 'requires_onboarding', 'google_connected',
             'faculty', 'faculty_name', 'program', 'program_name',
             'coordinator_profiles',
@@ -310,7 +315,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'id', 'first_name', 'last_name', 'email', 'role', 'roles',
             'document_number', 'second_lastname',
-            'is_directory_imported', 'requires_onboarding', 'google_connected',
+            'google_email', 'is_directory_imported', 'requires_onboarding', 'google_connected',
             'faculty', 'program',
         )
 

@@ -112,15 +112,17 @@ def claim_google_document(request):
         return Response({'claimed': False, 'requires_onboarding': True})
 
     google_sub = current.google_sub
-    google_email = str(current.email or '').strip().lower()
+    google_email = str(current.google_email or current.email or '').strip().lower()
     current.google_sub = None
-    current.save(update_fields=['google_sub'])
+    current.google_email = None
+    current.save(update_fields=['google_sub', 'google_email'])
 
     target.google_sub = google_sub
+    target.google_email = google_email
     if google_email and not target.personal_email:
         target.personal_email = google_email
     target.requires_onboarding = False
-    target.save(update_fields=['google_sub', 'personal_email', 'requires_onboarding'])
+    target.save(update_fields=['google_sub', 'google_email', 'personal_email', 'requires_onboarding'])
     current.delete()
 
     response = _token_response(target)

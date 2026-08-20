@@ -114,7 +114,8 @@ def google_login(request):
                 )
             if user:
                 user.google_sub = google_sub
-                user.save(update_fields=['google_sub'])
+                user.google_email = email
+                user.save(update_fields=['google_sub', 'google_email'])
             else:
                 user = User(
                     username=email,
@@ -124,10 +125,14 @@ def google_login(request):
                     role='STUDENT',
                     roles=['STUDENT'],
                     google_sub=google_sub,
+                    google_email=email,
                     requires_onboarding=True,
                 )
                 user.set_unusable_password()
                 user.save()
+        elif user.google_email != email:
+            user.google_email = email
+            user.save(update_fields=['google_email'])
 
     if not user.is_active:
         return Response({'detail': 'Esta cuenta está desactivada.'}, status=401)

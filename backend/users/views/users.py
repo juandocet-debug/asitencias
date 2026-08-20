@@ -112,7 +112,7 @@ class UserViewSet(viewsets.ModelViewSet):
               .only(
                   'id', 'username', 'first_name', 'last_name', 'email', 'role',
                   'roles', 'document_number', 'second_name', 'second_lastname',
-                  'personal_email', 'phone_number', 'photo', 'faculty_id',
+                  'personal_email', 'google_email', 'google_sub', 'phone_number', 'photo', 'faculty_id',
                   'program_id', 'is_directory_imported', 'requires_onboarding',
                   'directory_batch_id', 'faculty__name', 'program__name',
               )

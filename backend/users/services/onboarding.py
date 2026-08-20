@@ -43,6 +43,7 @@ def complete_student_onboarding(
         first = str(first_name or '').strip()
         last = str(last_name or '').strip()
         personal = str(personal_email or '').strip().lower()
+        google_email = str(user.google_email or user.email or '').strip().lower()
         if not first:
             raise serializers.ValidationError('El primer nombre es obligatorio.')
         if not last:
@@ -74,11 +75,14 @@ def complete_student_onboarding(
                 )
             google_sub = user.google_sub
             user.google_sub = None
-            user.save(update_fields=['google_sub'])
+            user.google_email = None
+            user.save(update_fields=['google_sub', 'google_email'])
             target = existing
             target.google_sub = google_sub
+            target.google_email = google_email
         else:
             target = user
+            target.google_email = google_email
         if not photo and not target.photo:
             raise serializers.ValidationError('La foto de perfil es obligatoria.')
         user.document_number = document
@@ -96,7 +100,7 @@ def complete_student_onboarding(
         target.requires_onboarding = False
         target.save(update_fields=[
             'google_sub', 'first_name', 'second_name', 'last_name', 'second_lastname',
-            'personal_email', 'phone_number', 'document_number', 'faculty', 'program',
+            'google_email', 'personal_email', 'phone_number', 'document_number', 'faculty', 'program',
             'photo', 'requires_onboarding',
         ])
         if existing:

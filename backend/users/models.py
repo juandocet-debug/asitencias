@@ -90,6 +90,7 @@ class User(AbstractUser):
     is_directory_imported = models.BooleanField(default=False, db_index=True)
     requires_onboarding = models.BooleanField(default=False, db_index=True)
     google_sub = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    google_email = models.EmailField(blank=True, null=True, db_index=True)
     directory_batch = models.ForeignKey(
         'DirectoryImportBatch',
         null=True,

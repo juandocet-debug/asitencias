@@ -3,7 +3,7 @@
 // Maneja su propio estado de formulario, validaciones y envío al backend.
 
 import React, { useMemo, useState } from 'react';
-import { X, Eye, EyeOff, Loader2, Check, Plus, Trash2, Briefcase, Building2, BookOpen } from 'lucide-react';
+import { X, Eye, EyeOff, Loader2, Check, Plus, Trash2, Briefcase, Building2, BookOpen, Mail } from 'lucide-react';
 import api from '../../services/api';
 import { ROLE_LABELS, ROLE_STYLES, ROLE_ICONS, COORDINATOR_TYPE_LABELS } from '../../constants/userRoles';
 
@@ -176,6 +176,10 @@ export default function UserFormModal({ editingUser, onClose, onSuccess, faculti
     const inputClass = (key) =>
         `w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-upn-500/20 focus:border-upn-500 ${formErrors[key] ? 'border-red-400 bg-red-50' : 'border-slate-200'}`;
 
+    const googleEmail = editingUser?.google_email
+        || (editingUser?.google_connected && !String(editingUser?.email || '').toLowerCase().endsWith('@upn.edu.co') ? editingUser.email : '')
+        || '';
+
     return (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
@@ -306,11 +310,18 @@ export default function UserFormModal({ editingUser, onClose, onSuccess, faculti
                         </div>
                     )}
 
-                    {/* Correo */}
-                    {field('Correo Institucional',
-                        <input type="email" placeholder="usuario@upn.edu.co" value={formData.email}
-                            onChange={e => setFormData({ ...formData, email: e.target.value })}
-                            className={inputClass('email')} />, 'email')}
+                    {/* Correos */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {field('Correo Institucional',
+                            <input type="email" placeholder="usuario@upn.edu.co" value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                className={inputClass('email')} />, 'email')}
+                        {editingUser && field(<><Mail size={12} className="inline mr-1" />Google vinculado</>,
+                            <div className={`w-full px-3 py-2 rounded-lg border text-sm font-semibold flex items-center justify-between gap-2 ${googleEmail ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                                <span className="truncate">{googleEmail || 'Sin cuenta Google vinculada'}</span>
+                                {editingUser.google_connected && <span className="text-[10px] font-black uppercase tracking-wide bg-white/70 border border-current/10 rounded-full px-2 py-0.5">1 cuenta</span>}
+                            </div>, 'google_email')}
+                    </div>
 
                     {/* Contraseña */}
                     <div className="space-y-1.5">

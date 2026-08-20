@@ -309,6 +309,7 @@ class UserDirectoryContractTests(TestCase):
         self.assertEqual(response.cookies['refresh_token']['path'], '/api/')
         old_student.refresh_from_db()
         self.assertEqual(old_student.google_sub, 'google-old-claim')
+        self.assertEqual(old_student.google_email, 'personal-old@gmail.com')
         self.assertEqual(old_student.personal_email, 'personal-old@gmail.com')
         self.assertFalse(User.objects.filter(pk=provisional.pk).exists())
 
@@ -370,6 +371,7 @@ class GoogleAuthenticationContractTests(TestCase):
         self.assertEqual(User.objects.filter(email='old.student@upn.edu.co').count(), 1)
         user.refresh_from_db()
         self.assertEqual(user.google_sub, 'google-existing-123')
+        self.assertEqual(user.google_email, 'old.student@upn.edu.co')
         self.assertFalse(user.requires_onboarding)
 
     @patch('google.oauth2.id_token.verify_oauth2_token')
@@ -390,6 +392,7 @@ class GoogleAuthenticationContractTests(TestCase):
         self.assertTrue(user.requires_onboarding)
         self.assertFalse(user.has_usable_password())
         self.assertEqual(user.roles, ['STUDENT'])
+        self.assertEqual(user.google_email, 'new.student@upn.edu.co')
 
     @patch('google.oauth2.id_token.verify_oauth2_token')
     def test_non_institutional_google_account_starts_onboarding(self, verify_token):
@@ -407,6 +410,7 @@ class GoogleAuthenticationContractTests(TestCase):
         user = User.objects.get(email='student@gmail.com')
         self.assertTrue(user.requires_onboarding)
         self.assertEqual(user.google_sub, 'personal-789')
+        self.assertEqual(user.google_email, 'student@gmail.com')
 
     @patch('google.oauth2.id_token.verify_oauth2_token')
     def test_non_institutional_google_account_reuses_same_email(self, verify_token):
@@ -466,6 +470,7 @@ class GoogleAuthenticationContractTests(TestCase):
         self.assertIn('access', response.json())
         existing.refresh_from_db()
         self.assertEqual(existing.google_sub, 'google-personal-123')
+        self.assertEqual(existing.google_email, 'personal.student@gmail.com')
         self.assertFalse(existing.requires_onboarding)
         self.assertFalse(User.objects.filter(pk=provisional.pk).exists())
 
