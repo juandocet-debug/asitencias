@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Eye, EyeOff, Lock, User } from 'lucide-react';
@@ -6,6 +6,11 @@ import api, { setAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 import fondoLogin from '../assets/fondoLogin.png';
 import superiorLogo from '../assets/superior.png';
+import GoogleSignInButton from '../components/auth/GoogleSignInButton';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const MotionSection = motion.section;
+const MotionDiv = motion.div;
 
 export default function Login() {
     const { fetchUser } = useUser();
@@ -14,9 +19,40 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showTraditional, setShowTraditional] = useState(!GOOGLE_CLIENT_ID);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const classCode = searchParams.get('code');
+
+    const finishLogin = useCallback(async (access, savedUsername = '') => {
+        setAccessToken(access);
+        if (savedUsername) localStorage.setItem('username', savedUsername);
+        const userData = fetchUser ? await fetchUser() : null;
+        if (!userData) throw new Error('PROFILE_NOT_AVAILABLE');
+        if (userData.requires_onboarding) {
+            navigate(classCode ? `/complete-profile?code=${encodeURIComponent(classCode)}` : '/complete-profile');
+        } else {
+            navigate(classCode ? `/register?code=${encodeURIComponent(classCode)}` : '/dashboard');
+        }
+    }, [classCode, fetchUser, navigate]);
+
+    const handleGoogleCredential = useCallback(async credential => {
+        if (!credential) return;
+        setError('');
+        setLoading(true);
+        try {
+            const response = await api.post('/users/auth/google/', { credential });
+            await finishLogin(response.data.access);
+        } catch (err) {
+            if (err.message === 'PROFILE_NOT_AVAILABLE') {
+                setError('Google confirmó tu acceso, pero no pudimos cargar tu perfil. Intenta nuevamente.');
+            } else {
+                setError(err?.response?.data?.detail || 'No fue posible ingresar con Google.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [finishLogin]);
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -25,15 +61,7 @@ export default function Login() {
         setLoading(true);
         try {
             const response = await api.post('/token/', { username, password });
-            setAccessToken(response.data.access);
-            localStorage.setItem('username', username);
-            const userData = fetchUser ? await fetchUser() : null;
-            if (!userData) {
-                setError('Iniciaste sesión, pero no pudimos cargar tu perfil. Intenta de nuevo en unos segundos.');
-                return;
-            }
-            if (userData.requires_onboarding) navigate('/complete-profile');
-            else navigate(classCode ? `/register?code=${classCode}` : '/dashboard');
+            await finishLogin(response.data.access, username);
         } catch (err) {
             const status = err?.response?.status;
             const disconnected = err?.code === 'ECONNABORTED' || !err?.response;
@@ -53,19 +81,31 @@ export default function Login() {
 
             <main className="relative z-10 flex min-h-screen w-full items-center px-4 py-6 sm:px-8 lg:px-16">
                 <div className="w-full max-w-[430px]">
-                    <motion.section initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} className="relative overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/55 bg-[#080716]/82 p-6 shadow-[0_0_0_1px_rgba(204,255,0,0.05),0_30px_90px_rgba(0,0,0,0.65),0_0_48px_rgba(118,87,246,0.28)] backdrop-blur-xl sm:p-8">
+                    <MotionSection initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} className="relative overflow-hidden rounded-[1.75rem] border border-[#8f5cff]/55 bg-[#080716]/82 p-6 shadow-[0_0_0_1px_rgba(204,255,0,0.05),0_30px_90px_rgba(0,0,0,0.65),0_0_48px_rgba(118,87,246,0.28)] backdrop-blur-xl sm:p-8">
                         <span className="pointer-events-none absolute left-0 top-10 h-24 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
                         <span className="pointer-events-none absolute right-0 top-14 h-16 w-px bg-[#b875ff] shadow-[0_0_18px_#a855f7]" />
-                        <motion.div
+                        <MotionDiv
                             className="mb-6 flex justify-center"
                             initial={{ opacity: 0, y: -16, scale: 0.92 }}
                             animate={{ opacity: 1, y: 0, scale: [1, 1.018, 1] }}
                             transition={{ opacity: { duration: 0.45 }, y: { duration: 0.45 }, scale: { duration: 4.2, repeat: Infinity, ease: 'easeInOut' } }}
                         >
                             <img src={superiorLogo} alt="AGON" className="w-full max-w-[330px] drop-shadow-[0_0_30px_rgba(118,87,246,0.42)]" />
-                        </motion.div>
+                        </MotionDiv>
                         <LoginHeader classCode={classCode} />
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        {GOOGLE_CLIENT_ID && (
+                            <div className="space-y-3">
+                                <GoogleSignInButton clientId={GOOGLE_CLIENT_ID} onCredential={handleGoogleCredential} disabled={loading} />
+                                <p className="text-center text-[11px] font-bold text-violet-200/45">Usa tu cuenta institucional @upn.edu.co</p>
+                                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-violet-200/35">
+                                    <span className="h-px flex-1 bg-white/12" /> o <span className="h-px flex-1 bg-white/12" />
+                                </div>
+                                <button type="button" onClick={() => setShowTraditional(value => !value)} className="w-full rounded-xl border border-white/12 bg-white/[0.04] py-3 text-xs font-black text-violet-100 transition hover:bg-white/[0.08]">
+                                    {showTraditional ? 'Ocultar acceso con contraseña' : 'Ingresar con usuario o contraseña'}
+                                </button>
+                            </div>
+                        )}
+                        {showTraditional && <form onSubmit={handleSubmit} className="mt-4 space-y-4">
                             <LoginField icon={User} label="Correo, usuario o cédula" value={username} onChange={setUsername} placeholder="correo@upn.edu.co o documento" autoComplete="username" />
                             <PasswordField value={password} onChange={setPassword} show={showPassword} toggle={() => setShowPassword(value => !value)} />
                             <div className="flex items-center justify-between">
@@ -81,9 +121,9 @@ export default function Login() {
                                 <p>¿Nuevo en la aventura?{' '}<Link to={classCode ? `/register?code=${classCode}` : '/register'} className="font-black text-[#ccff00] hover:underline">Crea tu perfil</Link></p>
                                 <span className="h-px flex-1 bg-white/18" />
                             </div>
-                        </form>
+                        </form>}
                         <p className="mt-7 border-t border-white/10 pt-5 text-center text-[10px] font-semibold text-violet-200/35">UPN · Control de Gestión Académica · 2026</p>
-                    </motion.section>
+                    </MotionSection>
                 </div>
             </main>
         </div>
@@ -101,7 +141,7 @@ function LoginHeader({ classCode }) {
 }
 
 function LoginField({ icon: Icon, label, value, onChange, ...props }) {
-    return <label className="block space-y-1.5"><span className="text-xs font-black uppercase tracking-wider text-violet-200/65">{label}</span><span className="relative block"><Icon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/55" /><input {...props} value={value} onChange={event => onChange(event.target.value)} className="w-full rounded-xl border border-violet-400/20 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm font-semibold text-white placeholder-violet-200/25 outline-none transition focus:border-[#ccff00]/70 focus:ring-2 focus:ring-[#ccff00]/10" /></span></label>;
+    return <label className="block space-y-1.5"><span className="text-xs font-black uppercase tracking-wider text-violet-200/65">{label}</span><span className="relative block">{React.createElement(Icon, { className: 'absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/55' })}<input {...props} value={value} onChange={event => onChange(event.target.value)} className="w-full rounded-xl border border-violet-400/20 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm font-semibold text-white placeholder-violet-200/25 outline-none transition focus:border-[#ccff00]/70 focus:ring-2 focus:ring-[#ccff00]/10" /></span></label>;
 }
 
 function PasswordField({ value, onChange, show, toggle }) {

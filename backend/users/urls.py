@@ -5,6 +5,7 @@ from .views import (
     password_reset_confirm, join_class, search_all_users, list_courses_for_ilinyx,
     FacultyViewSet, ProgramViewSet, coordinator_types,
     complete_onboarding,
+    google_login,
 )
 
 router = DefaultRouter()
@@ -19,6 +20,7 @@ program_router.register(r'', ProgramViewSet, basename='programs')
 
 urlpatterns = [
     path('register/student/', StudentRegisterView.as_view(), name='student-register'),
+    path('auth/google/', google_login, name='google-login'),
     path('password-reset/', password_reset_request, name='password-reset-request'),
     path('password-reset-confirm/', password_reset_confirm, name='password-reset-confirm'),
     path('join-class/', join_class, name='join-class'),

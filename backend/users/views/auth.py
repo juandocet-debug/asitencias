@@ -6,13 +6,14 @@ import secrets
 from rest_framework import permissions, status
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import transaction
 from ..models import PasswordResetToken
 
 User = get_user_model()
@@ -64,6 +65,73 @@ def logout_view(request):
 # Si alguien supera el límite recibe HTTP 429 y debe esperar 1 minuto
 class LoginRateThrottle(AnonRateThrottle):
     scope = 'login'  # corresponde a 'login': '10/min' en settings.py
+
+
+class GoogleLoginRateThrottle(AnonRateThrottle):
+    scope = 'google_login'
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([GoogleLoginRateThrottle])
+def google_login(request):
+    """Valida Google en servidor y vincula por correo institucional verificado."""
+    client_id = settings.GOOGLE_OAUTH_CLIENT_ID
+    credential = str(request.data.get('credential', '')).strip()
+    if not client_id:
+        return Response({'detail': 'El acceso con Google aún no está configurado.'}, status=503)
+    if not credential:
+        return Response({'detail': 'Google no entregó una credencial válida.'}, status=400)
+
+    try:
+        from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token
+        payload = id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            client_id,
+        )
+    except Exception:
+        return Response({'detail': 'No pudimos verificar la identidad de Google.'}, status=401)
+
+    email = str(payload.get('email', '')).strip().lower()
+    google_sub = str(payload.get('sub', '')).strip()
+    allowed_domain = settings.GOOGLE_ALLOWED_DOMAIN
+    hosted_domain = str(payload.get('hd', '')).strip().lower()
+    if not payload.get('email_verified') or not google_sub:
+        return Response({'detail': 'Google no confirmó este correo.'}, status=403)
+    if not email.endswith(f'@{allowed_domain}') or hosted_domain != allowed_domain:
+        return Response({'detail': f'Usa tu cuenta institucional @{allowed_domain}.'}, status=403)
+
+    with transaction.atomic():
+        user = User.objects.select_for_update().filter(google_sub=google_sub).first()
+        if user is None:
+            user = User.objects.select_for_update().filter(email__iexact=email).first()
+            if user and user.google_sub and user.google_sub != google_sub:
+                return Response(
+                    {'detail': 'Esta cuenta institucional ya está vinculada a otro acceso de Google.'},
+                    status=409,
+                )
+            if user:
+                user.google_sub = google_sub
+                user.save(update_fields=['google_sub'])
+            else:
+                user = User(
+                    username=email,
+                    email=email,
+                    first_name=str(payload.get('given_name', '')).strip(),
+                    last_name=str(payload.get('family_name', '')).strip(),
+                    role='STUDENT',
+                    roles=['STUDENT'],
+                    google_sub=google_sub,
+                    requires_onboarding=True,
+                )
+                user.set_unusable_password()
+                user.save()
+
+    if not user.is_active:
+        return Response({'detail': 'Esta cuenta está desactivada.'}, status=401)
+    return _token_response(user)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

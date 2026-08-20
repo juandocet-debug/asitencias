@@ -89,6 +89,7 @@ class User(AbstractUser):
     photo = CloudinaryField('image', blank=True, null=True, folder='profile_photos')
     is_directory_imported = models.BooleanField(default=False, db_index=True)
     requires_onboarding = models.BooleanField(default=False, db_index=True)
+    google_sub = models.CharField(max_length=255, unique=True, null=True, blank=True)
     directory_batch = models.ForeignKey(
         'DirectoryImportBatch',
         null=True,

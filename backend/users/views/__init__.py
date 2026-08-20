@@ -10,6 +10,7 @@ from .auth import (
     logout_view,
     password_reset_request,
     password_reset_confirm,
+    google_login,
 )
 
 from .users import (

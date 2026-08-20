@@ -120,9 +120,13 @@ REST_FRAMEWORK = {
     # Rate limiting — máximo 10 intentos de login por minuto por IP
     'DEFAULT_THROTTLE_RATES': {
         'login': '10/min',
+        'google_login': '10/min',
         'student_registration': '20/min',
     },
 }
+
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '').strip()
+GOOGLE_ALLOWED_DOMAIN = os.environ.get('GOOGLE_ALLOWED_DOMAIN', 'upn.edu.co').strip().lower()
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {

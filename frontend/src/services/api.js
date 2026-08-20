@@ -16,6 +16,7 @@ export const setAccessToken = (token) => {
 };
 
 export const hasAccessToken = () => Boolean(accessToken);
+export const getAccessToken = () => accessToken;
 
 export const clearClientSession = () => {
     setAccessToken(null);

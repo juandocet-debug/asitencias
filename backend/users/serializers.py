@@ -282,6 +282,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     coordinator_profiles = CoordinatorProfileSerializer(many=True, read_only=True)
     # SerializerMethodField para leer la foto de forma segura (evita el error de CloudinaryField en local)
     photo = serializers.SerializerMethodField()
+    google_connected = serializers.SerializerMethodField()
+
+    def get_google_connected(self, instance):
+        return bool(instance.google_sub)
 
     def get_photo(self, instance):
         if not instance.photo:
@@ -299,14 +303,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'first_name', 'last_name', 'email', 'role', 'roles',
             'document_number', 'photo', 'phone_number', 'personal_email',
             'second_name', 'second_lastname',
-            'is_directory_imported', 'requires_onboarding',
+            'is_directory_imported', 'requires_onboarding', 'google_connected',
             'faculty', 'faculty_name', 'program', 'program_name',
             'coordinator_profiles',
         )
         read_only_fields = (
             'id', 'first_name', 'last_name', 'email', 'role', 'roles',
             'document_number', 'second_lastname',
-            'is_directory_imported', 'requires_onboarding',
+            'is_directory_imported', 'requires_onboarding', 'google_connected',
             'faculty', 'program',
         )
 

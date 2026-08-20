@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-const APP_BUILD = 'agon-registration-draft-fix-20260818-09'
+const APP_BUILD = 'agon-google-login-ready-20260819-10'
 const storedBuild = localStorage.getItem('agon_app_build')
 if (storedBuild && storedBuild !== APP_BUILD && !sessionStorage.getItem('agon_build_refresh')) {
   sessionStorage.setItem('agon_build_refresh', '1')

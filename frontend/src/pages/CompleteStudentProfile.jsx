@@ -1,17 +1,28 @@
-import React, { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Camera, CheckCircle2, Eye, EyeOff, Loader2, Upload, X } from 'lucide-react';
-import api from '../services/api';
+import api, { getAccessToken } from '../services/api';
 import { useUser } from '../context/UserContext';
 
 const SPECIAL_RE = /[^A-Za-z0-9]/;
+const ONBOARDING_API_URL = import.meta.env.VITE_ONBOARDING_API_URL
+    || 'https://agon-backend-production-c5d2.up.railway.app/api/users/onboarding/complete/';
 
 export default function CompleteStudentProfile() {
     const { user, fetchUser } = useUser();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const classCode = searchParams.get('code')?.trim().toUpperCase() || '';
+    const googleUser = Boolean(user?.google_connected);
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [phone, setPhone] = useState(user?.phone_number || '');
+    const [documentNumber, setDocumentNumber] = useState(user?.document_number || '');
+    const [faculty, setFaculty] = useState(user?.faculty || '');
+    const [program, setProgram] = useState(user?.program || '');
+    const [faculties, setFaculties] = useState([]);
+    const [programs, setPrograms] = useState([]);
     const [photo, setPhoto] = useState(null);
     const [preview, setPreview] = useState(user?.photo || null);
     const [showPassword, setShowPassword] = useState(false);
@@ -21,13 +32,33 @@ export default function CompleteStudentProfile() {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
+    useEffect(() => {
+        if (!googleUser) return;
+        Promise.all([api.get('/users/faculties/'), api.get('/users/programs/')])
+            .then(([facultyResponse, programResponse]) => {
+                setFaculties(facultyResponse.data || []);
+                setPrograms(programResponse.data || []);
+            })
+            .catch(() => setError('No pudimos cargar facultades y programas.'));
+    }, [googleUser]);
+
+    const filteredPrograms = useMemo(
+        () => programs.filter(item => String(item.faculty) === String(faculty)),
+        [faculty, programs],
+    );
+
     const validate = () => {
-        if (!password || password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
-        if (!/[A-Z]/.test(password)) return 'La contraseña debe tener una mayúscula.';
-        if (!/[a-z]/.test(password)) return 'La contraseña debe tener una minúscula.';
-        if (!SPECIAL_RE.test(password)) return 'La contraseña debe tener un carácter especial.';
-        if (password !== passwordConfirm) return 'Las contraseñas no coinciden.';
+        if (!googleUser) {
+            if (!password || password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+            if (!/[A-Z]/.test(password)) return 'La contraseña debe tener una mayúscula.';
+            if (!/[a-z]/.test(password)) return 'La contraseña debe tener una minúscula.';
+            if (!SPECIAL_RE.test(password)) return 'La contraseña debe tener un carácter especial.';
+            if (password !== passwordConfirm) return 'Las contraseñas no coinciden.';
+        }
         if (!phone.trim()) return 'El número de celular es obligatorio.';
+        if (googleUser && !/^\d+$/.test(documentNumber.trim())) return 'Ingresa un número de documento válido.';
+        if (googleUser && (!faculty || !program)) return 'Selecciona tu facultad y programa.';
+        if (googleUser && !photo && !user?.photo) return 'Toma o sube tu foto de perfil.';
         return '';
     };
 
@@ -65,6 +96,7 @@ export default function CompleteStudentProfile() {
     const handleFile = (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
+        if (file.size > 5 * 1024 * 1024) return setError('La foto no puede superar 5 MB.');
         setPhoto(file);
         setPreview(URL.createObjectURL(file));
     };
@@ -79,13 +111,27 @@ export default function CompleteStudentProfile() {
         data.append('password', password);
         data.append('password_confirm', passwordConfirm);
         data.append('phone_number', phone.trim());
+        if (googleUser) {
+            data.append('document_number', documentNumber.trim());
+            data.append('faculty', faculty);
+            data.append('program', program);
+        }
         if (photo) data.append('photo', photo);
         try {
-            await api.post('/users/onboarding/complete/', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+            await axios.post(ONBOARDING_API_URL, data, {
+                headers: { Authorization: `Bearer ${getAccessToken()}` },
+            });
             const updatedUser = await fetchUser();
             if (!updatedUser) {
                 setError('Tu cuenta quedó activada, pero no pudimos cargar tu perfil. Vuelve a intentarlo en unos segundos.');
                 return;
+            }
+            if (classCode) {
+                try {
+                    await api.post('/users/join-class/', { class_code: classCode });
+                } catch (joinError) {
+                    if (!String(joinError?.response?.data?.error || '').includes('inscrito')) throw joinError;
+                }
             }
             navigate('/dashboard');
         } catch (err) {
@@ -107,7 +153,8 @@ export default function CompleteStudentProfile() {
                     <ReadOnlyData user={user} />
                     <div className="space-y-5">
                         <PhotoBox preview={preview} cameraActive={cameraActive} videoRef={videoRef} onStart={startCamera} onTake={takePhoto} onStop={stopCamera} onFile={handleFile} onClear={() => { setPreview(null); setPhoto(null); }} />
-                        <PasswordFields password={password} setPassword={setPassword} passwordConfirm={passwordConfirm} setPasswordConfirm={setPasswordConfirm} showPassword={showPassword} setShowPassword={setShowPassword} />
+                        {googleUser && <GoogleProfileFields documentNumber={documentNumber} setDocumentNumber={setDocumentNumber} faculty={faculty} setFaculty={value => { setFaculty(value); setProgram(''); }} program={program} setProgram={setProgram} faculties={faculties} programs={filteredPrograms} />}
+                        {!googleUser && <PasswordFields password={password} setPassword={setPassword} passwordConfirm={passwordConfirm} setPasswordConfirm={setPasswordConfirm} showPassword={showPassword} setShowPassword={setShowPassword} />}
                         <label className="block space-y-2">
                             <span className="text-sm font-black text-slate-600">Número de celular</span>
                             <input value={phone} onChange={event => setPhone(event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold outline-none focus:border-blue-500" />
@@ -148,6 +195,32 @@ function PhotoBox({ preview, cameraActive, videoRef, onStart, onTake, onStop, on
                 {cameraActive ? <><button type="button" onClick={onTake} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white">Capturar</button><button type="button" onClick={onStop} className="rounded-xl bg-slate-600 px-4 py-2 text-sm font-black text-white">Cancelar</button></> : <button type="button" onClick={onStart} className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white"><Camera size={16} /> Cámara</button>}
                 <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-black text-white"><Upload size={16} /> Subir<input type="file" accept="image/*" className="hidden" onChange={onFile} /></label>
             </div>
+        </div>
+    );
+}
+
+function GoogleProfileFields({ documentNumber, setDocumentNumber, faculty, setFaculty, program, setProgram, faculties, programs }) {
+    const fieldClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold outline-none focus:border-blue-500';
+    return (
+        <div className="space-y-3">
+            <label className="block space-y-2">
+                <span className="text-sm font-black text-slate-600">Número de documento</span>
+                <input inputMode="numeric" value={documentNumber} onChange={event => setDocumentNumber(event.target.value.replace(/\D/g, ''))} className={fieldClass} />
+            </label>
+            <label className="block space-y-2">
+                <span className="text-sm font-black text-slate-600">Facultad</span>
+                <select value={faculty} onChange={event => setFaculty(event.target.value)} className={fieldClass}>
+                    <option value="">Selecciona tu facultad</option>
+                    {faculties.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+            </label>
+            <label className="block space-y-2">
+                <span className="text-sm font-black text-slate-600">Programa</span>
+                <select value={program} onChange={event => setProgram(event.target.value)} disabled={!faculty} className={fieldClass}>
+                    <option value="">Selecciona tu programa</option>
+                    {programs.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+            </label>
         </div>
     );
 }

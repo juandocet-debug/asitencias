@@ -215,3 +215,71 @@ class StudentRegistrationContractTests(TestCase):
         response = self.client.post('/api/users/directory/import/', {})
 
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(
+    GOOGLE_OAUTH_CLIENT_ID='agon-client.apps.googleusercontent.com',
+    GOOGLE_ALLOWED_DOMAIN='upn.edu.co',
+)
+class GoogleAuthenticationContractTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @patch('google.oauth2.id_token.verify_oauth2_token')
+    def test_existing_institutional_account_is_linked_without_duplication(self, verify_token):
+        user = User.objects.create_user(
+            username='old.student@upn.edu.co',
+            email='old.student@upn.edu.co',
+            password='Safe-password!23',
+            role='STUDENT',
+        )
+        verify_token.return_value = {
+            'sub': 'google-existing-123',
+            'email': 'old.student@upn.edu.co',
+            'email_verified': True,
+            'hd': 'upn.edu.co',
+            'given_name': 'Old',
+            'family_name': 'Student',
+        }
+
+        response = self.client.post('/api/users/auth/google/', {'credential': 'signed-token'}, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('access', response.json())
+        self.assertEqual(User.objects.filter(email='old.student@upn.edu.co').count(), 1)
+        user.refresh_from_db()
+        self.assertEqual(user.google_sub, 'google-existing-123')
+        self.assertFalse(user.requires_onboarding)
+
+    @patch('google.oauth2.id_token.verify_oauth2_token')
+    def test_new_google_student_is_created_for_onboarding_without_password(self, verify_token):
+        verify_token.return_value = {
+            'sub': 'google-new-456',
+            'email': 'new.student@upn.edu.co',
+            'email_verified': True,
+            'hd': 'upn.edu.co',
+            'given_name': 'New',
+            'family_name': 'Student',
+        }
+
+        response = self.client.post('/api/users/auth/google/', {'credential': 'signed-token'}, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        user = User.objects.get(email='new.student@upn.edu.co')
+        self.assertTrue(user.requires_onboarding)
+        self.assertFalse(user.has_usable_password())
+        self.assertEqual(user.roles, ['STUDENT'])
+
+    @patch('google.oauth2.id_token.verify_oauth2_token')
+    def test_non_institutional_google_account_is_rejected(self, verify_token):
+        verify_token.return_value = {
+            'sub': 'personal-789',
+            'email': 'student@gmail.com',
+            'email_verified': True,
+            'hd': '',
+        }
+
+        response = self.client.post('/api/users/auth/google/', {'credential': 'signed-token'}, format='json')
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(User.objects.filter(email='student@gmail.com').exists())

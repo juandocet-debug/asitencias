@@ -14,7 +14,7 @@ def complete_onboarding(request):
     password = request.data.get('password', '')
     password_confirm = request.data.get('password_confirm', '')
     phone_number = request.data.get('phone_number', '').strip()
-    if password != password_confirm:
+    if not request.user.google_sub and password != password_confirm:
         return Response({'password': 'Las contraseñas no coinciden.'}, status=400)
     if not phone_number:
         return Response({'phone_number': 'El número de celular es obligatorio.'}, status=400)
@@ -24,6 +24,9 @@ def complete_onboarding(request):
             password=password,
             phone_number=phone_number,
             photo=request.FILES.get('photo'),
+            document_number=request.data.get('document_number', ''),
+            faculty_id=request.data.get('faculty'),
+            program_id=request.data.get('program'),
         )
     except Exception as exc:
         return Response({'error': str(exc)}, status=400)
