@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 import RubricBuilder from '../components/RubricBuilder';
+import RubricGradingModal from '../components/RubricGradingModal';
 
 const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
 const today = new Date().toISOString().slice(0, 10);
@@ -43,6 +44,7 @@ export default function AcademicRecords() {
     const [evaluationForm, setEvaluationForm] = useState({ rubric: '', course: '' });
     const [gradeDrafts, setGradeDrafts] = useState({});
     const [rubricBuilderOpen, setRubricBuilderOpen] = useState(false);
+    const [gradingTarget, setGradingTarget] = useState(null);
 
     useEffect(() => { loadBase(); }, []);
     useEffect(() => { loadRecords(); }, [selectedCourse]);
@@ -157,6 +159,11 @@ export default function AcademicRecords() {
         await loadRecords();
     }
 
+    async function saveRubricGrade(evaluation, student, scores, comments, average) {
+        await api.post('/records/grades/save-batch/', { evaluation: evaluation.id, student: student.id, final_grade: Number(average.toFixed(2)), comments, scores });
+        await loadRecords();
+    }
+
     if (previewActa) return <PrintView acta={toActa(previewActa)} onBack={() => setPreviewActa(null)} />;
     if (editingActa) return <ActaEditor acta={editingActa} setActa={setEditingActa} onBack={() => setEditingActa(null)} onSave={saveActa} onPreview={() => setPreviewActa({ data: editingActa })} onImport={importCoursePeople} user={user} />;
 
@@ -186,10 +193,11 @@ export default function AcademicRecords() {
             </div>
 
             {canManage && mode === 'minutes' && <MinutesPanel minutes={activeMinutes} onNew={() => setEditingActa(blankActa())} onEdit={m => setEditingActa({ id: m.id, ...toActa(m) })} onPreview={setPreviewActa} onDelete={deleteMinute} />}
-            {canManage && mode === 'rubrics' && <><div className="flex justify-end"><button onClick={() => setRubricBuilderOpen(true)} className="primary-btn"><Plus size={16} /> Nueva rúbrica completa</button></div><RubricsPanel rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} rubricForm={rubricForm} setRubricForm={setRubricForm} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} gradeDrafts={gradeDrafts} setGradeDrafts={setGradeDrafts} createRubric={createRubric} assignRubric={assignRubric} saveGrade={saveGrade} /></>}
+            {canManage && mode === 'rubrics' && <><div className="flex justify-end"><button onClick={() => setRubricBuilderOpen(true)} className="primary-btn"><Plus size={16} /> Nueva rúbrica completa</button></div><RubricGradeBoard rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} assignRubric={assignRubric} onGrade={setGradingTarget} /></>}
             {!canManage && <StudentPanel minutes={minutes} grades={grades} storedSignature={storedSignature} setSignatureOpen={setSignatureOpen} />}
             {signatureOpen && <SignatureModal minute={signatureOpen} storedSignature={storedSignature} onClose={() => setSignatureOpen(null)} onConfirm={signMinute} user={user} />}
             {rubricBuilderOpen && <RubricBuilder onClose={() => setRubricBuilderOpen(false)} onSave={saveCompleteRubric} />}
+            {gradingTarget && <RubricGradingModal evaluation={gradingTarget.evaluation} student={gradingTarget.student} existing={gradingTarget.grade} onClose={() => setGradingTarget(null)} onSave={(scores, comments, average) => saveRubricGrade(gradingTarget.evaluation, gradingTarget.student, scores, comments, average)} />}
         </div>
     );
 }
@@ -298,6 +306,10 @@ function Signatures({ acta, user, addRow, delRow }) {
 
 function StudentPanel({ minutes, grades, storedSignature, setSignatureOpen }) {
     return <div className="grid gap-4 lg:grid-cols-2"><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Mis actas</h2>{minutes.length === 0 && <Empty text="No tienes actas asignadas." />}{minutes.map(minute => <div key={minute.id} className="mt-3 rounded-xl border border-slate-100 p-3"><p className="font-black text-slate-800">{toActa(minute).tipo} No. {toActa(minute).numero || minute.id}</p><p className="text-xs font-bold text-slate-500">{minute.course_name} · {toActa(minute).fecha}</p><button onClick={() => setSignatureOpen(minute)} className="primary-btn mt-3">{minute.signed_by_me ? 'Ver acta firmada' : 'Revisar y firmar'}</button></div>)}</section><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Mis notas</h2>{grades.length === 0 && <Empty text="Aún no hay notas publicadas." />}{grades.map(grade => <div key={grade.id} className="mt-3 rounded-xl border border-slate-100 p-3"><p className="font-black text-slate-800">{grade.evaluation_detail?.rubric_detail?.title}</p><p className="text-sm font-black text-[#7657f6]">Nota: {grade.final_grade}</p><p className="text-sm text-slate-600">{grade.comments}</p></div>)}</section></div>;
+}
+
+function RubricGradeBoard({ rubrics, evaluations, students, grades, evaluationForm, setEvaluationForm, assignRubric, onGrade }) {
+    return <div className="grid gap-4 lg:grid-cols-[300px_1fr]"><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Asignar al curso</h2><p className="mt-1 text-sm text-slate-500">Selecciona una rúbrica para habilitarla en el curso actual.</p><form onSubmit={assignRubric} className="mt-4 grid gap-3"><select value={evaluationForm.rubric} onChange={e => setEvaluationForm({ ...evaluationForm, rubric: e.target.value })} required className="field"><option value="">Selecciona rúbrica</option>{rubrics.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}</select><button className="secondary-btn"><ClipboardList size={16} /> Asignar al curso</button></form></section><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Evaluar estudiantes</h2>{evaluations.length === 0 && <Empty text="Asigna una rúbrica para comenzar a calificar." />}{evaluations.map(evaluation => <div key={evaluation.id} className="mt-3 rounded-xl border border-slate-100 p-3"><div className="flex items-center justify-between gap-3"><div><p className="font-black text-slate-800">{evaluation.rubric_detail?.title}</p><p className="text-xs font-semibold text-slate-500">Selecciona un estudiante para abrir la rúbrica.</p></div><span className="app-chip">{evaluation.rubric_detail?.criteria?.length || 0} criterios</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{students.map(student => { const grade = grades.find(item => item.evaluation === evaluation.id && item.student === student.id); return <button type="button" key={student.id} onClick={() => onGrade({ evaluation, student, grade })} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-left hover:border-violet-300 hover:bg-violet-50"><span><span className="block text-sm font-black text-slate-800">{student.first_name} {student.last_name}</span><span className="text-xs font-semibold text-slate-500">{grade ? `Calificado: ${grade.final_grade}` : 'Pendiente de calificar'}</span></span><PenLine size={16} className="text-[#7657f6]" /></button>; })}</div></div>)}</section></div>;
 }
 
 function RubricsPanel({ rubrics, evaluations, students, grades, rubricForm, setRubricForm, evaluationForm, setEvaluationForm, gradeDrafts, setGradeDrafts, createRubric, assignRubric, saveGrade }) {
