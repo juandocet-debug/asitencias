@@ -61,7 +61,12 @@
   /* FOR023GDC: el bloque 10 solo contiene Nombre y Firma. */
   #print-acta .sec-10 + table th:nth-child(3),
   #print-acta .sec-10 + table td:nth-child(3) {
-    display: none;
+    display: none !important;
+  }
+
+  #print-acta .sec-10 + table thead tr > :last-child,
+  #print-acta .sec-10 + table tbody tr > :last-child {
+    display: none !important;
   }
 
   @media (max-width: 640px) {
