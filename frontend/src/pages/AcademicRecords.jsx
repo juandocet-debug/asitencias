@@ -372,6 +372,14 @@ function PrintView({ acta, onBack }) {
             for (let page = 0; page < 4; page += 1) {
                 if (page) pdf.addPage('letter', 'portrait');
                 pdf.addImage(headerCanvas.toDataURL('image/png'), 'PNG', margin, margin, imageWidth, headerHeight, undefined, 'FAST');
+                pdf.setFillColor(255, 255, 255);
+                pdf.rect(margin + imageWidth * 0.5, margin + headerHeight * 0.74, imageWidth * 0.5, headerHeight * 0.26, 'F');
+                pdf.setDrawColor(0, 0, 0);
+                pdf.setLineWidth(0.6);
+                pdf.line(margin + imageWidth * 0.5, margin + headerHeight * 0.74, margin + imageWidth, margin + headerHeight * 0.74);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(8);
+                pdf.text(`Página ${page + 1} de 4`, margin + imageWidth * 0.75, margin + headerHeight * 0.9, { align: 'center' });
                 const from = pages[page];
                 const to = pages[page + 1];
                 const sliceHeight = Math.max(1, to - from);
