@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, ChevronLeft, ClipboardList, Download, Eye, FilePenLine, PenLine, Plus, Save, Trash2, Users } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 
@@ -337,7 +339,35 @@ function pos(e, canvas) {
 }
 
 function PrintView({ acta, onBack }) {
-    return <div className="mx-auto max-w-5xl"><div className="no-print mb-4 flex gap-2"><button onClick={onBack} className="secondary-btn"><ChevronLeft size={16} /> Volver</button><button onClick={() => window.print()} className="primary-btn"><Download size={16} /> Descargar PDF</button></div><OfficialActa acta={acta} /></div>;
+    const [generating, setGenerating] = useState(false);
+    const downloadPdf = async () => {
+        setGenerating(true);
+        try {
+            const element = document.getElementById('print-acta');
+            const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#fff', useCORS: true, logging: false });
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter', compress: true });
+            const pageWidth = 612;
+            const pageHeight = 792;
+            const margin = 36;
+            const imageWidth = pageWidth - margin * 2;
+            const sourcePageHeight = Math.round(canvas.width * ((pageHeight - margin * 2) / imageWidth));
+            for (let offset = 0, page = 0; offset < canvas.height; offset += sourcePageHeight, page += 1) {
+                if (page) pdf.addPage('letter', 'portrait');
+                const sliceHeight = Math.min(sourcePageHeight, canvas.height - offset);
+                const slice = document.createElement('canvas');
+                slice.width = canvas.width;
+                slice.height = sliceHeight;
+                slice.getContext('2d').drawImage(canvas, 0, offset, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+                pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, imageWidth, (sliceHeight / canvas.width) * imageWidth, undefined, 'FAST');
+                pdf.setFontSize(8);
+                pdf.text(`Página ${page + 1}`, pageWidth - margin, pageHeight - 16, { align: 'right' });
+            }
+            pdf.save(`Acta-FOR023GDC-${acta.numero || 'sin-numero'}.pdf`);
+        } finally {
+            setGenerating(false);
+        }
+    };
+    return <div className="mx-auto max-w-5xl"><div className="no-print mb-4 flex gap-2"><button onClick={onBack} className="secondary-btn"><ChevronLeft size={16} /> Volver</button><button onClick={downloadPdf} disabled={generating} className="primary-btn"><Download size={16} /> {generating ? 'Generando PDF...' : 'Descargar PDF'}</button></div><OfficialActa acta={acta} /></div>;
 }
 
 function OfficialActa({ acta, compact = false }) {
