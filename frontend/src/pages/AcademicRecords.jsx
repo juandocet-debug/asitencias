@@ -152,7 +152,7 @@ export default function AcademicRecords() {
     if (editingActa) return <ActaEditor acta={editingActa} setActa={setEditingActa} onBack={() => setEditingActa(null)} onSave={saveActa} onPreview={() => setPreviewActa({ data: editingActa })} onImport={importCoursePeople} user={user} />;
 
     return (
-        <div className="mx-auto max-w-7xl space-y-5">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5">
             <section className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -208,7 +208,7 @@ function Tab({ active, icon: Icon, label, onClick }) {
 
 function MinutesPanel({ minutes, onNew, onEdit, onPreview, onDelete }) {
     return createPortal((
-        <section className="rounded-[1.1rem] border border-slate-200 bg-white shadow-sm">
+        <section className="min-h-0 rounded-[1.1rem] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 p-4">
                 <h2 className="font-black text-slate-900">Actas del curso</h2>
                 <button onClick={onNew} className="primary-btn"><Plus size={17} /> Nueva acta oficial</button>
