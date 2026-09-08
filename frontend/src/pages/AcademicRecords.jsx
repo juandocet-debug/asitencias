@@ -222,7 +222,6 @@ function MinutesPanel({ minutes, onNew, onEdit, onPreview, onDelete }) {
                         <div>
                             <p className="font-black text-slate-800">{acta.tipo} No. {acta.numero || minute.id}</p>
                             <p className="text-sm font-semibold text-slate-500">{minute.course_name} · {acta.fecha || minute.date}</p>
-                            <p className="mt-1 text-sm text-slate-600 line-clamp-2">{acta.orden_dia || 'Sin orden del día registrado'}</p>
                             <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">{signed} firmadas</span><span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">{Math.max(signatures.length - signed, 0)} pendientes</span></div>
                         </div>
                         <div className="flex flex-wrap gap-2">
