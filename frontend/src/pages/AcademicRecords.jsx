@@ -348,6 +348,6 @@ function OfficialActa({ acta, compact = false }) {
 }
 
 function Sec({ n, t }) { return <div className="sec">{n}. {t}:</div>; }
-function PeoplePrint({ n, title, rows = [] }) { return <><Sec n={n} t={title} /><table><thead><tr><th className="hdr">Nombres</th><th className="hdr">Cargo/Dependencia</th></tr></thead><tbody>{(rows.length ? rows : [{ nombre: 'N/A', cargo: '' }]).map((r, i) => <tr key={i}><td>{r.nombre}</td><td>{r.cargo}</td></tr>)}</tbody></table></>; }
+function PeoplePrint({ n, title, rows = [] }) { const displayRows = [...(rows.length ? rows : [{ nombre: 'N/A', cargo: '' }])]; while (displayRows.length < 6) displayRows.push({ nombre: '', cargo: '' }); return <><Sec n={n} t={title} /><table><thead><tr><th className="hdr">Nombres</th><th className="hdr">Cargo/Dependencia</th></tr></thead><tbody>{displayRows.map((r, i) => <tr key={i} style={{ height: 24 }}><td>{r.nombre}</td><td>{r.cargo}</td></tr>)}</tbody></table></>; }
 function Field({ label, children }) { return <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">{label}{children}</label>; }
 function Empty({ text }) { return <p className="p-5 text-sm font-semibold text-slate-500">{text}</p>; }
