@@ -45,6 +45,10 @@
   .icon-btn {
     @apply grid h-11 w-11 flex-shrink-0 place-items-center rounded-xl bg-[#7657f6] text-white shadow-md transition hover:bg-[#6345e8];
   }
+
+  .icon-soft {
+    @apply grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50;
+  }
 }
 
 @layer utilities {

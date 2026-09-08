@@ -85,6 +85,25 @@ class MeetingMinuteViewSet(viewsets.ModelViewSet):
             user=user,
             defaults={'signature_data': signature_data},
         )
+        data = dict(minute.data or {})
+        firmas = list(data.get('firmas') or [])
+        full_name = user.get_full_name() or user.username
+        today = signature.signed_at.date().isoformat()
+        index = next((i for i, item in enumerate(firmas) if str(item.get('user_id')) == str(user.id)), None)
+        payload = {
+            'nombre': full_name,
+            'firma': signature_data,
+            'user_id': user.id,
+            'firmado': True,
+            'fecha': today,
+        }
+        if index is None:
+            firmas.append(payload)
+        else:
+            firmas[index].update(payload)
+        data['firmas'] = firmas
+        minute.data = data
+        minute.save(update_fields=['data', 'updated_at'])
         return Response(MeetingMinuteSerializer(minute, context={'request': request}).data)
 
 

@@ -41,7 +41,7 @@ class MeetingMinuteSerializer(serializers.ModelSerializer):
         model = MeetingMinute
         fields = (
             'id', 'course', 'course_name', 'creator', 'creator_name', 'title', 'date',
-            'achievements', 'agreements', 'summary', 'attendees', 'absentees',
+            'data', 'achievements', 'agreements', 'summary', 'attendees', 'absentees',
             'participants', 'attendee_ids', 'absentee_ids', 'participant_ids',
             'status', 'signatures', 'signed_by_me', 'created_at', 'updated_at',
         )
@@ -56,6 +56,13 @@ class MeetingMinuteSerializer(serializers.ModelSerializer):
         attendees = validated_data.pop('attendee_ids', [])
         absentees = validated_data.pop('absentee_ids', [])
         participants = validated_data.pop('participant_ids', [])
+        data = validated_data.get('data') or {}
+        if data:
+            validated_data['title'] = validated_data.get('title') or f"Acta {data.get('numero') or ''}".strip()
+            validated_data['date'] = validated_data.get('date') or data.get('fecha')
+            validated_data['achievements'] = validated_data.get('achievements') or data.get('desarrollo', '')
+            validated_data['agreements'] = validated_data.get('agreements') or data.get('orden_dia', '')
+            validated_data['summary'] = validated_data.get('summary') or data.get('proxima_convocatoria', '')
         minute = MeetingMinute.objects.create(**validated_data)
         self._set_people(minute, attendees, absentees, participants)
         return minute

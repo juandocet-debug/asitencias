@@ -15,6 +15,7 @@ class MeetingMinute(models.Model):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_minutes')
     title = models.CharField(max_length=180)
     date = models.DateField()
+    data = models.JSONField(default=dict, blank=True)
     achievements = models.TextField(blank=True)
     agreements = models.TextField(blank=True)
     summary = models.TextField(blank=True)
