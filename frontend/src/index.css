@@ -64,6 +64,34 @@
       margin-bottom: -54%;
     }
   }
+
+  /* La salida oficial se distribuye en cuatro hojas carta, como el formato FOR023GDC. */
+  @media print {
+    @page {
+      size: letter;
+      margin: 0;
+    }
+
+    #print-acta {
+      width: 8.5in !important;
+      min-height: 11in;
+      max-width: none !important;
+      padding: 4cm 1.5cm 1.5cm !important;
+      box-sizing: border-box;
+    }
+
+    #print-acta .sec-6,
+    #print-acta .sec-8,
+    #print-acta .sec-10 {
+      break-before: page;
+      page-break-before: always;
+    }
+
+    #print-acta .print-running-header {
+      left: 1.5cm;
+      right: 1.5cm;
+    }
+  }
 }
 
 @layer utilities {
