@@ -58,6 +58,12 @@
     min-height: 12rem;
   }
 
+  /* FOR023GDC: el bloque 10 solo contiene Nombre y Firma. */
+  #print-acta .sec-10 + table th:nth-child(3),
+  #print-acta .sec-10 + table td:nth-child(3) {
+    display: none;
+  }
+
   @media (max-width: 640px) {
     .student-acta-preview > #print-acta {
       zoom: 0.46;
