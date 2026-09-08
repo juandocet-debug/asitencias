@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'core',         # permisos y utilidades compartidas entre apps
     'users',
     'academic',
+    'academic_records',
     'gamification',
     'practicas',
 ]

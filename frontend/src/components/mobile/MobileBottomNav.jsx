@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { AlertCircle, BookOpen, Gamepad2, Home, UserRound, Users } from 'lucide-react';
+import { AlertCircle, BookOpen, FilePenLine, Gamepad2, Home, UserRound, Users } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
 const BASE = [
@@ -13,11 +13,11 @@ export default function MobileBottomNav() {
     const { user, activeRole } = useUser();
     const role = activeRole || user?.role;
     const items = role === 'ADMIN'
-        ? [BASE[0], BASE[1], { to: '/missions', icon: Gamepad2, label: 'Misiones' }, { to: '/users', icon: Users, label: 'Usuarios' }]
+        ? [BASE[0], BASE[1], { to: '/records', icon: FilePenLine, label: 'Actas' }, { to: '/users', icon: Users, label: 'Usuarios' }]
         : role === 'STUDENT'
-            ? [BASE[0], BASE[1], { to: '/my-absences', icon: AlertCircle, label: 'Faltas' }, BASE[2]]
+            ? [BASE[0], BASE[1], { to: '/records', icon: FilePenLine, label: 'Actas' }, BASE[2]]
             : role === 'TEACHER'
-                ? [BASE[0], BASE[1], { to: '/missions', icon: Gamepad2, label: 'Misiones' }, BASE[2]]
+                ? [BASE[0], BASE[1], { to: '/records', icon: FilePenLine, label: 'Actas' }, BASE[2]]
                 : BASE;
 
     return (

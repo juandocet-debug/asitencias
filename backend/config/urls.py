@@ -24,6 +24,7 @@ def health(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/academic/', include('academic.urls')),
+    path('api/records/', include('academic_records.urls')),
     path('api/users/', include('users.urls')),
     path('api/practicas/', include('practicas.urls')),
 

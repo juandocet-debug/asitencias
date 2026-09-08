@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, BookOpen, Award, Wrench, ClipboardCheck,
     AlertCircle, ClipboardList, Settings, LogOut, Plus, GraduationCap,
-    Briefcase, User, Gamepad2
+    Briefcase, User, Gamepad2, FilePenLine
 } from 'lucide-react';
 import { ROLE_META, SidebarItem, SidebarSection, SidebarSubItem, RoleSwitcher } from './sidebarConfig';
 
@@ -84,6 +84,16 @@ export default function SidebarNav({ user, effectiveRole, allRoles, setActiveRol
 
                 {(isAdmin || effectiveRole === 'TEACHER') && (
                     <SidebarItem icon={Gamepad2} label="Misiones" to="/missions" onClick={onClose} subtitle="Recursos e inventario" />
+                )}
+
+                {['ADMIN', 'TEACHER', 'PRACTICE_TEACHER', 'STUDENT'].includes(effectiveRole) && (
+                    <SidebarItem
+                        icon={FilePenLine}
+                        label={isStudent ? 'Mis actas y notas' : 'Actas y rúbricas'}
+                        to="/records"
+                        onClick={onClose}
+                        subtitle={isStudent ? 'Firmas y notas' : 'Firmas y evaluación'}
+                    />
                 )}
 
                 {/* Admin only */}
