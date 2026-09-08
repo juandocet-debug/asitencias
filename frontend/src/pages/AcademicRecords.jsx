@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
+import RubricBuilder from '../components/RubricBuilder';
 
 const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
 const today = new Date().toISOString().slice(0, 10);
@@ -41,6 +42,7 @@ export default function AcademicRecords() {
     const [rubricForm, setRubricForm] = useState(blankRubric);
     const [evaluationForm, setEvaluationForm] = useState({ rubric: '', course: '' });
     const [gradeDrafts, setGradeDrafts] = useState({});
+    const [rubricBuilderOpen, setRubricBuilderOpen] = useState(false);
 
     useEffect(() => { loadBase(); }, []);
     useEffect(() => { loadRecords(); }, [selectedCourse]);
@@ -136,6 +138,11 @@ export default function AcademicRecords() {
         await loadRecords();
     }
 
+    async function saveCompleteRubric(payload) {
+        await api.post('/records/rubrics/', payload);
+        await loadRecords();
+    }
+
     async function assignRubric(event) {
         event.preventDefault();
         await api.post('/records/evaluations/', { ...evaluationForm, course: selectedCourse });
@@ -179,9 +186,10 @@ export default function AcademicRecords() {
             </div>
 
             {canManage && mode === 'minutes' && <MinutesPanel minutes={activeMinutes} onNew={() => setEditingActa(blankActa())} onEdit={m => setEditingActa({ id: m.id, ...toActa(m) })} onPreview={setPreviewActa} onDelete={deleteMinute} />}
-            {canManage && mode === 'rubrics' && <RubricsPanel rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} rubricForm={rubricForm} setRubricForm={setRubricForm} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} gradeDrafts={gradeDrafts} setGradeDrafts={setGradeDrafts} createRubric={createRubric} assignRubric={assignRubric} saveGrade={saveGrade} />}
+            {canManage && mode === 'rubrics' && <><div className="flex justify-end"><button onClick={() => setRubricBuilderOpen(true)} className="primary-btn"><Plus size={16} /> Nueva rúbrica completa</button></div><RubricsPanel rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} rubricForm={rubricForm} setRubricForm={setRubricForm} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} gradeDrafts={gradeDrafts} setGradeDrafts={setGradeDrafts} createRubric={createRubric} assignRubric={assignRubric} saveGrade={saveGrade} /></>}
             {!canManage && <StudentPanel minutes={minutes} grades={grades} storedSignature={storedSignature} setSignatureOpen={setSignatureOpen} />}
             {signatureOpen && <SignatureModal minute={signatureOpen} storedSignature={storedSignature} onClose={() => setSignatureOpen(null)} onConfirm={signMinute} user={user} />}
+            {rubricBuilderOpen && <RubricBuilder onClose={() => setRubricBuilderOpen(false)} onSave={saveCompleteRubric} />}
         </div>
     );
 }

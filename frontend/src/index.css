@@ -58,6 +58,15 @@
     min-height: 12rem;
   }
 
+  /* La creación completa se realiza en RubricBuilder, como en ILINYX. */
+  .xl\:grid-cols-\[420px_1fr\] > section:first-child {
+    display: none;
+  }
+
+  .xl\:grid-cols-\[420px_1fr\] > section:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
   /* FOR023GDC: el bloque 10 solo contiene Nombre y Firma. */
   #print-acta .sec-10 + table th:nth-child(3),
   #print-acta .sec-10 + table td:nth-child(3) {
