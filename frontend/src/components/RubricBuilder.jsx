@@ -29,11 +29,11 @@ function CriterionEditor({ criterion, index, canRemove, onChange, onRemove }) {
     </div>;
 }
 
-export default function RubricBuilder({ onClose, onSave }) {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [evaluatorCount, setEvaluatorCount] = useState(1);
-    const [criteria, setCriteria] = useState([newCriterion()]);
+export default function RubricBuilder({ initialRubric, onClose, onSave }) {
+    const [title, setTitle] = useState(initialRubric?.title || '');
+    const [description, setDescription] = useState(initialRubric?.description || '');
+    const [evaluatorCount, setEvaluatorCount] = useState(initialRubric?.evaluator_count || 1);
+    const [criteria, setCriteria] = useState(initialRubric?.criteria?.map(item => ({ id: item.id, name: item.name, levels: (item.levels || []).map(level => ({ value: level.value, description: level.description || '' })) })) || [newCriterion()]);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
     const save = async event => {
@@ -46,7 +46,7 @@ export default function RubricBuilder({ onClose, onSave }) {
     };
     return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-3 sm:p-6">
         <form onSubmit={save} className="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <header className="flex items-center justify-between bg-[#1e1b4b] px-4 py-3 text-white sm:px-6"><div><p className="text-[10px] font-black uppercase tracking-widest text-violet-200">Instrumento de evaluación</p><h2 className="text-lg font-black">Nueva rúbrica</h2></div><button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/10"><X size={18} /></button></header>
+            <header className="flex items-center justify-between bg-[#164e63] px-4 py-3 text-white sm:px-6"><div><p className="text-[10px] font-black uppercase tracking-widest text-cyan-200">Instrumento de evaluación</p><h2 className="text-lg font-black">{initialRubric ? 'Editar rúbrica' : 'Nueva rúbrica'}</h2></div><button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/10"><X size={18} /></button></header>
             <div className="space-y-4 overflow-y-auto p-4 sm:p-6">
                 {error && <p className="rounded-lg bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}
                 <div className="grid gap-3 sm:grid-cols-[1fr_100px]"><label className="grid gap-1 text-xs font-black uppercase text-slate-500">Título *<input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ej. Evaluación del proyecto final" className="field normal-case" /></label><label className="grid gap-1 text-xs font-black uppercase text-slate-500">Evaluadores<input type="number" min="1" max="10" value={evaluatorCount} onChange={e => setEvaluatorCount(Number(e.target.value))} className="field" /></label></div>

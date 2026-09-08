@@ -7,6 +7,8 @@ import { useUser } from '../context/UserContext';
 import api from '../services/api';
 import RubricBuilder from '../components/RubricBuilder';
 import RubricGradingModal from '../components/RubricGradingModal';
+import RubricLibrary from '../components/RubricLibrary';
+import RubricPreview from '../components/RubricPreview';
 
 const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
 const today = new Date().toISOString().slice(0, 10);
@@ -45,6 +47,8 @@ export default function AcademicRecords() {
     const [gradeDrafts, setGradeDrafts] = useState({});
     const [rubricBuilderOpen, setRubricBuilderOpen] = useState(false);
     const [gradingTarget, setGradingTarget] = useState(null);
+    const [editingRubric, setEditingRubric] = useState(null);
+    const [previewRubric, setPreviewRubric] = useState(null);
 
     useEffect(() => { loadBase(); }, []);
     useEffect(() => { loadRecords(); }, [selectedCourse]);
@@ -141,13 +145,22 @@ export default function AcademicRecords() {
     }
 
     async function saveCompleteRubric(payload) {
-        await api.post('/records/rubrics/', payload);
+        if (editingRubric) await api.put(`/records/rubrics/${editingRubric.id}/`, payload);
+        else await api.post('/records/rubrics/', payload);
+        setEditingRubric(null);
+        await loadRecords();
+    }
+
+    async function removeRubric(rubric) {
+        if (!window.confirm(`¿Eliminar la rúbrica "${rubric.title}"?`)) return;
+        await api.delete(`/records/rubrics/${rubric.id}/`);
         await loadRecords();
     }
 
     async function assignRubric(event) {
-        event.preventDefault();
-        await api.post('/records/evaluations/', { ...evaluationForm, course: selectedCourse });
+        const rubricId = typeof event === 'string' ? event : evaluationForm.rubric;
+        if (typeof event !== 'string') event.preventDefault();
+        await api.post('/records/evaluations/', { rubric: rubricId, course: selectedCourse });
         setEvaluationForm({ rubric: '', course: selectedCourse });
         await loadRecords();
     }
@@ -193,10 +206,12 @@ export default function AcademicRecords() {
             </div>
 
             {canManage && mode === 'minutes' && <MinutesPanel minutes={activeMinutes} onNew={() => setEditingActa(blankActa())} onEdit={m => setEditingActa({ id: m.id, ...toActa(m) })} onPreview={setPreviewActa} onDelete={deleteMinute} />}
-            {canManage && mode === 'rubrics' && <><div className="flex justify-end"><button onClick={() => setRubricBuilderOpen(true)} className="primary-btn"><Plus size={16} /> Nueva rúbrica completa</button></div><RubricGradeBoard rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} assignRubric={assignRubric} onGrade={setGradingTarget} /></>}
+            {canManage && mode === 'rubrics' && <><div className="flex justify-end"><button onClick={() => { setEditingRubric(null); setRubricBuilderOpen(true); }} className="inline-flex items-center gap-2 rounded-lg bg-[#164e63] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-cyan-200/50"><Plus size={16} /> Nueva rúbrica</button></div><RubricLibrary rubrics={rubrics} onEdit={rubric => { setEditingRubric(rubric); setRubricBuilderOpen(true); }} onDelete={removeRubric} onPreview={setPreviewRubric} onAssign={rubric => assignRubric(String(rubric.id))} /><RubricGradeBoard rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} assignRubric={assignRubric} onGrade={setGradingTarget} /></>}
             {!canManage && <StudentPanel minutes={minutes} grades={grades} storedSignature={storedSignature} setSignatureOpen={setSignatureOpen} />}
+            {!canManage && <StudentRubricPanel evaluations={visibleEvaluations} onPreview={setPreviewRubric} />}
             {signatureOpen && <SignatureModal minute={signatureOpen} storedSignature={storedSignature} onClose={() => setSignatureOpen(null)} onConfirm={signMinute} user={user} />}
-            {rubricBuilderOpen && <RubricBuilder onClose={() => setRubricBuilderOpen(false)} onSave={saveCompleteRubric} />}
+            {rubricBuilderOpen && <RubricBuilder initialRubric={editingRubric} onClose={() => { setRubricBuilderOpen(false); setEditingRubric(null); }} onSave={saveCompleteRubric} />}
+            {previewRubric && <RubricPreview rubric={previewRubric} onClose={() => setPreviewRubric(null)} />}
             {gradingTarget && <RubricGradingModal evaluation={gradingTarget.evaluation} student={gradingTarget.student} existing={gradingTarget.grade} onClose={() => setGradingTarget(null)} onSave={(scores, comments, average) => saveRubricGrade(gradingTarget.evaluation, gradingTarget.student, scores, comments, average)} />}
         </div>
     );
@@ -306,6 +321,10 @@ function Signatures({ acta, user, addRow, delRow }) {
 
 function StudentPanel({ minutes, grades, storedSignature, setSignatureOpen }) {
     return <div className="grid gap-4 lg:grid-cols-2"><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Mis actas</h2>{minutes.length === 0 && <Empty text="No tienes actas asignadas." />}{minutes.map(minute => <div key={minute.id} className="mt-3 rounded-xl border border-slate-100 p-3"><p className="font-black text-slate-800">{toActa(minute).tipo} No. {toActa(minute).numero || minute.id}</p><p className="text-xs font-bold text-slate-500">{minute.course_name} · {toActa(minute).fecha}</p><button onClick={() => setSignatureOpen(minute)} className="primary-btn mt-3">{minute.signed_by_me ? 'Ver acta firmada' : 'Revisar y firmar'}</button></div>)}</section><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Mis notas</h2>{grades.length === 0 && <Empty text="Aún no hay notas publicadas." />}{grades.map(grade => <div key={grade.id} className="mt-3 rounded-xl border border-slate-100 p-3"><p className="font-black text-slate-800">{grade.evaluation_detail?.rubric_detail?.title}</p><p className="text-sm font-black text-[#7657f6]">Nota: {grade.final_grade}</p><p className="text-sm text-slate-600">{grade.comments}</p></div>)}</section></div>;
+}
+
+function StudentRubricPanel({ evaluations, onPreview }) {
+    return <section className="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 shadow-sm"><p className="text-xs font-black uppercase tracking-widest text-cyan-700">Instrumentos del curso</p><h2 className="mt-1 text-lg font-black text-slate-900">Rúbricas compartidas</h2>{evaluations.length === 0 ? <Empty text="Aún no hay rúbricas compartidas contigo." /> : <div className="mt-3 grid gap-2">{evaluations.map(evaluation => <div key={evaluation.id} className="flex items-center justify-between gap-3 rounded-xl border border-cyan-100 bg-white p-3"><div><p className="font-black text-slate-800">{evaluation.rubric_detail?.title}</p><p className="text-xs font-semibold text-slate-500">{evaluation.rubric_detail?.criteria?.length || 0} criterios</p></div><button type="button" onClick={() => onPreview(evaluation.rubric_detail)} className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-xs font-black text-white"><Eye size={14} /> Ver rúbrica</button></div>)}</div>}</section>;
 }
 
 function RubricGradeBoard({ rubrics, evaluations, students, grades, evaluationForm, setEvaluationForm, assignRubric, onGrade }) {
