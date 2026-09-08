@@ -365,7 +365,11 @@ function PrintView({ acta, onBack }) {
             const contentHeight = pageHeight - contentTop - margin - 20;
             const sourceContentHeight = Math.round((contentHeight / imageWidth) * canvas.width);
             const safeStarts = [...element.children]
-                .filter(child => !child.classList.contains('screen-header') && !child.classList.contains('sec') && child.tagName !== 'STYLE')
+                .filter((child, index, children) => {
+                    if (child.classList.contains('screen-header') || child.tagName === 'STYLE') return false;
+                    const previous = children[index - 1];
+                    return !(child.tagName === 'TABLE' && previous?.classList.contains('sec'));
+                })
                 .map(child => Math.round((child.getBoundingClientRect().top - elementRect.top) * scale))
                 .filter(top => top > headerBottom && top < canvas.height)
                 .sort((a, b) => a - b);
