@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, ChevronLeft, ClipboardList, Download, Eye, FilePenLine, PenLine, Plus, Save, Users } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ClipboardList, Download, Eye, FilePenLine, PenLine, Plus, Save, Trash2, Users } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 
@@ -118,6 +118,14 @@ export default function AcademicRecords() {
         await loadRecords();
     }
 
+    async function deleteMinute(minute) {
+        const acta = toActa(minute);
+        const ok = window.confirm(`¿Eliminar ${acta.tipo} No. ${acta.numero || minute.id}? Esta acción no se puede deshacer.`);
+        if (!ok) return;
+        await api.delete(`/records/minutes/${minute.id}/`);
+        await loadRecords();
+    }
+
     async function createRubric(event) {
         event.preventDefault();
         await api.post('/records/rubrics/', rubricForm);
@@ -167,7 +175,7 @@ export default function AcademicRecords() {
                 {!canManage && <Tab active icon={PenLine} label="Mis actas y notas" />}
             </div>
 
-            {canManage && mode === 'minutes' && <MinutesPanel minutes={activeMinutes} onNew={() => setEditingActa(blankActa())} onEdit={m => setEditingActa({ id: m.id, ...toActa(m) })} onPreview={setPreviewActa} />}
+            {canManage && mode === 'minutes' && <MinutesPanel minutes={activeMinutes} onNew={() => setEditingActa(blankActa())} onEdit={m => setEditingActa({ id: m.id, ...toActa(m) })} onPreview={setPreviewActa} onDelete={deleteMinute} />}
             {canManage && mode === 'rubrics' && <RubricsPanel rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} rubricForm={rubricForm} setRubricForm={setRubricForm} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} gradeDrafts={gradeDrafts} setGradeDrafts={setGradeDrafts} createRubric={createRubric} assignRubric={assignRubric} saveGrade={saveGrade} />}
             {!canManage && <StudentPanel minutes={minutes} grades={grades} storedSignature={storedSignature} setSignatureOpen={setSignatureOpen} />}
             {signatureOpen && <SignatureModal minute={signatureOpen} storedSignature={storedSignature} onClose={() => setSignatureOpen(null)} onConfirm={signMinute} user={user} />}
@@ -197,7 +205,7 @@ function Tab({ active, icon: Icon, label, onClick }) {
     return <button onClick={onClick} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black ${active ? 'bg-[#7657f6] text-white shadow-lg shadow-violet-200' : 'bg-white text-slate-600 border border-slate-200'}`}><Icon size={17} /> {label}</button>;
 }
 
-function MinutesPanel({ minutes, onNew, onEdit, onPreview }) {
+function MinutesPanel({ minutes, onNew, onEdit, onPreview, onDelete }) {
     return (
         <section className="rounded-[1.1rem] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 p-4">
@@ -220,6 +228,7 @@ function MinutesPanel({ minutes, onNew, onEdit, onPreview }) {
                         <div className="flex flex-wrap gap-2">
                             <button onClick={() => onPreview(minute)} className="secondary-btn"><Eye size={16} /> Ver/PDF</button>
                             <button onClick={() => onEdit(minute)} className="secondary-btn"><FilePenLine size={16} /> Editar</button>
+                            <button onClick={() => onDelete(minute)} className="danger-btn"><Trash2 size={16} /> Eliminar</button>
                         </div>
                     </div>;
                 })}
@@ -292,7 +301,35 @@ function SignatureModal({ minute, storedSignature, onClose, onConfirm, user }) {
     const start = e => { e.preventDefault(); setDrawing(true); const ctx = canvasRef.current.getContext('2d'); const p = pos(e, canvasRef.current); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
     const move = e => { if (!drawing) return; e.preventDefault(); const ctx = canvasRef.current.getContext('2d'); const p = pos(e, canvasRef.current); ctx.lineTo(p.x, p.y); ctx.strokeStyle = '#172033'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke(); setHasDrawn(true); };
     const confirm = () => onConfirm(minute, storedSignature || canvasRef.current.toDataURL('image/png'));
-    return <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"><div className="w-full max-w-5xl rounded-2xl bg-white p-4 shadow-2xl"><div className="mb-3 flex items-center justify-between"><h3 className="font-black text-slate-900">Revisar y firmar acta</h3><button onClick={onClose}>Cerrar</button></div><div className="max-h-[55vh] overflow-auto rounded-xl border border-slate-200 p-3"><OfficialActa acta={toActa(minute)} /></div>{storedSignature ? <div className="mt-3 rounded-xl bg-emerald-50 p-3"><p className="text-sm font-bold text-emerald-800">Se usará tu firma guardada.</p><img src={storedSignature} alt="Firma guardada" className="mt-2 max-h-20 rounded bg-white p-2" /></div> : <canvas ref={canvasRef} width={520} height={150} className="mt-3 w-full rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 touch-none" onMouseDown={start} onMouseMove={move} onMouseUp={() => setDrawing(false)} onMouseLeave={() => setDrawing(false)} onTouchStart={start} onTouchMove={move} onTouchEnd={() => setDrawing(false)} /> }<button disabled={!storedSignature && !hasDrawn} onClick={confirm} className="primary-btn mt-3"><PenLine size={16} /> Firmar como {user?.first_name || user?.username}</button></div></div>;
+    return (
+        <div className="fixed inset-0 z-50 bg-black/45 p-0 sm:grid sm:place-items-center sm:p-4">
+            <div className="flex h-full w-full flex-col bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-5xl sm:rounded-2xl">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <h3 className="font-black text-slate-900">Revisar y firmar acta</h3>
+                    <button onClick={onClose} className="rounded-xl px-3 py-2 text-sm font-black text-slate-500">Cerrar</button>
+                </div>
+                <div className="flex-1 overflow-auto p-3 pb-36 sm:pb-4">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <OfficialActa acta={toActa(minute)} compact />
+                    </div>
+                    {storedSignature ? (
+                        <div className="mt-3 rounded-xl bg-emerald-50 p-3">
+                            <p className="text-sm font-bold text-emerald-800">Se usará tu firma guardada.</p>
+                            <img src={storedSignature} alt="Firma guardada" className="mt-2 max-h-20 rounded bg-white p-2" />
+                        </div>
+                    ) : (
+                        <div className="mt-3">
+                            <p className="mb-2 text-sm font-bold text-slate-700">Dibuja tu firma</p>
+                            <canvas ref={canvasRef} width={520} height={170} className="h-44 w-full rounded-xl border-2 border-dashed border-slate-300 bg-white touch-none" onMouseDown={start} onMouseMove={move} onMouseUp={() => setDrawing(false)} onMouseLeave={() => setDrawing(false)} onTouchStart={start} onTouchMove={move} onTouchEnd={() => setDrawing(false)} />
+                        </div>
+                    )}
+                </div>
+                <div className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:static sm:rounded-b-2xl">
+                    <button disabled={!storedSignature && !hasDrawn} onClick={confirm} className="primary-btn w-full"><PenLine size={16} /> Guardar y firmar como {user?.first_name || user?.username}</button>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function pos(e, canvas) {
@@ -305,9 +342,9 @@ function PrintView({ acta, onBack }) {
     return <div className="mx-auto max-w-5xl"><div className="no-print mb-4 flex gap-2"><button onClick={onBack} className="secondary-btn"><ChevronLeft size={16} /> Volver</button><button onClick={() => window.print()} className="primary-btn"><Download size={16} /> Descargar PDF</button></div><OfficialActa acta={acta} /></div>;
 }
 
-function OfficialActa({ acta }) {
+function OfficialActa({ acta, compact = false }) {
     const firmas = syncFirmas(acta);
-    return <div id="print-acta" className="bg-white p-8 text-[11px] text-black shadow-sm"><style>{`@media print{body *{visibility:hidden!important}.no-print{display:none!important}#print-acta,#print-acta *{visibility:visible!important}#print-acta{position:absolute;left:0;top:0;width:100%;box-shadow:none!important}@page{size:letter;margin:1.5cm}}#print-acta table{border-collapse:collapse;width:100%}#print-acta td,#print-acta th{border:1px solid #000;padding:4px 6px;vertical-align:top}#print-acta .sec{background:#d9d9d9;font-weight:bold;padding:4px 6px;border:1px solid #000;margin-top:6px}#print-acta .hdr{background:#d9d9d9;font-weight:bold}`}</style><table><tbody><tr><td rowSpan={2} className="text-center align-middle" style={{ width: '22%' }}><img src={UPN_LOGO} alt="UPN" style={{ height: 60, objectFit: 'contain', margin: 'auto' }} /></td><td className="text-center font-bold" style={{ fontSize: 14 }}>FORMATO</td></tr><tr><td className="text-center font-bold">ACTA DE REUNIÓN / RESUMEN DE REUNIÓN</td></tr><tr><td className="text-center font-bold" style={{ background: '#dbe5f1' }}>Código: FOR023GDC</td><td className="text-center font-bold" style={{ background: '#dbe5f1' }}>Versión: 03</td></tr><tr><td className="text-center font-bold" style={{ background: '#dbe5f1' }}>Fecha de Aprobación: 22-03-2012</td><td className="text-center font-bold" style={{ background: '#dbe5f1' }}>Página 1 de 1</td></tr></tbody></table><p className="my-2 text-center font-bold">Marque según corresponda (*):</p><p className="mb-2 text-center"><span className="border border-black px-2">{acta.tipo === 'ACTA' ? 'X' : ' '}</span> ACTA DE REUNIÓN&nbsp;&nbsp; <span className="border border-black px-2">{acta.tipo === 'RESUMEN' ? 'X' : ' '}</span> RESUMEN DE REUNIÓN</p><table><tbody><tr><td className="text-center font-bold">Acta / Resumen de Reunión No. {acta.numero || '___'} de {acta.total || '___'}</td></tr></tbody></table><Sec n="1" t="Información General" /><table><tbody><tr><td>Fecha</td><td>{acta.fecha}</td><td>Hora inicio:</td><td>{acta.hora_inicio}</td><td>Hora final:</td><td>{acta.hora_final}</td></tr><tr><td>Instancias / Dependencias:</td><td colSpan={5}>{acta.instancias}</td></tr><tr><td>Lugar:</td><td colSpan={5}>{acta.lugar}</td></tr></tbody></table><PeoplePrint n="2" title="Asistentes" rows={acta.asistentes} /><PeoplePrint n="3" title="Ausentes" rows={acta.ausentes} /><PeoplePrint n="4" title="Invitados" rows={acta.invitados} /><Sec n="5" t="Orden del Día" /><table><tbody><tr><td className="whitespace-pre-wrap">{acta.orden_dia}</td></tr></tbody></table><Sec n="6" t="Desarrollo del Orden del Día" /><table><tbody><tr><td className="whitespace-pre-wrap">{acta.desarrollo}</td></tr></tbody></table><Sec n="7" t="Compromisos" /><table><thead><tr><th className="hdr">Compromiso</th><th className="hdr">Responsable</th><th className="hdr">Fecha (dd-mm-aaaa)</th></tr></thead><tbody>{(acta.compromisos || []).map((c, i) => <tr key={i}><td>{c.compromiso}</td><td>{c.responsable}</td><td>{c.fecha}</td></tr>)}</tbody></table><Sec n="8" t="Próxima Convocatoria" /><table><tbody><tr><td className="whitespace-pre-wrap">{acta.proxima_convocatoria}</td></tr></tbody></table><Sec n="9" t="Anexos" /><table><tbody><tr><td className="whitespace-pre-wrap">{acta.anexos}</td></tr></tbody></table><Sec n="10" t="Firmas" /><table><thead><tr><th className="hdr">Nombre</th><th className="hdr">Firma</th><th className="hdr">Fecha</th></tr></thead><tbody>{firmas.map((f, i) => <tr key={i}><td>{f.nombre}</td><td>{f.firmado && f.firma?.startsWith('data:') ? <img src={f.firma} alt="Firma" style={{ maxHeight: 40, maxWidth: 140 }} /> : f.firmado ? 'Firmado' : 'Pendiente'}</td><td>{f.fecha || '-'}</td></tr>)}</tbody></table><p className="mt-3 text-[10px]"><b>(*) Acta de Reunión:</b> Reuniones que contemplan elaboración formal de actas. <b>Resumen de Reunión:</b> Se aplica en los demás casos.</p></div>;
+    return <div id="print-acta" className={`bg-white text-black shadow-sm ${compact ? 'w-[720px] p-6 text-[10px]' : 'mx-auto w-[816px] max-w-full p-8 text-[11px]'}`}><style>{`@media print{body *{visibility:hidden!important}.no-print{display:none!important}#print-acta,#print-acta *{visibility:visible!important}#print-acta{position:absolute;left:0;top:0;width:100%!important;max-width:none!important;box-shadow:none!important}@page{size:letter;margin:1.5cm}}#print-acta{font-family:Arial,sans-serif;letter-spacing:0}#print-acta table{border-collapse:collapse;width:100%;table-layout:fixed}#print-acta td,#print-acta th{border:1px solid #000;padding:4px 6px;vertical-align:top;word-break:break-word}#print-acta .sec{background:#d9d9d9;font-weight:bold;padding:4px 6px;border:1px solid #000;margin-top:6px}#print-acta .hdr{background:#d9d9d9;font-weight:bold}#print-acta .meta{background:#dbe5f1;font-weight:bold;text-align:center}`}</style><table><tbody><tr><td rowSpan={2} className="text-center align-middle" style={{ width: '25%' }}><img src={UPN_LOGO} alt="UPN" style={{ height: 66, objectFit: 'contain', margin: 'auto' }} /></td><td colSpan={2} className="text-center font-bold" style={{ fontSize: 14 }}>FORMATO</td></tr><tr><td colSpan={2} className="text-center font-bold">ACTA DE REUNIÓN / RESUMEN DE REUNIÓN</td></tr><tr><td className="meta">Código:<br />FOR023GDC</td><td className="meta">Versión: 03</td><td className="meta"></td></tr><tr><td className="meta">Fecha de Aprobación:<br />22-03-2012</td><td colSpan={2} className="meta">Página 1 de 1</td></tr></tbody></table><p className="my-2 text-center font-bold">Marque según corresponda (*):</p><p className="mb-2 text-center"><span className="border border-black px-2">{acta.tipo === 'ACTA' ? 'X' : ' '}</span> ACTA DE REUNIÓN&nbsp;&nbsp; <span className="border border-black px-2">{acta.tipo === 'RESUMEN' ? 'X' : ' '}</span> RESUMEN DE REUNIÓN</p><table><tbody><tr><td className="text-center font-bold">Acta / Resumen de Reunión No. {acta.numero || '___'} de {acta.total || '___'}</td></tr></tbody></table><Sec n="1" t="Información General" /><table><tbody><tr><td style={{ width: '22%' }}>Fecha</td><td>{acta.fecha}</td><td>Hora inicio:</td><td>{acta.hora_inicio}</td><td>Hora final:</td><td>{acta.hora_final}</td></tr><tr><td>Instancias / Dependencias:</td><td colSpan={5}>{acta.instancias}</td></tr><tr><td>Lugar:</td><td colSpan={5}>{acta.lugar}</td></tr></tbody></table><PeoplePrint n="2" title="Asistentes" rows={acta.asistentes} /><PeoplePrint n="3" title="Ausentes" rows={acta.ausentes} /><PeoplePrint n="4" title="Invitados" rows={acta.invitados} /><Sec n="5" t="Orden del Día" /><table><tbody><tr><td className="whitespace-pre-wrap" style={{ minHeight: 72 }}>{acta.orden_dia}</td></tr></tbody></table><Sec n="6" t="Desarrollo del Orden del Día" /><table><tbody><tr><td className="whitespace-pre-wrap" style={{ minHeight: 120 }}>{acta.desarrollo}</td></tr></tbody></table><Sec n="7" t="Compromisos" /><table><thead><tr><th className="hdr">Compromiso</th><th className="hdr">Responsable</th><th className="hdr">Fecha (dd-mm-aaaa)</th></tr></thead><tbody>{(acta.compromisos || []).map((c, i) => <tr key={i}><td>{c.compromiso}</td><td>{c.responsable}</td><td>{c.fecha}</td></tr>)}</tbody></table><Sec n="8" t="Próxima Convocatoria" /><table><tbody><tr><td className="whitespace-pre-wrap">{acta.proxima_convocatoria}</td></tr></tbody></table><Sec n="9" t="Anexos" /><table><tbody><tr><td className="whitespace-pre-wrap">{acta.anexos}</td></tr></tbody></table><Sec n="10" t="Firmas" /><table><thead><tr><th className="hdr">Nombre</th><th className="hdr">Firma</th><th className="hdr">Fecha</th></tr></thead><tbody>{firmas.map((f, i) => <tr key={i}><td>{f.nombre}</td><td>{f.firmado && f.firma?.startsWith('data:') ? <img src={f.firma} alt="Firma" style={{ maxHeight: 40, maxWidth: 140 }} /> : f.firmado ? 'Firmado' : 'Pendiente'}</td><td>{f.fecha || '-'}</td></tr>)}</tbody></table><p className="mt-3 text-[10px]"><b>(*) Acta de Reunión:</b> Reuniones que contemplan elaboración formal de actas. <b>Resumen de Reunión:</b> Se aplica en los demás casos.</p></div>;
 }
 
 function Sec({ n, t }) { return <div className="sec">{n}. {t}:</div>; }

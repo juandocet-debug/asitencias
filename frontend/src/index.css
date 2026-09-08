@@ -42,6 +42,10 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl border border-violet-100 bg-violet-50 px-4 py-2.5 text-sm font-black text-[#7657f6] transition hover:bg-violet-100;
   }
 
+  .danger-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-black text-red-600 transition hover:bg-red-100;
+  }
+
   .icon-btn {
     @apply grid h-11 w-11 flex-shrink-0 place-items-center rounded-xl bg-[#7657f6] text-white shadow-md transition hover:bg-[#6345e8];
   }
