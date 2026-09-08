@@ -308,8 +308,8 @@ function SignatureModal({ minute, storedSignature, onClose, onConfirm, user }) {
                     <h3 className="font-black text-slate-900">Revisar y firmar acta</h3>
                     <button onClick={onClose} className="rounded-xl px-3 py-2 text-sm font-black text-slate-500">Cerrar</button>
                 </div>
-                <div className="flex-1 overflow-auto p-3 pb-32 sm:pb-4">
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex-1 overflow-auto p-3 pb-4 sm:pb-4">
+                    <div className="student-acta-preview overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <OfficialActa acta={toActa(minute)} compact />
                     </div>
                     {storedSignature ? (
@@ -324,7 +324,7 @@ function SignatureModal({ minute, storedSignature, onClose, onConfirm, user }) {
                         </div>
                     )}
                 </div>
-                <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-slate-200 bg-white p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(15,23,42,0.18)] sm:static sm:rounded-b-2xl sm:pb-3">
+                <div className="border-t border-slate-200 bg-white p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(15,23,42,0.18)] sm:rounded-b-2xl sm:pb-3">
                     <button disabled={!storedSignature && !hasDrawn} onClick={confirm} className="primary-btn w-full"><PenLine size={16} /> Guardar y firmar como {user?.first_name || user?.username}</button>
                 </div>
             </div>

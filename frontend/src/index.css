@@ -53,6 +53,17 @@
   .icon-soft {
     @apply grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50;
   }
+
+  .student-acta-preview {
+    min-height: 12rem;
+  }
+
+  @media (max-width: 640px) {
+    .student-acta-preview > #print-acta {
+      zoom: 0.46;
+      margin-bottom: -54%;
+    }
+  }
 }
 
 @layer utilities {
