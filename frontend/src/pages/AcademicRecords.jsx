@@ -360,16 +360,15 @@ function PrintView({ acta, onBack }) {
             headerCanvas.width = canvas.width;
             headerCanvas.height = headerBottom - headerTop;
             headerCanvas.getContext('2d').drawImage(canvas, 0, headerTop, canvas.width, headerCanvas.height, 0, 0, canvas.width, headerCanvas.height);
-            const sectionStarts = [headerBottom, '6', '8', '10'].map(value => {
-                if (typeof value === 'number') return value;
-                const section = element.querySelector(`.sec-${value}`);
-                return section ? Math.round((section.getBoundingClientRect().top - elementRect.top) * scale) : canvas.height;
-            });
-            const pages = [sectionStarts[0], sectionStarts[1], sectionStarts[2], sectionStarts[3], canvas.height];
             const headerHeight = (headerCanvas.height / headerCanvas.width) * imageWidth;
             const contentTop = margin + headerHeight + 12;
             const contentHeight = pageHeight - contentTop - margin - 20;
-            for (let page = 0; page < 4; page += 1) {
+            const sourceContentHeight = Math.round((contentHeight / imageWidth) * canvas.width);
+            const pages = [];
+            for (let offset = headerBottom; offset < canvas.height; offset += sourceContentHeight) {
+                pages.push([offset, Math.min(offset + sourceContentHeight, canvas.height)]);
+            }
+            for (let page = 0; page < pages.length; page += 1) {
                 if (page) pdf.addPage('letter', 'portrait');
                 pdf.addImage(headerCanvas.toDataURL('image/png'), 'PNG', margin, margin, imageWidth, headerHeight, undefined, 'FAST');
                 pdf.setFillColor(255, 255, 255);
@@ -380,17 +379,16 @@ function PrintView({ acta, onBack }) {
                 pdf.setFont('helvetica', 'bold');
                 pdf.setFontSize(8);
                 pdf.text(`Página ${page + 1} de 4`, margin + imageWidth * 0.75, margin + headerHeight * 0.9, { align: 'center' });
-                const from = pages[page];
-                const to = pages[page + 1];
+                const [from, to] = pages[page];
                 const sliceHeight = Math.max(1, to - from);
                 const slice = document.createElement('canvas');
                 slice.width = canvas.width;
                 slice.height = sliceHeight;
                 slice.getContext('2d').drawImage(canvas, 0, from, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-                const renderedHeight = Math.min(contentHeight, (sliceHeight / canvas.width) * imageWidth);
+                const renderedHeight = (sliceHeight / canvas.width) * imageWidth;
                 pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', margin, contentTop, imageWidth, renderedHeight, undefined, 'FAST');
                 pdf.setFontSize(8);
-                pdf.text(`Página ${page + 1} de 4`, pageWidth - margin, pageHeight - 16, { align: 'right' });
+                pdf.text(`Página ${page + 1} de ${pages.length}`, pageWidth - margin, pageHeight - 16, { align: 'right' });
             }
             pdf.save(`Acta-FOR023GDC-${acta.numero || 'sin-numero'}.pdf`);
         } finally {
