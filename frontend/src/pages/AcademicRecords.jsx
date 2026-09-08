@@ -364,21 +364,22 @@ function PrintView({ acta, onBack }) {
             const contentTop = margin + headerHeight + 12;
             const contentHeight = pageHeight - contentTop - margin - 20;
             const sourceContentHeight = Math.round((contentHeight / imageWidth) * canvas.width);
+            const safeStarts = [...element.children]
+                .filter(child => !child.classList.contains('screen-header') && !child.classList.contains('sec') && child.tagName !== 'STYLE')
+                .map(child => Math.round((child.getBoundingClientRect().top - elementRect.top) * scale))
+                .filter(top => top > headerBottom && top < canvas.height)
+                .sort((a, b) => a - b);
             const pages = [];
-            for (let offset = headerBottom; offset < canvas.height; offset += sourceContentHeight) {
-                pages.push([offset, Math.min(offset + sourceContentHeight, canvas.height)]);
+            let offset = headerBottom;
+            while (offset < canvas.height) {
+                const target = offset + sourceContentHeight;
+                const next = safeStarts.filter(top => top > offset && top <= target).pop() || Math.min(target, canvas.height);
+                pages.push([offset, next]);
+                offset = next;
             }
             for (let page = 0; page < pages.length; page += 1) {
                 if (page) pdf.addPage('letter', 'portrait');
                 pdf.addImage(headerCanvas.toDataURL('image/png'), 'PNG', margin, margin, imageWidth, headerHeight, undefined, 'FAST');
-                pdf.setFillColor(255, 255, 255);
-                pdf.rect(margin + imageWidth * 0.5, margin + headerHeight * 0.74, imageWidth * 0.5, headerHeight * 0.26, 'F');
-                pdf.setDrawColor(0, 0, 0);
-                pdf.setLineWidth(0.6);
-                pdf.line(margin + imageWidth * 0.5, margin + headerHeight * 0.74, margin + imageWidth, margin + headerHeight * 0.74);
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(8);
-                pdf.text(`Página ${page + 1} de 4`, margin + imageWidth * 0.75, margin + headerHeight * 0.9, { align: 'center' });
                 const [from, to] = pages[page];
                 const sliceHeight = Math.max(1, to - from);
                 const slice = document.createElement('canvas');
