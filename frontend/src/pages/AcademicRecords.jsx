@@ -207,7 +207,7 @@ function Tab({ active, icon: Icon, label, onClick }) {
 }
 
 function MinutesPanel({ minutes, onNew, onEdit, onPreview, onDelete }) {
-    return createPortal((
+    return (
         <section className="min-h-0 rounded-[1.1rem] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 p-4">
                 <h2 className="font-black text-slate-900">Actas del curso</h2>
@@ -234,7 +234,7 @@ function MinutesPanel({ minutes, onNew, onEdit, onPreview, onDelete }) {
                 })}
             </div>
         </section>
-    ), document.body);
+    );
 }
 
 function ActaEditor({ acta, setActa, onBack, onSave, onPreview, onImport, user }) {
