@@ -10,6 +10,7 @@ import RubricGradingModal from '../components/RubricGradingModal';
 import RubricLibrary from '../components/RubricLibrary';
 import RubricPreview from '../components/RubricPreview';
 import RubricGradingPage from './RubricGradingPage';
+import RubricPreviewPage from './RubricPreviewPage';
 
 const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
 const today = new Date().toISOString().slice(0, 10);
@@ -186,6 +187,7 @@ export default function AcademicRecords() {
     if (previewActa) return <PrintView acta={toActa(previewActa)} onBack={() => setPreviewActa(null)} />;
     if (editingActa) return <ActaEditor acta={editingActa} setActa={setEditingActa} onBack={() => setEditingActa(null)} onSave={saveActa} onPreview={() => setPreviewActa({ data: editingActa })} onImport={importCoursePeople} user={user} />;
     if (gradingTarget) return <RubricGradingPage evaluation={gradingTarget.evaluation} student={gradingTarget.student} existing={gradingTarget.grade} onBack={() => setGradingTarget(null)} onSave={async (scores, comments, average) => { await saveRubricGrade(gradingTarget.evaluation, gradingTarget.student, scores, comments, average); setGradingTarget(null); }} />;
+    if (previewRubric) return <RubricPreviewPage rubric={previewRubric} onBack={() => setPreviewRubric(null)} />;
 
     return (
         <div className="mx-auto flex max-w-7xl flex-col gap-5">
