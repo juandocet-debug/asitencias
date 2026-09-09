@@ -192,7 +192,7 @@ export default function AcademicRecords() {
 
     return (
         <div className="mx-auto flex max-w-7xl flex-col gap-5">
-            <section className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-sm">
+            {canManage ? <section className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <p className="text-xs font-black uppercase tracking-widest text-[#7657f6]">AGON académico</p>
@@ -207,7 +207,7 @@ export default function AcademicRecords() {
                     <Stat label="Firmas pendientes" value={stats.pending} />
                     <Stat label="Evaluaciones" value={stats.evaluations} />
                 </div>
-            </section>
+            </section> : <StudentRecordsHeader stats={stats} />}
 
             <div className="flex flex-wrap gap-2">
                 {canManage && <Tab active={mode === 'minutes'} onClick={() => setMode('minutes')} icon={FilePenLine} label="Actas" />}
@@ -243,6 +243,19 @@ function syncFirmas(acta) {
 
 function Stat({ label, value }) {
     return <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"><p className="text-xs font-bold text-slate-500">{label}</p><p className="text-2xl font-black text-slate-900">{value}</p></div>;
+}
+
+function StudentRecordsHeader({ stats }) {
+    return <section className="overflow-hidden rounded-[1.5rem] border border-violet-200 bg-gradient-to-br from-[#241b55] via-[#4930a0] to-[#0e7490] p-4 text-white shadow-xl shadow-violet-200/50 sm:p-6">
+        <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">AGON académico</p><h1 className="mt-1 text-2xl font-black leading-tight sm:text-3xl">Mis actas y notas</h1><p className="mt-2 max-w-xl text-sm font-medium leading-relaxed text-white/75">Consulta tus actas, firmas y resultados desde un solo lugar.</p></div><span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/10 text-xl font-black text-cyan-200">A</span>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"><StudentStat label="Actas" value={stats.minutes} tone="bg-cyan-400 text-[#123b52]" /><StudentStat label="Firmas listas" value={stats.signed} tone="bg-emerald-400 text-emerald-950" /><StudentStat label="Pendientes" value={stats.pending} tone="bg-amber-300 text-amber-950" /><StudentStat label="Evaluaciones" value={stats.evaluations} tone="bg-violet-200 text-violet-950" /></div>
+    </section>;
+}
+
+function StudentStat({ label, value, tone }) {
+    return <div className={`rounded-2xl p-3 shadow-sm ${tone}`}><p className="text-[10px] font-black uppercase tracking-wide opacity-75">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>;
 }
 
 function Tab({ active, icon: Icon, label, onClick }) {
@@ -330,11 +343,11 @@ function Signatures({ acta, user, addRow, delRow }) {
 }
 
 function StudentPanel({ minutes, grades, storedSignature, setSignatureOpen }) {
-    return <div className="grid gap-4 lg:grid-cols-2"><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Mis actas</h2>{minutes.length === 0 && <Empty text="No tienes actas asignadas." />}{minutes.map(minute => <div key={minute.id} className="mt-3 rounded-xl border border-slate-100 p-3"><p className="font-black text-slate-800">{toActa(minute).tipo} No. {toActa(minute).numero || minute.id}</p><p className="text-xs font-bold text-slate-500">{minute.course_name} · {toActa(minute).fecha}</p><button onClick={() => setSignatureOpen(minute)} className="primary-btn mt-3">{minute.signed_by_me ? 'Ver acta firmada' : 'Revisar y firmar'}</button></div>)}</section><section className="rounded-[1.1rem] border border-slate-200 bg-white p-4 shadow-sm"><h2 className="font-black text-slate-900">Mis notas</h2>{grades.length === 0 && <Empty text="Aún no hay notas publicadas." />}{grades.map(grade => <div key={grade.id} className="mt-3 rounded-xl border border-slate-100 p-3"><p className="font-black text-slate-800">{grade.evaluation_detail?.rubric_detail?.title}</p><p className="text-sm font-black text-[#7657f6]">Nota: {grade.final_grade}</p><p className="text-sm text-slate-600">{grade.comments}</p></div>)}</section></div>;
+    return <div className="grid gap-4 lg:grid-cols-2"><section className="overflow-hidden rounded-[1.25rem] border border-violet-100 bg-white shadow-sm"><div className="bg-gradient-to-r from-violet-600 to-cyan-600 px-4 py-3 text-white"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/75">Documentos</p><h2 className="text-lg font-black">Mis actas</h2></div><div className="p-4">{minutes.length === 0 && <Empty text="No tienes actas asignadas." />}{minutes.map(minute => <div key={minute.id} className="mt-3 rounded-xl border border-violet-100 bg-violet-50/50 p-3 first:mt-0"><p className="font-black text-slate-800">{toActa(minute).tipo} No. {toActa(minute).numero || minute.id}</p><p className="text-xs font-bold text-slate-500">{minute.course_name} · {toActa(minute).fecha}</p><button onClick={() => setSignatureOpen(minute)} className="primary-btn mt-3 w-full justify-center">{minute.signed_by_me ? 'Ver acta firmada' : 'Revisar y firmar'}</button></div>)}</div></section><section className="overflow-hidden rounded-[1.25rem] border border-cyan-100 bg-white shadow-sm"><div className="bg-gradient-to-r from-cyan-700 to-teal-500 px-4 py-3 text-white"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/75">Resultados</p><h2 className="text-lg font-black">Mis notas</h2></div><div className="p-4">{grades.length === 0 && <Empty text="Aún no hay notas publicadas." />}{grades.map(grade => <div key={grade.id} className="mt-3 rounded-xl border border-cyan-100 bg-cyan-50/50 p-3 first:mt-0"><div className="flex items-start justify-between gap-3"><p className="font-black text-slate-800">{grade.evaluation_detail?.rubric_detail?.title}</p><span className="rounded-lg bg-cyan-700 px-2 py-1 text-sm font-black text-white">{grade.final_grade}</span></div><p className="mt-2 text-sm leading-relaxed text-slate-600">{grade.comments || 'Sin comentarios.'}</p></div>)}</div></section></div>;
 }
 
 function StudentRubricPanel({ evaluations, grades, onPreview }) {
-    return <section className="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 shadow-sm"><p className="text-xs font-black uppercase tracking-widest text-cyan-700">Mis evaluaciones</p><h2 className="mt-1 text-lg font-black text-slate-900">Mi rúbrica y mi nota</h2>{evaluations.length === 0 ? <Empty text="Aún no hay rúbricas compartidas contigo." /> : <div className="mt-3 grid gap-2">{evaluations.map(evaluation => { const grade = grades.find(item => item.evaluation === evaluation.id); const rubric = evaluation.rubric_detail; return <div key={evaluation.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-100 bg-white p-3"><div><p className="font-black text-slate-800">{rubric?.title}</p><p className="text-xs font-semibold text-slate-500">{rubric?.criteria?.length || 0} criterios · {grade ? `Nota: ${grade.final_grade}` : 'Pendiente de calificación'}</p></div><button type="button" onClick={() => onPreview({ ...rubric, studentGrade: grade })} className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-xs font-black text-white"><Eye size={14} /> Ver mi rúbrica / PDF</button></div>; })}</div>}</section>;
+    return <section className="overflow-hidden rounded-[1.25rem] border border-cyan-200 bg-white shadow-sm"><div className="flex items-center justify-between gap-3 bg-gradient-to-r from-[#123b52] to-cyan-700 px-4 py-4 text-white"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Mis evaluaciones</p><h2 className="mt-1 text-lg font-black">Rúbricas y resultados</h2></div><span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black">{evaluations.length}</span></div>{evaluations.length === 0 ? <div className="p-4"><Empty text="Aún no hay rúbricas compartidas contigo." /></div> : <div className="grid gap-3 p-4">{evaluations.map(evaluation => { const grade = grades.find(item => item.evaluation === evaluation.id); const rubric = evaluation.rubric_detail; return <div key={evaluation.id} className="flex flex-col gap-3 rounded-xl border border-cyan-100 bg-cyan-50/40 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate font-black text-slate-800">{rubric?.title}</p><p className="text-xs font-semibold text-slate-500">{rubric?.criteria?.length || 0} criterios · {grade ? `Nota: ${grade.final_grade}` : 'Pendiente de calificación'}</p></div><button type="button" onClick={() => onPreview({ ...rubric, studentGrade: grade })} className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-700 px-3 py-2.5 text-xs font-black text-white shadow-md shadow-cyan-700/20 sm:w-auto"><Eye size={14} /> Ver mi rúbrica / PDF</button></div>; })}</div>}</section>;
 }
 
 function RubricGradeBoard({ rubrics, evaluations, students, grades, evaluationForm, setEvaluationForm, assignRubric, onGrade }) {
