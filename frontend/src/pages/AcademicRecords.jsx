@@ -210,7 +210,7 @@ export default function AcademicRecords() {
                 </div>
             </section> : null}
 
-            {!canManage && <StudentRecordsView stats={stats} minutes={minutes} grades={grades} evaluations={visibleEvaluations} onSign={setSignatureOpen} onPreview={setPreviewRubric} />}
+            {!canManage && <div className="relative -mx-4 -mt-4 min-h-full overflow-hidden bg-[#050219] px-3 pb-28 pt-3 text-white sm:-mx-8 sm:-mt-8 sm:px-4 md:-mx-8 md:px-8" style={{ backgroundImage: 'linear-gradient(rgba(139,109,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(139,109,255,.12) 1px, transparent 1px), radial-gradient(circle at 18% 8%, rgba(139,109,255,.28), transparent 28%), linear-gradient(180deg, #120934 0%, #06021a 48%, #03010d 100%)', backgroundSize: '42px 42px, 42px 42px, auto, auto' }}><StudentRecordsView stats={stats} minutes={minutes} grades={grades} evaluations={visibleEvaluations} onSign={setSignatureOpen} onPreview={setPreviewRubric} /></div>}
             <div className={canManage ? 'flex flex-wrap gap-2' : 'hidden'}>
                 {canManage && <Tab active={mode === 'minutes'} onClick={() => setMode('minutes')} icon={FilePenLine} label="Actas" />}
                 {canManage && <Tab active={mode === 'rubrics'} onClick={() => setMode('rubrics')} icon={ClipboardList} label="Rúbricas y notas" />}
