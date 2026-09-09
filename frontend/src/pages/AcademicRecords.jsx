@@ -12,6 +12,7 @@ import RubricPreview from '../components/RubricPreview';
 import RubricGradingPage from './RubricGradingPage';
 import RubricPreviewPage from './RubricPreviewPage';
 import { getMediaUrl } from '../utils/dateUtils';
+import StudentRecordsView from '../components/StudentRecordsView';
 
 const UPN_LOGO = 'https://i.ibb.co/C5SB6zj4/Identidad-UPN-25-vertical-azul-fondo-blanco.png';
 const today = new Date().toISOString().slice(0, 10);
@@ -207,9 +208,10 @@ export default function AcademicRecords() {
                     <Stat label="Firmas pendientes" value={stats.pending} />
                     <Stat label="Evaluaciones" value={stats.evaluations} />
                 </div>
-            </section> : <StudentRecordsHeader stats={stats} />}
+            </section> : null}
 
-            <div className="flex flex-wrap gap-2">
+            {!canManage && <StudentRecordsView stats={stats} minutes={minutes} grades={grades} evaluations={visibleEvaluations} onSign={setSignatureOpen} onPreview={setPreviewRubric} />}
+            <div className={canManage ? 'flex flex-wrap gap-2' : 'hidden'}>
                 {canManage && <Tab active={mode === 'minutes'} onClick={() => setMode('minutes')} icon={FilePenLine} label="Actas" />}
                 {canManage && <Tab active={mode === 'rubrics'} onClick={() => setMode('rubrics')} icon={ClipboardList} label="Rúbricas y notas" />}
                 {!canManage && <Tab active icon={PenLine} label="Mis actas y notas" />}
@@ -217,8 +219,6 @@ export default function AcademicRecords() {
 
             {canManage && mode === 'minutes' && <MinutesPanel minutes={activeMinutes} onNew={() => setEditingActa(blankActa())} onEdit={m => setEditingActa({ id: m.id, ...toActa(m) })} onPreview={setPreviewActa} onDelete={deleteMinute} />}
             {canManage && mode === 'rubrics' && <><div className="flex justify-end"><button onClick={() => { setEditingRubric(null); setRubricBuilderOpen(true); }} className="inline-flex items-center gap-2 rounded-lg bg-[#164e63] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-cyan-200/50"><Plus size={16} /> Nueva rúbrica</button></div><RubricLibrary rubrics={rubrics} onEdit={rubric => { setEditingRubric(rubric); setRubricBuilderOpen(true); }} onDelete={removeRubric} onPreview={setPreviewRubric} onAssign={rubric => assignRubric(String(rubric.id))} /><RubricGradeBoard rubrics={rubrics} evaluations={visibleEvaluations} students={course?.students || []} grades={grades} evaluationForm={evaluationForm} setEvaluationForm={setEvaluationForm} assignRubric={assignRubric} onGrade={setGradingTarget} /></>}
-            {!canManage && <StudentPanel minutes={minutes} grades={grades} storedSignature={storedSignature} setSignatureOpen={setSignatureOpen} />}
-            {!canManage && <StudentRubricPanel evaluations={visibleEvaluations} grades={grades} onPreview={setPreviewRubric} />}
             {signatureOpen && <SignatureModal minute={signatureOpen} storedSignature={storedSignature} onClose={() => setSignatureOpen(null)} onConfirm={signMinute} user={user} />}
             {rubricBuilderOpen && <RubricBuilder initialRubric={editingRubric} onClose={() => { setRubricBuilderOpen(false); setEditingRubric(null); }} onSave={saveCompleteRubric} />}
             {previewRubric && <RubricPreview rubric={previewRubric} onClose={() => setPreviewRubric(null)} />}
