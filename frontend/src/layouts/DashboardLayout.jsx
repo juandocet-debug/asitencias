@@ -87,7 +87,7 @@ export default function DashboardLayout() {
                     handleLogout={handleLogout}
                     onMenuToggle={() => setIsSidebarOpen(value => !value)}
                 />
-                <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4 md:p-8">
+                <div className="flex-1 overflow-y-auto px-4 pb-24 pt-4 md:p-8 md:pb-8">
                     <Outlet />
                 </div>
             </main>
