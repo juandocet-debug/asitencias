@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import SidebarNav from '../components/layout/SidebarNav';
@@ -10,12 +10,14 @@ import { clearClientSession, logoutSession } from '../services/api';
 
 export default function DashboardLayout() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, setUser, loading, activeRole, setActiveRole } = useUser();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [joinModalOpen, setJoinModalOpen] = useState(false);
 
     const allRoles = (user?.roles?.length > 0 ? user.roles : [user?.role]).filter(Boolean);
     const effectiveRole = activeRole || user?.role;
+    const studentRecords = effectiveRole === 'STUDENT' && location.pathname === '/records';
 
     const handleLogout = async () => {
         await logoutSession();
@@ -78,7 +80,7 @@ export default function DashboardLayout() {
                 </>
             )}
 
-            <main className="relative z-10 flex h-screen flex-1 flex-col overflow-hidden md:ml-64">
+            <main className={`relative z-10 flex h-screen flex-1 flex-col overflow-hidden md:ml-64 ${studentRecords ? 'bg-[#050219]' : ''}`}>
                 <Topbar
                     user={user}
                     effectiveRole={effectiveRole}
