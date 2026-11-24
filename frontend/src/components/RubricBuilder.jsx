@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Plus, Save, Trash2, X } from 'lucide-react';
 const DEFAULT_LEVELS = [1, 2, 3, 4, 5].map(value => ({ value, description: '' }));
 const LEVEL_NAMES = { 1: 'Insuficiente', 2: 'Básico', 3: 'Adecuado', 4: 'Bueno', 5: 'Excelente' };
 
-const newCriterion = () => ({ id: Date.now() + Math.random(), name: '', levels: DEFAULT_LEVELS.map(level => ({ ...level })) });
+const newCriterion = () => ({ key: crypto.randomUUID(), name: '', levels: DEFAULT_LEVELS.map(level => ({ ...level })) });
 
 function CriterionEditor({ criterion, index, canRemove, onChange, onRemove }) {
     const [expanded, setExpanded] = useState(true);
@@ -38,11 +38,16 @@ export default function RubricBuilder({ initialRubric, onClose, onSave }) {
     const [saving, setSaving] = useState(false);
     const save = async event => {
         event.preventDefault();
-        const validCriteria = criteria.filter(item => item.name.trim()).map((item, order) => ({ name: item.name.trim(), order, levels: item.levels.filter(level => level.value > 0).map(level => ({ value: level.value, description: level.description || '' })) }));
+        const validCriteria = criteria.filter(item => item.name.trim()).map((item, order) => ({
+            ...(item.id ? { id: item.id } : {}), name: item.name.trim(), order,
+            levels: item.levels.filter(level => level.value > 0),
+        }));
         if (!title.trim()) return setError('Escribe el título de la rúbrica.');
         if (!validCriteria.length) return setError('Agrega al menos un criterio con nombre.');
         setSaving(true);
-        try { await onSave({ title: title.trim(), description, evaluator_count: evaluatorCount, criteria: validCriteria }); onClose(); } catch { setError('No se pudo guardar la rúbrica.'); } finally { setSaving(false); }
+        try { await onSave({ title: title.trim(), description, evaluator_count: evaluatorCount, criteria: validCriteria }); onClose(); }
+        catch (failure) { setError(failure.response?.data?.criteria?.[0] || 'No se pudo guardar la rúbrica.'); }
+        finally { setSaving(false); }
     };
     return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-3 sm:p-6">
         <form onSubmit={save} className="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -52,7 +57,7 @@ export default function RubricBuilder({ initialRubric, onClose, onSave }) {
                 <div className="grid gap-3 sm:grid-cols-[1fr_100px]"><label className="grid gap-1 text-xs font-black uppercase text-slate-500">Título *<input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ej. Evaluación del proyecto final" className="field normal-case" /></label><label className="grid gap-1 text-xs font-black uppercase text-slate-500">Evaluadores<input type="number" min="1" max="10" value={evaluatorCount} onChange={e => setEvaluatorCount(Number(e.target.value))} className="field" /></label></div>
                 <label className="grid gap-1 text-xs font-black uppercase text-slate-500">Descripción general<textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Propósito de esta rúbrica..." className="field normal-case" /></label>
                 <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-black text-slate-800">Criterios y niveles</h3><button type="button" onClick={() => setCriteria(items => [...items, newCriterion()])} className="secondary-btn"><Plus size={15} /> Criterio</button></div>
-                <div className="grid gap-3">{criteria.map((criterion, index) => <CriterionEditor key={criterion.id} criterion={criterion} index={index} canRemove={criteria.length > 1} onChange={value => setCriteria(items => items.map((item, i) => i === index ? value : item))} onRemove={() => setCriteria(items => items.filter((_, i) => i !== index))} />)}</div>
+                <div className="grid gap-3">{criteria.map((criterion, index) => <CriterionEditor key={criterion.id ?? criterion.key} criterion={criterion} index={index} canRemove={criteria.length > 1} onChange={value => setCriteria(items => items.map((item, i) => i === index ? value : item))} onRemove={() => setCriteria(items => items.filter((_, i) => i !== index))} />)}</div>
             </div>
             <footer className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 p-3 sm:p-4"><button type="button" onClick={onClose} className="secondary-btn">Cancelar</button><button disabled={saving} className="primary-btn"><Save size={15} /> {saving ? 'Guardando...' : 'Guardar rúbrica'}</button></footer>
         </form>

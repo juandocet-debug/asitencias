@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework import serializers
 
 from academic.serializers import SimpleStudentSerializer
+from .rubric_persistence import save_criteria
 from .models import (
     CourseEvaluation,
     Grade,
@@ -100,6 +102,7 @@ class RubricLevelSerializer(serializers.ModelSerializer):
 
 
 class RubricCriterionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, min_value=1)
     levels = RubricLevelSerializer(many=True)
 
     class Meta:
@@ -116,29 +119,23 @@ class RubricSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'description', 'creator', 'creator_name', 'evaluator_count', 'criteria', 'created_at')
         read_only_fields = ('creator', 'created_at')
 
+    @transaction.atomic
     def create(self, validated_data):
         criteria = validated_data.pop('criteria', [])
         rubric = Rubric.objects.create(**validated_data)
-        self._replace_criteria(rubric, criteria)
+        save_criteria(rubric, criteria)
         return rubric
 
+    @transaction.atomic
     def update(self, instance, validated_data):
+        instance = Rubric.objects.select_for_update().get(pk=instance.pk)
         criteria = validated_data.pop('criteria', None)
         for field, value in validated_data.items():
             setattr(instance, field, value)
         instance.save()
         if criteria is not None:
-            instance.criteria.all().delete()
-            self._replace_criteria(instance, criteria)
+            save_criteria(instance, criteria)
         return instance
-
-    def _replace_criteria(self, rubric, criteria):
-        for index, item in enumerate(criteria):
-            levels = item.pop('levels', [])
-            criterion = RubricCriterion.objects.create(rubric=rubric, order=item.get('order', index), name=item['name'])
-            for level in levels:
-                RubricLevel.objects.create(criterion=criterion, **level)
-
 
 class CourseEvaluationSerializer(serializers.ModelSerializer):
     rubric_detail = RubricSerializer(source='rubric', read_only=True)

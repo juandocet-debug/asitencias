@@ -107,3 +107,9 @@ class Grade(models.Model):
     class Meta:
         unique_together = ('evaluation', 'student', 'evaluator')
         ordering = ('student__last_name', 'student__first_name')
+
+
+class FinalEvaluationPlan(models.Model):
+    course = models.OneToOneField(Course, on_delete=models.CASCADE, related_name='final_evaluation_plan')
+    attendance_weight = models.DecimalField(max_digits=5, decimal_places=2)
+    rubric_weights = models.JSONField(default=dict)

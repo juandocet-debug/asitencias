@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QrCode, UserPlus, BarChart3, Check } from 'lucide-react';
+import { QrCode, UserPlus, BarChart3, Check, ClipboardCheck } from 'lucide-react';
 
-export default function ClassActionsBar({ course, isAdmin, courseId, onQr, onManage, onAttendance }) {
+export default function ClassActionsBar({ course, isAdmin, courseId, onQr, onManage, onAttendance, onEvaluate }) {
     const navigate = useNavigate();
 
     return (
@@ -29,6 +29,10 @@ export default function ClassActionsBar({ course, isAdmin, courseId, onQr, onMan
 
                 <ActionButton onClick={onAttendance} icon={<Check size={18} />} className="bg-gradient-to-br from-[#8b6dff] to-[#7657f6] text-white shadow-xl shadow-violet-200">
                     Llamar Asistencia
+                </ActionButton>
+
+                <ActionButton onClick={onEvaluate} icon={<ClipboardCheck size={18} />} className="border border-[#d9cef9] bg-[#f0edff] text-[#2a2147]">
+                    Evaluación final
                 </ActionButton>
             </div>
         </div>
